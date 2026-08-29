@@ -8,26 +8,29 @@ the six scanners, or just read the latest `results` artifact from
 
 | | |
 |---|---|
-| Run | [#4](https://github.com/llody9977/secret-scanner-benchmark/actions/runs/33238513504), commit `3c42350` |
+| Run | [#5](https://github.com/llody9977/secret-scanner-benchmark/actions/runs/33239296691), commit `2c88f4a` |
 | Date | 2026-08-29 |
 | Corpus | seed `20260829`, HEAD `07e07fadb192ef0610047cc82b404e441d15d44d` |
 | Planted | 45 secrets · 18 decoys · 37 present at HEAD · 8 history-only |
 
 ## Per-tool totals
 
-| Tool | Version | Mode | TP | FP | FN | N/A | Precision | Recall | F1 |
-|------|---------|------|----|----|----|-----|-----------|--------|-----|
-| Gitleaks | 8.30.1 | default | 35 | 1 | 10 | 0 | 97.2% | 77.8% | 86.4% |
-| Betterleaks | 1.8.1 | default | 39 | 2 | 6 | 0 | 95.1% | 86.7% | **90.7%** |
-| TruffleHog | 3.97.1 | all-results | 22 | 0 | 23 | 0 | 100.0% | 48.9% | 65.7% |
-| TruffleHog | 3.97.1 | verified-only | 0 | 0 | 45 | 0 | — | 0.0% | — |
-| Kingfisher | 2.0.0 | default | 24 | 1 | 21 | 0 | 96.0% | 53.3% | 68.6% |
-| Titus | 1.2.8 | default | 41 | 4 | 4 | 0 | 91.1% | 91.1% | **91.1%** |
-| detect-secrets | 1.5.0 | default | 26 | 13 | 11 | 8 | 66.7% | 70.3% | 68.4% |
+| Tool | Version | Mode | TP | FP | FN | N/A | Σ | Precision | Recall | F1 |
+|------|---------|------|----|----|----|-----|---|-----------|--------|-----|
+| Gitleaks | 8.30.1 | default | 35 | 1 | 10 | 0 | 45 | 97.2% | 77.8% | 86.4% |
+| Betterleaks | 1.8.1 | default | 39 | 2 | 6 | 0 | 45 | 95.1% | 86.7% | **90.7%** |
+| TruffleHog | 3.97.1 | all-results | 22 | 0 | 23 | 0 | 45 | 100.0% | 48.9% | 65.7% |
+| TruffleHog | 3.97.1 | verified-only | 0 | 0 | 45 | 0 | 45 | — | 0.0% | — |
+| Kingfisher | 2.0.0 | default | 24 | 1 | 21 | 0 | 45 | 96.0% | 53.3% | 68.6% |
+| Titus | 1.2.8 | default | 41 | 4 | 4 | 0 | 45 | 91.1% | 91.1% | **91.1%** |
+| detect-secrets | 1.5.0 | default | 26 | 13 | 11 | 8 | 45 | 66.7% | 70.3% | 68.4% |
 
-`N/A` = the tool cannot reach that placement (detect-secrets does not walk
-history), scored as neither hit nor miss. TruffleHog `verified-only` is excluded
-from the cross-tool tally below.
+`Σ` = TP + FN + N/A. Every planted secret is exactly one of caught, missed, or
+out-of-reach, so `Σ` equals the planted total (45) on every row — the scorer
+fails the run if it does not. `N/A` = the tool cannot reach that placement
+(detect-secrets does not walk history). FP is a separate axis: findings matching
+nothing planted, bounded by the 18 decoys plus spurious noise. TruffleHog
+`verified-only` is excluded from the coverage analysis below.
 
 ## Headline
 
@@ -37,8 +40,34 @@ from the cross-tool tally below.
   resistance to the split-string obfuscation. No tool has both.
 - **Caught by exactly one tool: 2** — `aws-temp-key` and `hist-aws`, both only
   by Titus. Both are `AKIA`/`ASIA` access-key IDs (see below).
-- **Union coverage: 44/45.** Layering three tools gets you almost everything the
-  set can find; it does not get you everything.
+- **Union coverage: 44/45.** Layering gets you almost everything the set can
+  find; it does not get you everything.
+
+## Cross-tool coverage
+
+The complementarity question — does the best tool subsume the others, and what
+combination covers the corpus?
+
+| Tool | Caught | Unique to it |
+|------|-------:|--------------|
+| Titus | 41/45 | `aws-temp-key`, `hist-aws` |
+| Betterleaks | 39/45 | — |
+| Gitleaks | 35/45 | — |
+| detect-secrets | 26/45 | — |
+| Kingfisher | 24/45 | — |
+| TruffleHog (all) | 22/45 | — |
+
+- **Betterleaks strictly dominates Gitleaks, Kingfisher and TruffleHog** — every
+  secret any of those three catch, Betterleaks also catches, plus more. A
+  Gitleaks user loses nothing by switching. (Titus likewise covers everything
+  Kingfisher does.)
+- **Only Titus has unique catches** (2). Every other tool's hits are a subset of
+  what the rest of the field already covers.
+- **Smallest set for 44/45: Titus + Gitleaks** (or Titus + Betterleaks). Two
+  tools is the whole story — a third adds nothing but noise.
+- **The one gap, `hist-openai`, is not closed by adding tools.** It is an
+  obfuscated secret in history; the fix is process (pre-commit hooks, short-lived
+  credentials, history rewriting on rotation), not another scanner.
 
 ## What the results show
 
@@ -125,12 +154,16 @@ under-perform on `reverted-commit` (0/2) because they miss those secret *types*
 
 ## Recommendation
 
-- **One tool:** Titus or Betterleaks. Titus for recall (91%), Betterleaks for
-  the recall/precision balance (87% / 95%) and the lighter false-positive load.
-- **Two tools:** Betterleaks + Titus covers 44/45 with manageable noise.
+- **One tool:** Titus or Betterleaks. Titus for recall (91%) and the only unique
+  catches in the field; Betterleaks for the recall/precision balance (87% / 95%)
+  and lighter false-positive load. Betterleaks strictly dominates Gitleaks here,
+  so a Gitleaks pipeline can switch with nothing to lose.
+- **Two tools:** Titus + Betterleaks → 44/45. A third tool adds only noise on
+  this corpus.
 - **Pre-commit:** detect-secrets or Betterleaks `--pre-commit`; accept that
   history and other surfaces are out of scope there.
 - **Do not** rely on verified-only output as a gate, and do not benchmark a
   verifying tool that way.
-- **Layer regardless.** Even the union leaves `hist-openai` — an obfuscated
-  secret in history is the case to design your process around, not your tool.
+- **The last secret is a process problem.** `hist-openai` survives every tool
+  and every combination — an obfuscated credential in history is the case to
+  design your rotation and pre-commit story around, not your scanner choice.

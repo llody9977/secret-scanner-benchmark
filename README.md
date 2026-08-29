@@ -17,8 +17,8 @@ runnable.
 be used.
 
 **Latest results:** [docs/RESULTS.md](docs/RESULTS.md) — best single-tool recall
-is 91%, union of six tools is 44/45, and one obfuscated secret in history is
-caught by nothing.
+91% (Titus); Betterleaks strictly dominates Gitleaks; two tools reach 44/45; one
+obfuscated secret in history is caught by nothing.
 
 ---
 
