@@ -234,6 +234,21 @@ def _cross_tool(
     return caught_by_none, dict(sorted(caught_by_one.items()))
 
 
+# A finding pointing at one of these is scanner noise on a benchmark artifact,
+# not a result about the repository under test — the manifest holds every
+# planted value in plaintext, the seed is the corpus key. This is a fallback:
+# the scan target should not contain them in the first place (the CI workflow
+# deletes bench/manifest.yaml before scanning). A tool that de-duplicates by
+# value can still mis-attribute a real detection to the manifest, so relying on
+# this filter under-counts — remove the files, don't lean on the filter.
+_ARTIFACT_BASENAMES = {"manifest.yaml", "seed"}
+
+
+def _drop_artifact_findings(findings: List[Finding]) -> Tuple[List[Finding], int]:
+    kept = [f for f in findings if _norm(f.file).rsplit("/", 1)[-1] not in _ARTIFACT_BASENAMES]
+    return kept, len(findings) - len(kept)
+
+
 def score(manifest: Manifest, run_index: RunIndex, results_dir: Path) -> ScoreCard:
     results_dir = Path(results_dir)
     index = _Index(manifest)
@@ -241,6 +256,12 @@ def score(manifest: Manifest, run_index: RunIndex, results_dir: Path) -> ScoreCa
 
     for run in run_index.runs:
         findings = parse(run.parser, results_dir / run.path, run.tool)
+        findings, dropped = _drop_artifact_findings(findings)
+        if dropped:
+            print(f"[score] {run.tool}/{run.mode}: ignored {dropped} finding(s) on "
+                  f"manifest.yaml / seed. Exclude these from the scan target — a tool "
+                  f"that de-duplicates by value may have attributed real detections to "
+                  f"them, so this run's recall is a lower bound.")
         run_score = score_run(manifest, run, findings, index)
         scored.append((run, run_score, findings))
 

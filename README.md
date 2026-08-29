@@ -26,12 +26,16 @@ pip install -e .
 # 1. Generate the scannable corpus + ground-truth manifest from the committed seed
 python generator/generate.py --seed "$(cat corpus/seed)" --output ./bench
 
-# 2. Run your scanners against ./bench, writing one report per run into ./scan-output
+# 2. Keep the manifest for scoring, but move it out of the scan target — it holds
+#    every planted value in plaintext, so leaving it in ./bench inflates results
+cp bench/manifest.yaml manifest.yaml && rm bench/manifest.yaml
+
+# 3. Run your scanners against ./bench, one report per run into ./scan-output
 #    (the CI workflow does this for gitleaks, betterleaks, trufflehog, kingfisher,
 #     titus and detect-secrets)
 
-# 3. Score the reports against the manifest
-python scoring/score.py --manifest ./bench/manifest.yaml --results ./scan-output --out ./results
+# 4. Score the reports against the manifest
+python scoring/score.py --manifest ./manifest.yaml --results ./scan-output --out ./results
 ```
 
 `ssbench generate`, `ssbench score` and `ssbench verify` are the same commands

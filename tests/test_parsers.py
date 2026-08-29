@@ -91,6 +91,21 @@ def test_sarif_parser_titus_shape_absolute_uri(tmp_path):
     assert findings[0].line == 5
 
 
+def test_artifact_findings_are_dropped(tmp_path):
+    from ssbench.score import _drop_artifact_findings
+    from ssbench.models import Finding
+
+    findings = [
+        Finding(tool="t", file="src/app/config.py", line=8, raw_secret="x"),
+        Finding(tool="t", file="bench/manifest.yaml", line=175, raw_secret="x"),
+        Finding(tool="t", file="./manifest.yaml", line=1, raw_secret="x"),
+        Finding(tool="t", file="corpus/seed", line=1, raw_secret="x"),
+    ]
+    kept, dropped = _drop_artifact_findings(findings)
+    assert dropped == 3
+    assert [f.file for f in kept] == ["src/app/config.py"]
+
+
 def test_detect_secrets_parser(tmp_path):
     report = tmp_path / "ds.json"
     report.write_text(json.dumps({

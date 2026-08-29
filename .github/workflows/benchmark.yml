@@ -91,7 +91,14 @@ jobs:
         with:
           name: corpus
           path: bench
-      - run: mkdir -p scan-output
+      - name: Prepare scan target
+        run: |
+          mkdir -p scan-output
+          # The ground-truth manifest ships in the corpus artifact for the score
+          # job, but it is not part of the repository under test — it holds every
+          # planted value in plaintext. Leaving it in the tree lets all-files
+          # scanners (detect-secrets, kingfisher, titus) rack up matches on it.
+          rm -f bench/manifest.yaml
 
       # --- gitleaks: regex + entropy, walks history, no verification ----------
       - name: gitleaks
