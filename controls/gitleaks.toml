@@ -1,0 +1,71 @@
+# Configured control: the blocking gate.
+#
+# This is the ruleset the pull-request gate and the pre-commit hook run. It is
+# not the ruleset the comparative benchmark runs -- that one is deliberately
+# stock, because a benchmark that tunes each tool measures the tuning. This file
+# measures nothing; it enforces something.
+title = "secret-scanner-benchmark configured control"
+
+# Keep every provider default. A local ruleset that replaces the defaults
+# rather than extending them is the most common way a gate silently stops
+# covering the formats it was bought for.
+[extend]
+useDefault = true
+
+# One repository-only format, standing in for the internal token shape every
+# organisation has and no vendor ships a detector for. Custom formats are the
+# part of a gate that only you can test; see regression/README.md.
+[[rules]]
+id = "synthetic-demo-api-key"
+description = "Fictional internal API key format, used only by the regression suite"
+regex = '''\bDEMO_[A-Z0-9]{32}\b'''
+keywords = ["DEMO_"]
+tags = ["synthetic", "regression"]
+
+# Two classes this repository says it cares about that the stock provider rules
+# do not cover. Both were found by regression/run.py, not by reading the
+# ruleset -- which is most of the argument for having the suite. Nobody
+# discovers a missing rule by rereading the rules they already have.
+[[rules]]
+id = "connection-string-inline-password"
+description = "Database or broker URI with an inline password"
+# The password group excludes { } $ so the rule does not fire on the
+# interpolation templates every codebase has -- postgres://u:${DB_PASSWORD}@h
+# is the correct pattern, not a finding. Regression scenario:
+# connection-string-template.
+regex = '''(?i)\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|rediss?|amqps?)://[^\s:@/]+:([^\s:@/{}$]{8,})@'''
+secretGroup = 1
+keywords = ["postgres", "mysql", "mongodb", "redis", "amqp"]
+tags = ["generic", "connection-string"]
+
+[[rules]]
+id = "http-basic-authorization-header"
+description = "HTTP Basic Authorization header carrying base64 user:password"
+regex = '''(?i)authorization:\s*basic\s+([A-Za-z0-9+/]{16,}={0,2})'''
+secretGroup = 1
+keywords = ["authorization"]
+tags = ["generic", "http-header"]
+
+[[allowlists]]
+description = """
+The benchmark corpus and the regression corpus are both deliberately full of
+credential-shaped strings. Neither is a finding about this repository. The
+benchmark corpus is generated into ./bench at scan time and never committed;
+the regression corpus is materialised into a temporary directory by
+regression/run.py. These paths are allowlisted so that a developer who
+materialises either one locally does not have their own pre-commit hook fire
+on it.
+"""
+paths = [
+  '''(^|/)bench/''',
+  # The generator's format modules. They hold the pinned synthetic keypairs
+  # (base64-encoded in source precisely so that they do not trip every host's
+  # scanning, which --max-decode-depth then correctly decodes and flags) and
+  # the connection-string builders. Both are the tool under construction, not
+  # a credential in this repository. This allowlist is narrow on purpose: it
+  # names three modules, not `ssbench/`, so a secret committed anywhere else in
+  # the package is still caught.
+  '''(^|/)ssbench/formats/(keys|misc|github|aws|vendors|ai)\.py$''',
+  '''(^|/)regression/templates/''',
+  '''(^|/)corpus/manifest\.yaml$''',
+]

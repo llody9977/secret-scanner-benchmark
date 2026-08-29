@@ -68,7 +68,7 @@
 
     <figure>
       <div class="figframe">
-        <svg viewBox="0 0 880 340" role="img" aria-label="Six control points across the development pipeline: IDE, pre-commit hook, push protection, pull request CI, post-merge scheduled scan, and non-repository surfaces. Only the IDE, pre-commit and push-protection points are preventive; the remainder are detective. Developer friction is highest at the earliest points and falls to zero at the last two.">
+        <svg viewBox="0 0 880 356" role="img" aria-label="Six control points across the development pipeline: IDE, pre-commit hook, push protection, pull request CI, post-merge scheduled scan, and non-repository surfaces. Only the IDE, pre-commit and push-protection points are preventive; the remainder are detective. Synchronous developer friction is highest at the earliest points and absent at the last two, which still carry triage cost.">
           <defs>
             <marker id="p3arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
@@ -148,10 +148,11 @@
           <text x="797" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">28% OF INCIDENTS</text>
 
           <text x="14" y="312" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Points 1 and 2 are opt-in and locally bypassable — they reduce noise downstream but evidence nothing.</text>
-          <text x="14" y="328" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Point 3 is the only placement that is both enforceable and complete. Points 5 and 6 are free of friction because no human is waiting.</text>
+          <text x="14" y="328" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Point 3 is the only placement enforceable across every in-scope push — enforceable, not complete: patterns, push size, timeouts and bypass all bound it.</text>
+          <text x="14" y="344" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Points 5 and 6 impose no synchronous developer friction — nobody is waiting — but they still carry triage and operational cost.</text>
         </svg>
       </div>
-      <figcaption>The two bands are the governance trade-off in one picture. Friction is concentrated where prevention is possible; coverage is complete where prevention is not. A programme that installs only the low-friction points has bought observation, and should not describe it as prevention in a control narrative.</figcaption>
+      <figcaption>The two bands are the governance trade-off in one picture. Synchronous friction is concentrated where prevention is possible; coverage is broadest where prevention is not. Neither band is free: the late points move the cost off the developer's critical path and onto a triage queue, which is a better place for it but not a costless one. A programme that installs only the low-friction points has bought observation, and should not describe it as prevention in a control narrative.</figcaption>
     </figure>
 
     <div class="tablewrap">

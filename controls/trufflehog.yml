@@ -1,0 +1,11 @@
+# Configured control: the scheduled discovery detector set.
+#
+# TruffleHog runs as discovery, not as a gate -- see controls/README.md for why
+# the two roles get different tools here. This file adds only the internal
+# format; every shipped detector stays enabled.
+detectors:
+  - name: SyntheticDemoAPIKey
+    keywords:
+      - DEMO_
+    regex:
+      token: '(DEMO_[A-Z0-9]{32})'

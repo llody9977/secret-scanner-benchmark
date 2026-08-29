@@ -1,0 +1,177 @@
+# Configured-control regression corpus.
+#
+# This is NOT a product benchmark. It does not compare scanners and no number
+# in it belongs in a tool-selection argument. It asserts one thing: that the
+# gate THIS repository has configured -- controls/gitleaks.toml, the custom
+# internal rule, the allowlists, the workflow's exit-code handling -- still
+# makes the control decision it was specified to make, for each credential
+# class the organisation says it cares about.
+#
+# The comparative benchmark corpus (corpus/, generated from corpus/seed) is the
+# other population and answers a different question: which tool detects what.
+# Do not merge them, and do not quote a number from one in an argument about
+# the other.
+#
+# expected_control_decision is the assertion. It is what a control owner signs
+# off and what a failure here means: the gate stopped doing what it was
+# specified to do. Per-tool detector names and counts are recorded as observed
+# metadata for drift review, not asserted -- detector names change between
+# releases and pinning them produces failures that teach nothing.
+
+schema_version: 2
+seed: 20260829
+description: >-
+  Non-issued credential shapes, materialised from templates at scan time, for
+  regression-testing this repository's configured secret-scanning controls.
+provider_checks_enabled: false
+secret_material_committed: false
+
+scenarios:
+  # ---- positive: the gate must block --------------------------------------
+  - id: custom-internal
+    credential_class: Custom internal token
+    target: positive/custom-internal.env
+    expected_control_decision: block
+    why: >-
+      The only format no vendor ships a detector for. If the custom rule is
+      dropped, renamed or shadowed by an allowlist, this is the scenario that
+      catches it -- and nothing else will.
+
+  - id: base64-custom
+    credential_class: Base64-encoded custom token
+    target: positive/base64-custom.env
+    expected_control_decision: block
+    why: >-
+      Exercises --max-decode-depth. A gate that stops decoding stops seeing
+      this, and the failure is silent.
+
+  - id: password-assignment
+    credential_class: Username/password assignment
+    target: positive/password-assignment.txt
+    expected_control_decision: block
+
+  - id: postgres-url
+    credential_class: PostgreSQL credential URL
+    target: positive/postgres-url.env
+    expected_control_decision: block
+
+  - id: basic-header
+    credential_class: HTTP Basic credential
+    target: positive/basic-header.txt
+    expected_control_decision: block
+
+  - id: bearer-jwt
+    credential_class: Bearer JWT
+    target: positive/bearer-jwt.txt
+    expected_control_decision: block
+
+  - id: github-pat
+    credential_class: GitHub PAT-shaped token
+    target: positive/github-pat.env
+    expected_control_decision: block
+
+  - id: mailchimp-api-key
+    credential_class: Mailchimp API key-shaped token
+    target: positive/mailchimp-api-key.env
+    expected_control_decision: block
+    why: >-
+      This is the fixture the hosted push-protection test uses, so the CLI gate
+      and the host control are exercised on the same value. See
+      docs/HOSTED-PUSH-PROTECTION.md.
+
+  - id: oauth-client-secret
+    credential_class: OAuth client secret
+    target: positive/oauth-client.env
+    expected_control_decision: block
+
+  - id: aws-pair
+    credential_class: AWS key pair, same file
+    target: positive/aws-pair.env
+    expected_control_decision: block
+
+  - id: aws-split-secret
+    credential_class: AWS secret access key, separated from its id
+    target: positive/aws-split/secret.env
+    expected_control_decision: block
+    why: >-
+      The confidential half on its own. This must block: it is the value that
+      authenticates. Compare aws-split-id below -- the benchmark's ground-truth
+      correction is the same distinction, enforced here rather than scored.
+
+  # ---- the deliberate non-block ------------------------------------------
+  - id: aws-split-id
+    credential_class: AWS access key id, separated from its secret
+    target: positive/aws-split/id.env
+    expected_control_decision: pass
+    why: >-
+      A bare access key id, with no secret access key anywhere near it. The
+      gate does not block, and that is the specified behaviour, not a gap: an
+      access key id is an identifier that AWS transmits in cleartext in every
+      signed request, and blocking a push on one costs a developer a bypass
+      request in exchange for preventing no exposure. This is the same
+      distinction the comparative benchmark scores as an indicator -- asserted
+      here as a control decision rather than measured.
+
+      It is a real trade-off, and it has a cost worth naming: the id is what
+      incident response feeds to `aws iam delete-access-key`, so an
+      organisation that wants key ids surfaced should route them to the
+      scheduled discovery workflow rather than the blocking gate, and change
+      this expectation only if it also accepts the noise at the gate.
+
+  - id: service-account
+    credential_class: Service-account private key
+    target: positive/service-account.yaml
+    expected_control_decision: block
+
+  - id: rsa-private-key
+    credential_class: RSA private key
+    target: positive/rsa-private-key.pem
+    expected_control_decision: block
+
+  - id: openssh-private-key
+    credential_class: OpenSSH private key
+    target: positive/openssh-private-key
+    expected_control_decision: block
+
+  - id: symmetric-key
+    credential_class: Symmetric encryption key
+    target: positive/symmetric-key.env
+    expected_control_decision: block
+
+  - id: webhook-secret
+    credential_class: Webhook signing secret
+    target: positive/webhook-secret.env
+    expected_control_decision: block
+
+  # ---- negative: the gate must NOT block ----------------------------------
+  # These are the scenarios that keep the gate usable. A ruleset change that
+  # improves recall by breaking one of these has not improved anything: it has
+  # moved cost onto every developer who writes a config file.
+  - id: runtime-reference
+    credential_class: Runtime secret reference
+    target: negative/runtime-reference.env
+    expected_control_decision: pass
+    why: >-
+      The pattern the organisation is asking developers to adopt. If the gate
+      fires on the correct answer, developers stop believing the gate.
+
+  - id: placeholder
+    credential_class: Placeholder value
+    target: negative/placeholder.env
+    expected_control_decision: pass
+
+  - id: public-key
+    credential_class: SSH public key
+    target: negative/openssh-public-key.pub
+    expected_control_decision: pass
+
+  - id: connection-string-template
+    credential_class: Connection string with an interpolated password
+    target: negative/connection-string-template.env
+    expected_control_decision: pass
+    why: >-
+      Added after the connection-string rule was written, because the first
+      version of that rule fired on this. A URI whose password is `${VAR}` is
+      the pattern developers are being asked to adopt; a gate that blocks it
+      teaches them the gate is wrong. Every new rule needs its negative on the
+      same day, or the precision cost is discovered by a developer instead.

@@ -1,0 +1,3 @@
+^bench/
+^regression/templates/
+^corpus/manifest\.yaml$

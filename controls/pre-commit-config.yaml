@@ -1,0 +1,47 @@
+# Configured control: local developer feedback. Optional by design.
+#
+# Copy to .pre-commit-config.yaml and run `pre-commit install --install-hooks`.
+# This is control point 2 in part three: it is opt-in, locally bypassable with
+# `--no-verify`, and evidences nothing to an auditor. Its value is that it
+# fails in two seconds on the developer's own machine instead of two minutes
+# into a pipeline, which is the difference between a fix and a bypass request.
+# It is not a substitute for the server-side gate and should never be described
+# as one in a control narrative.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks-system
+        name: Gitleaks staged-content scan
+        args: ["--config=controls/gitleaks.toml", "--redact=100", "--max-decode-depth=1"]
+        pass_filenames: false
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      # Pre-push runs full history, because the thing that reaches the server is
+      # the history, not the working tree. This is the last local point at which
+      # a secret in an earlier commit is still cheap to remove.
+      - id: gitleaks-pre-push
+        name: Gitleaks full-history scan before push
+        entry: gitleaks git --config controls/gitleaks.toml --max-decode-depth=1 --no-banner --redact=100 .
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: detect-private-key
+        exclude: ^(bench|regression/templates)/
+        stages: [pre-commit]
+      - id: check-added-large-files
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+      - id: trailing-whitespace
+        stages: [pre-commit]

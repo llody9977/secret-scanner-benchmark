@@ -1,0 +1,2 @@
+# Base64 of the fictional demo-user password pair.
+Authorization: Basic {{BASIC_B64}}

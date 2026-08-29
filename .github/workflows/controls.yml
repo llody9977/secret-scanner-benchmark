@@ -1,0 +1,248 @@
+name: controls
+
+# The configured control set, as opposed to the benchmark.
+#
+# benchmark.yml asks "which tool detects what" against stock configurations.
+# This workflow asks "does the gate we configured still work" against
+# controls/gitleaks.toml. They are different questions with different corpora
+# and they must not be merged; see regression/README.md.
+#
+# Three jobs, matching three control points from part three:
+#   gate       -- control point 3: the pull-request gate, blocking on findings
+#   regression -- the configured-control regression suite (20 scenarios)
+#   discovery  -- control point 4: scheduled full-history breadth scan
+#
+# Every job distinguishes "scanned, clean" from "did not scan". A workflow that
+# treats a scanner crash as a pass is the most common way a pipeline reports
+# green while covering nothing.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "controls/**"
+      - "regression/**"
+      - ".github/workflows/controls.yml"
+  pull_request:
+  schedule:
+    # Discovery runs weekly; the gate does not need a schedule because it runs
+    # on every push that could change what it sees.
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: "8.30.1"
+  # sha256 of gitleaks_8.30.1_linux_x64.tar.gz. Pinning the version alone still
+  # trusts whatever that tag points at today.
+  GITLEAKS_ARCHIVE_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+  TRUFFLEHOG_VERSION: "3.97.1"
+  TRUFFLEHOG_ARCHIVE_SHA256: "f863ea3a8d786f7d097870496c977944cce7372a2fe1e56707d965016e543ece"
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # --- control point 3: the blocking gate ---------------------------------
+  gate:
+    name: Gitleaks full-history gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v5.1.0
+        with:
+          # The gate scans history, not the working tree: what reaches the
+          # server is the history. A shallow clone makes this job pass on a
+          # repository whose secret is one commit back.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pinned Gitleaks
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          path="$RUNNER_TEMP/$archive"
+          bin="$RUNNER_TEMP/bin"; mkdir -p "$bin"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}" \
+            --output "$path"
+          printf '%s  %s\n' "$GITLEAKS_ARCHIVE_SHA256" "$path" | sha256sum --check --strict
+          tar -xzf "$path" -C "$bin" gitleaks
+          chmod 0755 "$bin/gitleaks"
+          printf '%s\n' "$bin" >> "$GITHUB_PATH"
+
+      - name: Scan history and publish the summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/gitleaks.json"
+
+          set +e
+          gitleaks git \
+            --config controls/gitleaks.toml \
+            --exit-code 1 \
+            --max-decode-depth=1 \
+            --no-banner \
+            --redact=100 \
+            --report-format json \
+            --report-path "$report" \
+            .
+          scan_status=$?
+          set -e
+
+          # Three outcomes, not two. A missing or unparseable report means the
+          # scanner did not run, which is an error -- never a clean result.
+          if [[ ! -f "$report" ]] || ! jq -e 'type == "array"' "$report" >/dev/null 2>&1; then
+            echo "::error::gitleaks produced no valid report (exit $scan_status); treating as failure, not as clean"
+            exit 2
+          fi
+          findings="$(jq 'length' "$report")"
+
+          if [[ "$scan_status" -ne 0 && ! ( "$scan_status" -eq 1 && "$findings" -gt 0 ) ]]; then
+            echo "::error::gitleaks failed with exit code $scan_status"
+            exit "$scan_status"
+          fi
+
+          # Never republish what the gate caught. A summary with wider read
+          # access than the branch is a second exposure, not a report.
+          if ! jq -e 'all(.[]; ((.Secret // "") | . == "" or . == "REDACTED" or contains("REDACTED")))' \
+            "$report" >/dev/null; then
+            echo "::error::report redaction check failed; refusing to publish a summary"
+            exit 2
+          fi
+
+          {
+            printf '## Gitleaks gate (control point 3)\n\n'
+            printf '| Field | Result |\n| --- | --- |\n'
+            printf '| Outcome | %s |\n' \
+              "$( [[ "$findings" -gt 0 ]] && echo "$findings finding(s); gate failed" || echo "No findings" )"
+            printf '| Scanner | Gitleaks `%s`, config `controls/gitleaks.toml` |\n' "$GITLEAKS_VERSION"
+            printf '| Scope | Complete checked-out history. Both test corpora are allowlisted; neither is a finding about this repository. |\n'
+            printf '| Control role | Detective for content already pushed. Preventive for **merge** only, and only while this check is required. |\n'
+            printf '| Report handling | Redaction verified; matched values and locations are not published. |\n'
+            if [[ "$findings" -gt 0 ]]; then
+              printf '\n### Findings by rule\n\n| Rule | Count |\n| --- | ---: |\n'
+              jq -r 'group_by(.RuleID)[] | "| `\(.[0].RuleID | gsub("[^A-Za-z0-9._:/+-]"; "_"))` | \(length) |"' "$report"
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          [[ "$findings" -eq 0 ]] || exit 1
+
+  # --- the configured-control regression suite ----------------------------
+  regression:
+    name: Configured-control regression suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -e .
+
+      - name: Install pinned Gitleaks
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          path="$RUNNER_TEMP/$archive"
+          bin="$RUNNER_TEMP/bin"; mkdir -p "$bin"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}" \
+            --output "$path"
+          printf '%s  %s\n' "$GITLEAKS_ARCHIVE_SHA256" "$path" | sha256sum --check --strict
+          tar -xzf "$path" -C "$bin" gitleaks
+          chmod 0755 "$bin/gitleaks"
+          printf '%s\n' "$bin" >> "$GITHUB_PATH"
+
+      - name: Assert every control decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            printf '## Configured-control regression suite\n\n'
+            printf '```\n'
+            python regression/run.py --json "$RUNNER_TEMP/regression.json" 2>&1 | tee /dev/stderr
+            printf '```\n'
+            printf '\nThis is not a benchmark. A failure here means the gate stopped making a\n'
+            printf 'control decision it was specified to make.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v6.0.0
+        if: always()
+        with:
+          name: regression-record
+          path: ${{ runner.temp }}/regression.json
+          retention-days: 30
+
+  # --- control point 4: scheduled discovery -------------------------------
+  discovery:
+    name: Scheduled full-history discovery
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pinned TruffleHog
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="trufflehog_${TRUFFLEHOG_VERSION}_linux_amd64.tar.gz"
+          path="$RUNNER_TEMP/$archive"
+          bin="$RUNNER_TEMP/bin"; mkdir -p "$bin"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+            "https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/${archive}" \
+            --output "$path"
+          printf '%s  %s\n' "$TRUFFLEHOG_ARCHIVE_SHA256" "$path" | sha256sum --check --strict
+          tar -xzf "$path" -C "$bin" trufflehog
+          chmod 0755 "$bin/trufflehog"
+          printf '%s\n' "$bin" >> "$GITHUB_PATH"
+
+      - name: Discover and publish the summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/trufflehog.jsonl"
+          set +e
+          # --no-verification: never send a candidate from this repository to an
+          # issuing provider. Verification is a triage input, not a scan flag,
+          # and a synthetic corpus makes it actively misleading -- see the
+          # verified-only row in docs/RESULTS.md.
+          trufflehog git file://. \
+            --config controls/trufflehog.yml \
+            --exclude-paths controls/trufflehog-exclude-paths.txt \
+            --no-verification --no-update --json --fail --fail-on-scan-errors \
+            > "$report"
+          scan_status=$?
+          set -e
+
+          if ! jq -s -e 'type == "array" and all(.[]; type == "object")' "$report" >/dev/null 2>&1; then
+            echo "::error::TruffleHog output was not valid JSON Lines (exit $scan_status); treating as failure"
+            exit 2
+          fi
+          findings="$(jq -s 'length' "$report")"
+
+          {
+            printf '## TruffleHog scheduled discovery (control point 4)\n\n'
+            printf '| Field | Result |\n| --- | --- |\n'
+            printf '| Outcome | %s candidate finding(s) |\n' "$findings"
+            printf '| Scanner | TruffleHog `%s` |\n' "$TRUFFLEHOG_VERSION"
+            printf '| Provider checks | Disabled; no candidate leaves this runner |\n'
+            printf '| Control role | Detective breadth. This job prevents nothing and is not on any developer critical path. |\n'
+            printf '| Report handling | Raw output stays in runner temp and is not uploaded |\n'
+            if [[ "$findings" -gt 0 ]]; then
+              printf '\n### Findings by detector\n\n| Detector | Count |\n| --- | ---: |\n'
+              jq -sr 'group_by(.DetectorName)[] | "| `\(.[0].DetectorName | gsub("[^A-Za-z0-9._:/+-]"; "_"))` | \(length) |"' "$report"
+              printf '\nRevoke or rotate confirmed credentials before any repository cleanup.\n'
+              printf 'See docs/INCIDENT-RESPONSE.md -- deleting the line is not revocation.\n'
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          [[ "$findings" -eq 0 ]] || exit 1
