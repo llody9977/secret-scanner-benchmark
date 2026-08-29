@@ -1,12 +1,20 @@
 name: benchmark
 
-# Builds the synthetic corpus, runs every free/self-hostable scanner against it
-# in an isolated job, and scores the results against corpus/manifest.yaml.
+# Builds the synthetic corpus, runs every free/self-hostable scanner from the
+# article's "benchmarkable set" against it in an isolated job, and scores the
+# results against corpus/manifest.yaml.
+#
+# Covered: gitleaks, betterleaks, trufflehog, kingfisher, titus, detect-secrets.
+# Not covered: git-secrets (no structured output) and GitHub secret scanning
+# (a platform feature, not a CLI — but note that its push protection already
+# fires on this corpus; see SECURITY.md).
 #
 # Design constraints (from the article, section four):
 #   * one job per tool so a single failure does not mask the rest (fail-fast: false)
 #   * fetch-depth: 0 so history-capable tools actually see history
-#   * every verification-capable tool runs twice: verified-only AND all-results
+#   * verification-capable tools: run unfiltered (every synthetic secret is
+#     non-live, so a verified-only pass would score ~0% — TruffleHog runs both
+#     to demonstrate exactly that trap)
 #   * SARIF/JSON per tool uploaded as an artifact, then scored by scoring/score.py
 #   * every action and tool pinned to an exact version, recorded in the output
 #   * no repository secret is ever injected — the corpus is the only input
@@ -32,8 +40,11 @@ permissions:
 
 env:
   PYTHON_VERSION: "3.11"
-  GITLEAKS_VERSION: "8.28.0"
-  TRUFFLEHOG_VERSION: "3.90.9"
+  GITLEAKS_VERSION: "8.30.1"
+  BETTERLEAKS_VERSION: "1.8.1"
+  TRUFFLEHOG_VERSION: "3.97.1"
+  KINGFISHER_VERSION: "2.0.0"
+  TITUS_VERSION: "1.2.8"
   DETECT_SECRETS_VERSION: "1.5.0"
 
 jobs:
@@ -73,7 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tool: [gitleaks, trufflehog, detect-secrets]
+        tool: [gitleaks, betterleaks, trufflehog, kingfisher, titus, detect-secrets]
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: actions/download-artifact@v4.1.8
@@ -89,8 +100,20 @@ jobs:
           curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
             | tar -xz -C /usr/local/bin gitleaks
           gitleaks version | tee scan-output/gitleaks.version
-          # 'gitleaks git' walks full history; exit code is non-zero on findings.
           gitleaks git ./bench --report-format json --report-path scan-output/gitleaks.json --no-banner --exit-code 0
+          test -s scan-output/gitleaks.json
+
+      # --- betterleaks: Gitleaks successor; RE2 regex + keyword prefilter, history, verification ---
+      - name: betterleaks
+        if: matrix.tool == 'betterleaks'
+        run: |
+          curl -sSL "https://github.com/betterleaks/betterleaks/releases/download/v${BETTERLEAKS_VERSION}/betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/bl.tgz
+          tar -xzf /tmp/bl.tgz -C /tmp
+          sudo install "$(find /tmp -maxdepth 2 -type f -name betterleaks | head -1)" /usr/local/bin/betterleaks
+          betterleaks version | tee scan-output/betterleaks.version
+          # 'git' walks full history. No --validation: synthetic secrets are non-live.
+          betterleaks git ./bench --report-path scan-output/betterleaks.sarif --report-format sarif --exit-code 0 || true
+          test -s scan-output/betterleaks.sarif
 
       # --- trufflehog: regex detectors + live verification ------------------
       - name: trufflehog
@@ -106,6 +129,32 @@ jobs:
           # expected to be ~empty. Reported to show the benchmarking trap explicitly.
           trufflehog git file://./bench --json --no-update --only-verified \
             > scan-output/trufflehog-verified.json || true
+          test -f scan-output/trufflehog-all.json
+
+      # --- kingfisher: SIMD regex + language-aware parsing + checksums, history, verification ---
+      - name: kingfisher
+        if: matrix.tool == 'kingfisher'
+        run: |
+          curl -sSL "https://github.com/mongodb/kingfisher/releases/download/v${KINGFISHER_VERSION}/kingfisher-linux-x64.tgz" -o /tmp/kf.tgz
+          tar -xzf /tmp/kf.tgz -C /tmp
+          sudo install "$(find /tmp -maxdepth 2 -type f -name kingfisher | head -1)" /usr/local/bin/kingfisher
+          kingfisher --version | tee scan-output/kingfisher.version
+          # Scans git history by default; --validation-filter all keeps every finding.
+          kingfisher scan ./bench --format sarif --output scan-output/kingfisher.sarif \
+            --validation-filter all --confidence low || true
+          test -s scan-output/kingfisher.sarif
+
+      # --- titus: NoseyParker successor; Hyperscan regex + validation, history, verification ---
+      - name: titus
+        if: matrix.tool == 'titus'
+        run: |
+          curl -sSL "https://github.com/praetorian-inc/titus/releases/download/v${TITUS_VERSION}/titus-linux-amd64" -o /usr/local/bin/titus
+          chmod +x /usr/local/bin/titus
+          titus version | tee scan-output/titus.version
+          # scan populates a datastore (git history via --git); report renders SARIF.
+          titus scan ./bench --git --ruleset all --output titus.ds >/dev/null 2>&1 || true
+          titus report --datastore titus.ds --format sarif > scan-output/titus.sarif
+          test -s scan-output/titus.sarif
 
       # --- detect-secrets: regex + entropy + keyword, working tree only ------
       - name: detect-secrets
@@ -115,6 +164,7 @@ jobs:
           detect-secrets --version | tee scan-output/detect-secrets.version
           # Scans the checked-out tree (HEAD), not history — by design.
           ( cd bench && detect-secrets scan --all-files ) > scan-output/detect-secrets.json
+          test -s scan-output/detect-secrets.json
 
       - uses: actions/upload-artifact@v4.4.3
         with:
@@ -151,23 +201,27 @@ jobs:
               f = out / f"{name}.version"
               return f.read_text().strip().splitlines()[-1] if f.exists() else "unknown"
 
+          FULL = ["working-tree", "history", "verification"]
           runs = []
-          if (out / "gitleaks.json").exists():
-              runs.append(dict(tool="gitleaks", version=version("gitleaks"), parser="gitleaks",
-                               mode="default", capabilities=["working-tree", "history"],
-                               path="gitleaks.json"))
-          if (out / "trufflehog-all.json").exists():
-              runs.append(dict(tool="trufflehog", version=version("trufflehog"), parser="trufflehog",
-                               mode="all-results", capabilities=["working-tree", "history", "verification"],
-                               path="trufflehog-all.json"))
-          if (out / "trufflehog-verified.json").exists():
-              runs.append(dict(tool="trufflehog", version=version("trufflehog"), parser="trufflehog",
-                               mode="verified-only", capabilities=["working-tree", "history", "verification"],
-                               path="trufflehog-verified.json", counts_toward_coverage=False))
-          if (out / "detect-secrets.json").exists():
-              runs.append(dict(tool="detect-secrets", version=version("detect-secrets"), parser="detect-secrets",
-                               mode="default", capabilities=["working-tree"],
-                               path="detect-secrets.json"))
+
+          def add(report, **kw):
+              if (out / report).exists():
+                  runs.append(dict(path=report, **kw))
+
+          add("gitleaks.json", tool="gitleaks", version=version("gitleaks"), parser="gitleaks",
+              mode="default", capabilities=["working-tree", "history"])
+          add("betterleaks.sarif", tool="betterleaks", version=version("betterleaks"), parser="sarif",
+              mode="default", capabilities=FULL)
+          add("trufflehog-all.json", tool="trufflehog", version=version("trufflehog"), parser="trufflehog",
+              mode="all-results", capabilities=FULL)
+          add("trufflehog-verified.json", tool="trufflehog", version=version("trufflehog"), parser="trufflehog",
+              mode="verified-only", capabilities=FULL, counts_toward_coverage=False)
+          add("kingfisher.sarif", tool="kingfisher", version=version("kingfisher"), parser="sarif",
+              mode="default", capabilities=FULL)
+          add("titus.sarif", tool="titus", version=version("titus"), parser="sarif",
+              mode="default", capabilities=FULL)
+          add("detect-secrets.json", tool="detect-secrets", version=version("detect-secrets"),
+              parser="detect-secrets", mode="default", capabilities=["working-tree"])
 
           (out / "index.yaml").write_text(yaml.safe_dump({"runs": runs}, sort_keys=False))
           print(yaml.safe_dump({"runs": runs}, sort_keys=False))

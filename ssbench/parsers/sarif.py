@@ -1,10 +1,9 @@
 """Parser for SARIF 2.1.0 output.
 
 Used for GitHub secret scanning exports and for any tool run with a SARIF
-formatter (Gitleaks, TruffleHog, Kingfisher, Titus). SARIF carries a location
-but rarely the raw secret, so matching leans on file + line. A partial
-fingerprint, when present, is preserved as ``raw_secret`` for a best-effort
-hash match.
+formatter — in this benchmark: Betterleaks, Kingfisher and Titus. All three put
+the matched string in ``region.snippet.text``, so hash matching usually works;
+where a tool redacts the snippet, matching falls back to file + line.
 """
 
 from __future__ import annotations
@@ -35,6 +34,24 @@ def _raw_secret(result: dict) -> Optional[str]:
     return None
 
 
+def _commit_from_properties(result: dict) -> Optional[str]:
+    """Kingfisher hangs git provenance off ``location.properties.git_metadata``;
+    other tools use ``result.properties``. Check both."""
+    bags = [result.get("properties")]
+    for loc in result.get("locations") or []:
+        if isinstance(loc, dict):
+            bags.append(loc.get("properties"))
+    for bag in bags:
+        if not isinstance(bag, dict):
+            continue
+        meta = bag.get("git_metadata")
+        if isinstance(meta, dict) and meta.get("commit"):
+            return str(meta["commit"])
+        if bag.get("commit"):
+            return str(bag["commit"])
+    return None
+
+
 def parse(path: Path, tool: str) -> List[Finding]:
     data = load_json(path)
     findings: List[Finding] = []
@@ -50,7 +67,7 @@ def parse(path: Path, tool: str) -> List[Finding]:
             file_path, line = _first_location(result)
             rule_id = result.get("ruleId") or ""
             partial = result.get("partialFingerprints", {}) or {}
-            commit = partial.get("commitSha") or None
+            commit = partial.get("commitSha") or _commit_from_properties(result) or None
             findings.append(Finding(
                 tool=tool,
                 rule=str(rules.get(rule_id, {}).get("name", rule_id)),

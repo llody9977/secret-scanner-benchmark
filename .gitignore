@@ -4,6 +4,11 @@
 /results/
 /scan-output/
 
+# Local scanner working files
+*.ds
+/titus.ds/
+bench-verify/
+
 # Python
 __pycache__/
 *.py[cod]

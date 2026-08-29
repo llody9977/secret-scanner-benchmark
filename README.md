@@ -27,7 +27,8 @@ pip install -e .
 python generator/generate.py --seed "$(cat corpus/seed)" --output ./bench
 
 # 2. Run your scanners against ./bench, writing one report per run into ./scan-output
-#    (the CI workflow does this for gitleaks, trufflehog and detect-secrets)
+#    (the CI workflow does this for gitleaks, betterleaks, trufflehog, kingfisher,
+#     titus and detect-secrets)
 
 # 3. Score the reports against the manifest
 python scoring/score.py --manifest ./bench/manifest.yaml --results ./scan-output --out ./results
@@ -152,10 +153,19 @@ and tool pinned to an exact version and recorded in the output, `permissions:
 contents: read`, and no repository secret is ever referenced. Results land in
 the job summary and a `results` artifact.
 
+Covered: **gitleaks, betterleaks, trufflehog, kingfisher, titus, detect-secrets**
+— the six runnable tools in the article's benchmarkable set. TruffleHog runs
+twice (`all-results` and `verified-only`); the other verification-capable tools
+(betterleaks, kingfisher, titus) run unfiltered, since every synthetic secret is
+non-live. Not covered: `git-secrets` (no structured output to parse) and GitHub
+secret scanning (a platform feature, not a CLI — though its push protection
+already fires on this corpus; see SECURITY.md).
+
 Adding a tool: add it to the `scan` matrix with an install + run step that
-writes `scan-output/<tool>.<ext>` and `scan-output/<tool>.version`, then add a
-branch to the run-index builder in the `score` job. Write a parser in
-`ssbench/parsers/` if its output format is new.
+writes `scan-output/<tool>.<ext>` and `scan-output/<tool>.version`, then add an
+`add(...)` line to the run-index builder in the `score` job. Write a parser in
+`ssbench/parsers/` if its output format is new; SARIF and the Gitleaks/TruffleHog
+JSON shapes are already handled.
 
 ---
 
