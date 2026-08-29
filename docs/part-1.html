@@ -81,7 +81,7 @@
       <p>Those three figures are the argument. The attacker operates in seconds because discovery is automated. The defender operates in weeks because remediation is human. And the credential does not expire on its own, so the gap between the two clocks never closes without someone closing it.</p>
       <p><strong>A caveat on comparing them.</strong> These three numbers come from different populations measured in different ways, and none is a like-for-like counterpart of another. The sixty-second figure is a median across credentials that reached a public surface, where automated harvesting applies; it says nothing about a secret in a private repository. The 27-day figure is self-reported by decision-makers about their own organisations, and "remediate" is their word, not necessarily "revoked at the provider." The 64 percent is a longitudinal validity check on one vendor's historical detections.</p>
       <p>One comparison in particular is worth refusing. IBM's widely quoted 247-day mean time to identify and contain a breach<sup class="fn"><a id="fnref-6" href="#fn-6">6</a></sup> describes a different process: it averages across organisations that had not yet discovered they were breached. Once a scanner has fired, discovery has already happened, and the relevant interval is detection-to-revocation &mdash; hours or days in a competent programme, not months. Setting 247 days against sixty seconds makes the rhetoric stronger and the analysis worse.</p>
-      <p>What survives the caveats is the shape rather than the ratio: automated exploitation is measured in seconds, human remediation in days to weeks, and a large fraction of credentials are never revoked at all. Every control decision below follows from that shape. A control that shaves days off the defender's clock is competing in the wrong race. A control that shortens the credential's useful life, constrains what it can do, or revokes it without a human in the loop is competing in the right one.</p>
+      <p>What survives the caveats is the shape rather than the ratio: automated exploitation is measured in seconds, human remediation in days to weeks, and a large fraction of credentials are never revoked at all. Every control decision below follows from that shape. A control that shaves days off the defender's clock cannot prevent the first use &mdash; that race is lost in the first minute, and no improvement to detection or triage latency wins it. It can still matter a great deal afterwards: cutting exposure from twenty-seven days to two days cuts the window for persistence, repeated use, lateral movement and quiet data egress by roughly an order of magnitude, and most of the damage in the case studies below accrued after the first use, not during it. The distinction worth holding is between controls that reduce the <em>blast radius</em> of an exposure and controls that reduce its <em>probability</em>. Faster revocation is the first kind and is worth investing in. Only the second kind &mdash; shortening the credential's useful life, constraining what it can do, or preventing the push in the first place &mdash; changes whether the first use happens at all.</p>
     </div>
   </section>
 
@@ -108,7 +108,7 @@
       </ul>
     </div>
 
-    <h3 class="col">Demand: discovery is now instant and triaged</h3>
+    <h3 class="col">Demand: discovery is instant, and what follows is automated</h3>
     <div class="col flow">
       <p>Automated harvesting of public commit streams is not new, and it is worth separating what is well evidenced here from what is merely asserted, because the AI framing is doing more work in the trade press than the evidence supports.</p>
       <p><strong>Well evidenced.</strong> Harvesting and credential validation run continuously at scale, and have for years. The Cloud Security Alliance's tracking of one credential-theft operation between December 2025 and January 2026 catalogued around 35,000 attack sessions, averaging 972 per day, with automated scanning for exposed endpoints and validation before resale.<sup class="fn"><a id="fnref-20" href="#fn-20">20</a></sup> None of that requires a language model.</p>
@@ -120,7 +120,7 @@
 
     <figure>
       <div class="figframe">
-        <svg viewBox="0 0 880 330" role="img" aria-label="Two loops running from the same leaked commit: the attacker loop completes discovery, validation and use inside one minute, while the defender loop takes hours to reach revocation, leaving an exploitation window that the scanner cannot close.">
+        <svg viewBox="0 0 880 330" role="img" aria-label="Two loops running from the same leaked commit: the attacker loop completes discovery, automated validation and use inside one minute, while the defender loop takes hours to reach revocation, leaving an exploitation window that the scanner cannot close.">
           <defs>
             <marker id="p1arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
@@ -148,8 +148,8 @@
           <text x="321" y="82" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">~5s</text>
 
           <rect x="340" y="66" width="126" height="52" fill="none" class="crit-line" stroke-width="1.5"></rect>
-          <text x="403" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">LLM triage:</text>
-          <text x="403" y="105" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">live? scope?</text>
+          <text x="403" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">automated</text>
+          <text x="403" y="105" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">validation: live?</text>
 
           <line x1="466" y1="92" x2="504" y2="92" class="crit-line" stroke-width="1.5" marker-end="url(#p1arrowc)"></line>
           <text x="485" y="82" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">~15s</text>
@@ -197,7 +197,7 @@
           <text x="818" y="310" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="currentColor">64% never get here</text>
         </svg>
       </div>
-      <figcaption>The same commit starts two loops. Detection speed is not the constraint &mdash; the scanner fires in the same minute the attacker does. The constraint is everything between detection and revocation, all of which is human, and the fact that a large majority of exposed credentials are never revoked at all.<sup class="fn"><a href="#fn-1">1</a></sup></figcaption>
+      <figcaption>The same commit starts two loops. Detection speed is not the constraint &mdash; the scanner fires in the same minute the attacker does. The constraint is everything between detection and revocation, all of which is human, and the fact that a large majority of exposed credentials are never revoked at all.<sup class="fn"><a href="#fn-1">1</a></sup> Every stage in the attacker loop as drawn is automated credential harvesting and validation, which is well evidenced and predates language models. Model-driven prioritisation of harvested keys &mdash; ranking by privilege and value before use &mdash; would sit at the same step, but is asserted in industry reporting rather than documented, and is deliberately not drawn here.</figcaption>
     </figure>
   </section>
 
@@ -409,6 +409,7 @@
           <li>Where auto-revoke is too risky, auto-rotate: issue the replacement first, then invalidate the old one.</li>
           <li>Set and report a rotation SLA by exposure class (table below), owned by an engineering leader, not by the security team.</li>
           <li>Wire validity checking into triage so that "still live" is a field on the ticket, not a manual step &mdash; while remembering that validity alone misclassifies a large share of critical findings.</li>
+          <li><strong>Do not rebuild what the provider already does.</strong> Several providers participate in host secret-scanning partner programmes and act on a leaked token without waiting for you: push a live <code>sk_live_</code> key to a public GitHub repository and Stripe is notified and revokes it, typically within minutes and without a ticket in your queue; AWS applies a quarantine policy to an exposed access key; npm, Slack and GitHub itself revoke their own token formats on notification. This is the one path where revocation latency is already measured in minutes rather than days, and it is free. Two limits make it a supplement rather than a strategy: it covers only public repositories and only participating providers' formats &mdash; nothing internal, nothing bespoke, nothing in a private repository &mdash; and provider revocation is not provider notification of <em>use</em>, so you still own the question of what the credential did before it was killed.</li>
         </ul>
       </div>
 
