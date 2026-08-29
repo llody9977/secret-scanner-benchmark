@@ -137,6 +137,17 @@ class Metrics(BaseModel):
 
     @computed_field
     @property
+    def planted(self) -> int:
+        """Planted secrets accounted for: every one is a hit, a miss or N/A.
+
+        For the ``overall`` metrics this equals the corpus planted total. FP is
+        a separate axis (findings that matched nothing planted, bounded by the
+        decoy count plus spurious noise), so it is deliberately not in this sum.
+        """
+        return self.tp + self.fn + self.na
+
+    @computed_field
+    @property
     def precision(self) -> Optional[float]:
         denom = self.tp + self.fp
         return None if denom == 0 else round(self.tp / denom, 4)
@@ -161,11 +172,35 @@ class RunScore(BaseModel):
     version: str
     mode: str
     overall: Metrics
+    planted_total: int
+    decoy_total: int
     by_secret_type: Dict[str, Metrics]
     by_placement: Dict[str, Metrics]
     false_positives: List[Finding]
     missed_planted_ids: List[str]
     decoys_triggered: List[str]
+
+
+class CoverageAnalysis(BaseModel):
+    """How the default-mode tools combine — the complementarity view."""
+
+    tools: List[str]
+    planted_total: int
+    union_caught: int = Field(description="planted secrets caught by at least one tool")
+    union_missed: List[str] = Field(description="caught by no tool (== ScoreCard.caught_by_no_tool)")
+    per_tool_caught: Dict[str, int]
+    per_tool_unique: Dict[str, List[str]] = Field(
+        description="planted ids this tool caught that no other tool did"
+    )
+    dominates: Dict[str, List[str]] = Field(
+        description="tool -> tools whose entire catch-set it also covers (strict superset)"
+    )
+    best_pair: Optional[List[object]] = Field(
+        default=None, description="[toolA, toolB, union_caught] — the two-tool combo with the widest union"
+    )
+    minimal_cover: List[str] = Field(
+        description="greedy smallest set of tools whose union equals union_caught"
+    )
 
 
 class ScoreCard(BaseModel):
@@ -176,5 +211,6 @@ class ScoreCard(BaseModel):
     runs: List[RunScore]
     caught_by_no_tool: List[str]
     caught_by_one_tool: Dict[str, str]
+    coverage: Optional[CoverageAnalysis] = None
     planted_total: int
     decoy_total: int

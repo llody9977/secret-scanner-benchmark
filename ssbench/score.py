@@ -192,11 +192,20 @@ def score_run(manifest: Manifest, run: ToolRun, findings: List[Finding], index: 
         by_type[key].fp += 1
         by_placement["decoy-file" if decoy else "spurious"].fp += 1
 
+    planted_total = manifest.stats.planted_total
+    if overall.planted != planted_total:
+        raise AssertionError(
+            f"{run.tool}/{run.mode}: TP+FN+N/A = {overall.planted}, expected "
+            f"{planted_total} (every planted secret must be exactly one of hit, miss, N/A)"
+        )
+
     return RunScore(
         tool=run.tool,
         version=run.version,
         mode=run.mode,
         overall=overall,
+        planted_total=planted_total,
+        decoy_total=manifest.stats.decoy_total,
         by_secret_type={k: v for k, v in sorted(by_type.items())},
         by_placement={k: v for k, v in sorted(by_placement.items())},
         false_positives=false_positives,
@@ -207,31 +216,79 @@ def score_run(manifest: Manifest, run: ToolRun, findings: List[Finding], index: 
 
 def _cross_tool(
     manifest: Manifest, scored: List[Tuple[ToolRun, RunScore, List[Finding]]], index: _Index
-) -> Tuple[List[str], Dict[str, str]]:
+) -> Tuple[List[str], Dict[str, str], "CoverageAnalysis"]:
+    from ssbench.models import CoverageAnalysis
+
     catchers: Dict[str, List[str]] = defaultdict(list)
     capable: Dict[str, bool] = defaultdict(bool)
+    caught_by: Dict[str, set] = {}  # tool -> set of planted ids it caught
 
     for run, _, findings in scored:
         if not run.counts_toward_coverage:
             continue
         caps = set(run.capabilities)
         run_hits = set(_assign(findings, index)[0])
+        tool_set = caught_by.setdefault(run.tool, set())
         for p in manifest.planted:
             required = manifest.placement_requires.get(p.placement, "working-tree")
             if required in caps:
                 capable[p.id] = True
                 if p.id in run_hits:
                     catchers[p.id].append(run.tool)
+                    tool_set.add(p.id)
 
-    caught_by_none = sorted(
-        p.id for p in manifest.planted if capable[p.id] and not catchers[p.id]
-    )
+    all_ids = [p.id for p in manifest.planted]
+    caught_by_none = sorted(i for i in all_ids if capable[i] and not catchers[i])
     caught_by_one = {
         pid: sorted(set(tools))[0]
         for pid, tools in catchers.items()
         if len(set(tools)) == 1
     }
-    return caught_by_none, dict(sorted(caught_by_one.items()))
+
+    union = set().union(*caught_by.values()) if caught_by else set()
+    tools = sorted(caught_by)
+    unique = {
+        t: sorted(i for i in caught_by[t] if catchers[i] == [t] or set(catchers[i]) == {t})
+        for t in tools
+    }
+    dominates = {
+        a: sorted(b for b in tools if b != a and caught_by[b] and caught_by[b] < caught_by[a])
+        for a in tools
+    }
+    dominates = {a: v for a, v in dominates.items() if v}
+
+    # greedy set cover over `union`
+    remaining, cover = set(union), []
+    pool = dict(caught_by)
+    while remaining:
+        best = max(pool, key=lambda t: len(pool[t] & remaining))
+        if not (pool[best] & remaining):
+            break
+        cover.append(best)
+        remaining -= pool[best]
+        del pool[best]
+
+    best_pair = None
+    if len(tools) >= 2:
+        pairs = [
+            (a, b, len(caught_by[a] | caught_by[b]))
+            for i, a in enumerate(tools) for b in tools[i + 1:]
+        ]
+        a, b, n = max(pairs, key=lambda x: x[2])
+        best_pair = [a, b, n]
+
+    coverage = CoverageAnalysis(
+        tools=tools,
+        planted_total=manifest.stats.planted_total,
+        union_caught=len(union),
+        union_missed=caught_by_none,
+        per_tool_caught={t: len(caught_by[t]) for t in tools},
+        per_tool_unique=unique,
+        dominates=dominates,
+        best_pair=best_pair,
+        minimal_cover=cover,
+    )
+    return caught_by_none, dict(sorted(caught_by_one.items())), coverage
 
 
 # A finding pointing at one of these is scanner noise on a benchmark artifact,
@@ -265,7 +322,7 @@ def score(manifest: Manifest, run_index: RunIndex, results_dir: Path) -> ScoreCa
         run_score = score_run(manifest, run, findings, index)
         scored.append((run, run_score, findings))
 
-    caught_by_none, caught_by_one = _cross_tool(manifest, scored, index)
+    caught_by_none, caught_by_one, coverage = _cross_tool(manifest, scored, index)
 
     return ScoreCard(
         seed=manifest.seed,
@@ -274,6 +331,7 @@ def score(manifest: Manifest, run_index: RunIndex, results_dir: Path) -> ScoreCa
         runs=[rs for _, rs, _ in scored],
         caught_by_no_tool=caught_by_none,
         caught_by_one_tool=caught_by_one,
+        coverage=coverage,
         planted_total=manifest.stats.planted_total,
         decoy_total=manifest.stats.decoy_total,
     )

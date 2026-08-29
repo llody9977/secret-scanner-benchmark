@@ -19,8 +19,9 @@ name: benchmark
 #   * every action and tool pinned to an exact version, recorded in the output
 #   * no repository secret is ever injected — the corpus is the only input
 #
-# Actions are pinned to release tags here for readability; for production use,
-# repin each to its 40-char commit SHA.
+# Actions are pinned to exact release tags on their Node 24 runtime (checkout v5,
+# setup-python v6, upload-artifact v6, download-artifact v7) for readability; for
+# production use, repin each to its 40-char commit SHA.
 
 on:
   workflow_dispatch:
@@ -51,8 +52,8 @@ jobs:
   generate:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-python@v5.6.0
+      - uses: actions/checkout@v5.1.0
+      - uses: actions/setup-python@v6.3.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install ssbench
@@ -71,7 +72,7 @@ jobs:
             echo "::error::corpus/manifest.yaml is out of date — regenerate with: python generator/generate.py --seed \$(cat corpus/seed) --output ./bench --record"
             exit 1
           }
-      - uses: actions/upload-artifact@v4.4.3
+      - uses: actions/upload-artifact@v6.0.0
         with:
           name: corpus
           path: bench/
@@ -86,8 +87,8 @@ jobs:
       matrix:
         tool: [gitleaks, betterleaks, trufflehog, kingfisher, titus, detect-secrets]
     steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/download-artifact@v4.1.8
+      - uses: actions/checkout@v5.1.0
+      - uses: actions/download-artifact@v7.0.0
         with:
           name: corpus
           path: bench
@@ -173,7 +174,7 @@ jobs:
           ( cd bench && detect-secrets scan --all-files ) > scan-output/detect-secrets.json
           test -s scan-output/detect-secrets.json
 
-      - uses: actions/upload-artifact@v4.4.3
+      - uses: actions/upload-artifact@v6.0.0
         with:
           name: scan-${{ matrix.tool }}
           path: scan-output/
@@ -184,16 +185,16 @@ jobs:
     if: always()
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-python@v5.6.0
+      - uses: actions/checkout@v5.1.0
+      - uses: actions/setup-python@v6.3.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: pip install -e .
-      - uses: actions/download-artifact@v4.1.8
+      - uses: actions/download-artifact@v7.0.0
         with:
           name: corpus
           path: bench
-      - uses: actions/download-artifact@v4.1.8
+      - uses: actions/download-artifact@v7.0.0
         with:
           pattern: scan-*
           merge-multiple: true
@@ -241,7 +242,7 @@ jobs:
             echo
             cat results/results.md
           } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4.4.3
+      - uses: actions/upload-artifact@v6.0.0
         with:
           name: results
           path: results/

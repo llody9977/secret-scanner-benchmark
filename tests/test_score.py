@@ -96,3 +96,51 @@ def test_decoy_hit_is_a_false_positive(tmp_path, manifest):
     run = card.runs[0]
     assert run.overall.fp == 1
     assert decoy.id in run.decoys_triggered
+
+
+def test_tp_fn_na_always_sum_to_planted_total(tmp_path, manifest):
+    total = manifest.stats.planted_total
+    half = [
+        {"RuleID": p.secret_type, "File": p.file, "StartLine": p.line, "Secret": p.value, "Commit": ""}
+        for p in manifest.planted[::2]
+    ]
+    (tmp_path / "gl.json").write_text(json.dumps(half))
+    run_index = _write_runs(tmp_path, manifest, [{
+        "tool": "wt-only", "version": "1", "parser": "gitleaks", "mode": "default",
+        "capabilities": ["working-tree"], "path": "gl.json",
+    }])
+    card = score(manifest, run_index, tmp_path)
+    m = card.runs[0].overall
+    assert m.tp + m.fn + m.na == total == m.planted
+    assert card.runs[0].planted_total == total
+
+
+def test_coverage_analysis_union_unique_and_minimal_cover(tmp_path, manifest):
+    ids = [p.id for p in manifest.planted]
+    by_id = {p.id: p for p in manifest.planted}
+
+    def report(catch_ids):
+        return json.dumps([
+            {"RuleID": by_id[i].secret_type, "File": by_id[i].file, "StartLine": by_id[i].line,
+             "Secret": by_id[i].value, "Commit": ""}
+            for i in catch_ids
+        ])
+
+    # tool A catches the first 20, tool B the middle 20 (overlap 10), C only id[40]
+    (tmp_path / "a.json").write_text(report(ids[:20]))
+    (tmp_path / "b.json").write_text(report(ids[10:30]))
+    (tmp_path / "c.json").write_text(report([ids[40]]))
+    run_index = _write_runs(tmp_path, manifest, [
+        {"tool": "A", "version": "1", "parser": "gitleaks", "mode": "default",
+         "capabilities": ["working-tree", "history"], "path": "a.json"},
+        {"tool": "B", "version": "1", "parser": "gitleaks", "mode": "default",
+         "capabilities": ["working-tree", "history"], "path": "b.json"},
+        {"tool": "C", "version": "1", "parser": "gitleaks", "mode": "default",
+         "capabilities": ["working-tree", "history"], "path": "c.json"},
+    ])
+    cov = score(manifest, run_index, tmp_path).coverage
+    assert cov is not None
+    assert cov.union_caught == 31  # 30 from A∪B + id[40] from C
+    assert cov.per_tool_unique["C"] == [ids[40]]
+    assert set(cov.minimal_cover) >= {"C"}  # C is the only source of id[40]
+    assert cov.per_tool_caught == {"A": 20, "B": 20, "C": 1}
