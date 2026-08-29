@@ -17,6 +17,14 @@ rather than reporting one after the fact.
 > repository.** The procedure to reproduce it here is in full below; until
 > someone runs it, read the result as evidence about GitHub's behaviour on that
 > repository and configuration, not as a property of this one.
+>
+> **Do not delete `llody9977/secret-scan` before re-running this test here.**
+> The alert link below, and the URLs inside
+> [`results/hosted-push-protection.json`](../results/hosted-push-protection.json),
+> resolve into that repository. Deleting it breaks them, and this is the only
+> direct evidence in the series that scanning ever prevented an exposure rather
+> than reporting one. Re-run the procedure below in this repository first, land
+> the new record, then retire the old repository.
 
 Machine-readable record: [`results/hosted-push-protection.json`](../results/hosted-push-protection.json).
 
