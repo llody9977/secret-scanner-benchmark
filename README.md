@@ -12,6 +12,9 @@ Kingfisher, Titus, and every AI-service credential format. This is the design
 from section four of *Nothing Catches Everything* (part 2 of the series), made
 runnable.
 
+**Series article, part 1:** *[The Sixty-Second Credential](https://llody9977.github.io/secret-scanner-benchmark/)*
+— the threat and the business case for why scanning sits where it does.
+
 **Every credential here is synthetic and non-functional.** See
 [SECURITY.md](SECURITY.md) for how each format is fabricated and why it cannot
 be used.
