@@ -8,7 +8,7 @@ the six scanners, or read the latest `results` artifact from
 
 | | |
 |---|---|
-| Run | #6 — rescore of the run #5 scanner reports against corrected ground truth |
+| Run | [#6](https://github.com/llody9977/secret-scanner-benchmark/actions/runs/33263168294), commit `52c3004` — first CI run against corrected ground truth |
 | Date | 2026-08-29 |
 | Corpus | seed `20260829`, HEAD `07e07fadb192ef0610047cc82b404e441d15d44d` |
 | Ground truth | 41 planted secrets · 18 decoys · **4 indicators** · 34 present at HEAD · 7 history-only |
@@ -59,7 +59,7 @@ where the real result is.
 | TruffleHog | 3.97.1 | verified-only | 0 | 0 | 41 | 0 | 41 | — | 0.0% | — | 0/4 |
 | Kingfisher | 2.0.0 | default | 24 | 1 | 17 | 0 | 41 | 96.0% | 58.5% | 72.7% | 0/4 |
 | Titus | 1.2.8 | default | 37 | 4 | 4 | 0 | 41 | 90.2% | 90.2% | 90.2% | **3/4** |
-| detect-secrets | 1.5.0 | default | 26 | 13 | 8 | 7 | 41 | 66.7% | 76.5% | 71.2% | 0/4 |
+| detect-secrets | 1.5.0 | default | 25 | 13 | 9 | 7 | 41 | 65.8% | 73.5% | 69.4% | 0/4 |
 
 `Σ` = TP + FN + N/A. Every planted secret is exactly one of caught, missed, or
 out-of-reach, so `Σ` equals the planted total (41) on every row — the scorer
@@ -90,7 +90,7 @@ count of access key IDs reported, scored on neither axis. TruffleHog
 | Betterleaks | 39/41 | — |
 | Titus | 37/41 | — |
 | Gitleaks | 35/41 | — |
-| detect-secrets | 26/41 | — |
+| detect-secrets | 25/41 | — |
 | Kingfisher | 24/41 | — |
 | TruffleHog (all) | 22/41 | — |
 
@@ -173,7 +173,7 @@ the Gitleaks lineage decodes and re-scans base64 payloads here.
 
 ### 7. detect-secrets: broad recall, heavy noise — but all of it on the decoys
 
-76.5% recall on the placements it can reach, at 66.7% precision. It emits **13
+73.5% recall on the placements it can reach, at 65.8% precision. It emits **13
 false-positive findings, all of them on planted decoy content, resolving to 10
 distinct decoys** — git SHAs, a base64 PNG, `changeme`, `${VAR}` placeholders,
 the provider documentation samples. Three of the thirteen are a second or third
@@ -196,7 +196,7 @@ tools — everyone except TruffleHog. If you maintain an allowlist, start there.
 | json-fixture | 5/5 | 5/5 | 4/5 | 4/5 | 5/5 | 5/5 |
 | terraform-vars | 3/4 | 4/4 | 3/4 | 3/4 | 4/4 | 4/4 |
 | ci-log-artifact | 3/3 | 3/3 | 1/3 | 1/3 | 2/3 | 1/3 |
-| dockerfile-env | 2/2 | 2/2 | 1/2 | 1/2 | 1/2 | 1/2 |
+| dockerfile-env | 2/2 | 2/2 | 1/2 | 1/2 | 1/2 | 0/2 |
 | jupyter-output | 1/1 | 1/1 | 0/1 | 1/1 | 1/1 | 0/1 |
 | minified-bundle | 2/2 | 2/2 | 1/2 | 1/2 | 2/2 | 1/2 |
 | base64-blob | 1/1 | 1/1 | 0/1 | 0/1 | 0/1 | 0/1 |
@@ -232,14 +232,20 @@ Those belong in a pilot, not in a recall table.
 
 ## Provenance and limits
 
-- Run #5's scanner reports were produced on `ubuntu-24.04` in GitHub Actions.
-  Run #6 re-ran the same six tools at the same pinned versions on `darwin/arm64`
-  against a byte-identical corpus, and scored them with the corrected ground
-  truth. The two runs agree on every per-tool total.
-- Outbound verification callbacks were blocked in the run #6 environment. Both
-  verification-capable tools were invoked in modes that retain unverified
+- Run #6 is a GitHub Actions run on `ubuntu-24.04`, same six tools at the same
+  pinned versions, against a byte-identical corpus (HEAD unchanged), scored with
+  the corrected ground truth.
+- The correction was developed against a local `darwin/arm64` rescore of the
+  run #5 reports. CI reproduced it exactly on six of seven rows. The seventh:
+  detect-secrets caught `slack-webhook` (a Slack webhook URL in a `Dockerfile
+  ENV`) locally and missed it on CI, which is a one-secret platform difference
+  in that tool, not in the scoring. CI is canonical and the figures above are
+  CI's; the local run is mentioned only because the discrepancy is real and
+  someone reproducing this on macOS will see it.
+- Verification callbacks are never enabled in this benchmark. Both
+  verification-capable tools are invoked in modes that retain unverified
   findings (`--results=verified,unknown,unverified`, `--validation-filter all`),
-  so this does not affect the counts — but it is why `verified-only` is reported
-  separately rather than treated as a result.
+  which is why `verified-only` is reported separately rather than treated as a
+  result.
 - Every credential is synthetic and non-functional. No result here says
   anything about how these tools behave against live credentials.
