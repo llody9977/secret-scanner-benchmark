@@ -24,6 +24,11 @@ class SecretSpec:
     value: str
     checksum_valid: Optional[bool] = None
     expected_detectable: bool = True
+    # False marks a credential *identifier* rather than an authenticator: a
+    # value that is part of a credential but is not itself confidential, and so
+    # cannot be a planted secret. An AWS access key id is the case that matters
+    # here. Missing one is not a miss; reporting one is not a false positive.
+    is_secret: bool = True
     multiline: bool = False
     # For multiline secrets (PEM blocks, service-account JSON) the value is
     # written more or less verbatim; ``assignment_key`` names the variable used

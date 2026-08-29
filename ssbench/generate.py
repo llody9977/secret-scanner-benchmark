@@ -14,7 +14,14 @@ from ssbench.constants import CORPUS_CREATED, PLACEMENT_REQUIRES
 from ssbench.decoys import DecoySpec, build_decoys
 from ssbench.formats.base import SecretSpec
 from ssbench.gitbuild import Commit, build_repo
-from ssbench.models import Decoy, Manifest, ManifestStats, PlantedSecret, sha256_hex
+from ssbench.models import (
+    Decoy,
+    Indicator,
+    Manifest,
+    ManifestStats,
+    PlantedSecret,
+    sha256_hex,
+)
 from ssbench.placements import PLACEMENTS, Placement, RenderedFile, render_file
 from ssbench.plan import build_plan
 from ssbench.rng import SeededRNG
@@ -75,9 +82,21 @@ def _collect(rng: SeededRNG) -> Tuple[List[_Stub], Dict[str, DecoySpec]]:
     for entry in build_plan():
         spec = entry.builder(rng.derive(entry.id), **entry.kwargs)
         placement = PLACEMENTS[entry.placement]
-        stubs.append(_Stub(entry.id, spec, placement, entry.obfuscation))
-        if spec.companion is not None:
-            stubs.append(_Stub(f"{entry.id}-companion", spec.companion, placement, entry.obfuscation))
+        parts = [spec] + ([spec.companion] if spec.companion is not None else [])
+        # The plan entry names a credential; a credential may be written as more
+        # than one value (an AWS pair). The confidential half keeps the plan id,
+        # the identifier half gets an "-id" suffix, and the file keeps them in
+        # the order the builder returned them — identifier first, as it would be
+        # written in a real config.
+        seen = {True: 0, False: 0}
+        for part in parts:
+            n = seen[part.is_secret]
+            seen[part.is_secret] += 1
+            if part.is_secret:
+                sid = entry.id if n == 0 else f"{entry.id}-{n + 1}"
+            else:
+                sid = f"{entry.id}-id" if n == 0 else f"{entry.id}-id{n + 1}"
+            stubs.append(_Stub(sid, part, placement, entry.obfuscation))
 
     decoys = {f"decoy-{i:02d}": d for i, d in enumerate(build_decoys(rng))}
     return stubs, decoys
@@ -207,7 +226,9 @@ def _manifest_placement(placement: Placement) -> str:
     return placement.key
 
 
-def _stats(planted: List[PlantedSecret], decoys: List[Decoy]) -> ManifestStats:
+def _stats(
+    planted: List[PlantedSecret], decoys: List[Decoy], indicators: List[Indicator]
+) -> ManifestStats:
     by_cat: Dict[str, int] = defaultdict(int)
     by_type: Dict[str, int] = defaultdict(int)
     by_place: Dict[str, int] = defaultdict(int)
@@ -220,6 +241,7 @@ def _stats(planted: List[PlantedSecret], decoys: List[Decoy]) -> ManifestStats:
     return ManifestStats(
         planted_total=len(planted),
         decoy_total=len(decoys),
+        indicator_total=len(indicators),
         by_category=dict(sorted(by_cat.items())),
         by_secret_type=dict(sorted(by_type.items())),
         by_placement=dict(sorted(by_place.items())),
@@ -240,7 +262,7 @@ def _redact(data: dict) -> dict:
     exact values are a pure function of ``corpus/seed`` and are reproduced by
     ``python generator/generate.py --seed "$(cat corpus/seed)" --output ./bench``.
     """
-    for group in ("planted", "decoys"):
+    for group in ("planted", "decoys", "indicators"):
         for entry in data.get(group, []):
             if entry.get("value"):
                 entry["value"] = REDACTED_VALUE
@@ -280,12 +302,29 @@ def generate(seed: int, output_dir: Path, record_to: Optional[Path] = None) -> M
     result = build_repo(output_dir, commits, labels)
 
     planted: List[PlantedSecret] = []
+    indicators: List[Indicator] = []
     for stub in stubs:
         path, line = _line_of(stub.id, files)
         layer = _classify(stub)
         introduced = result.introduced_at.get(stub.id)
         if introduced is None and layer == "branch":
             introduced = result.branch_commits.get(stub.branch)
+        if not stub.spec.is_secret:
+            indicators.append(Indicator(
+                id=stub.id,
+                secret_type=stub.spec.secret_type,
+                value=stub.spec.value,
+                value_sha256=sha256_hex(stub.spec.value),
+                branch=stub.branch,
+                file=path,
+                line=line,
+                placement=_manifest_placement(stub.placement),
+                obfuscation=stub.obfuscation,
+                introduced_commit=introduced,
+                present_at_head=(layer == "head"),
+                reason=stub.spec.notes,
+            ))
+            continue
         planted.append(PlantedSecret(
             id=stub.id,
             secret_type=stub.spec.secret_type,
@@ -326,9 +365,10 @@ def generate(seed: int, output_dir: Path, record_to: Optional[Path] = None) -> M
         corpus_head_commit=result.head_commit,
         branches=["main", *sorted(result.branch_commits)],
         placement_requires=dict(PLACEMENT_REQUIRES),
-        stats=_stats(planted, decoy_models),
+        stats=_stats(planted, decoy_models, indicators),
         planted=planted,
         decoys=decoy_models,
+        indicators=indicators,
     )
 
     (output_dir / "manifest.yaml").write_text(_dump_manifest(manifest), encoding="utf-8")

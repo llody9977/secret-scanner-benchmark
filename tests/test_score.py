@@ -144,3 +144,52 @@ def test_coverage_analysis_union_unique_and_minimal_cover(tmp_path, manifest):
     assert cov.per_tool_unique["C"] == [ids[40]]
     assert set(cov.minimal_cover) >= {"C"}  # C is the only source of id[40]
     assert cov.per_tool_caught == {"A": 20, "B": 20, "C": 1}
+
+
+def test_indicator_finding_is_neither_a_hit_nor_a_false_positive(tmp_path, manifest):
+    """Reporting an AWS access key id scores on neither axis.
+
+    A tool that flags `AKIA…` has surfaced a useful investigative signal and
+    nothing confidential. Crediting it as recall would reward finding a value
+    that is not a secret; charging it as a false positive would punish a
+    legitimate one. It is counted separately and scored nowhere.
+    """
+    assert manifest.indicators, "corpus must plant at least one indicator"
+    findings = [
+        {"RuleID": "aws-access-key-id", "File": i.file, "StartLine": i.line,
+         "Secret": i.value, "Commit": ""}
+        for i in manifest.indicators
+    ]
+    (tmp_path / "ind.json").write_text(json.dumps(findings))
+    run_index = _write_runs(tmp_path, manifest, [{
+        "tool": "id-only", "version": "1", "parser": "gitleaks", "mode": "default",
+        "capabilities": ["working-tree", "history", "verification"], "path": "ind.json",
+    }])
+    run = score(manifest, run_index, tmp_path).runs[0]
+    assert run.overall.tp == 0
+    assert run.overall.fp == 0
+    assert run.indicators_reported == sorted(i.id for i in manifest.indicators)
+    assert run.overall.planted == manifest.stats.planted_total
+
+
+def test_access_key_id_hit_is_not_credited_to_the_adjacent_secret_key(tmp_path, manifest):
+    """The pair sits on adjacent lines, so proximity matching is the trap.
+
+    Before the ground-truth correction, a finding on the id line could be
+    claimed by the secret access key beside it — inflating recall for tools
+    that never detected the confidential half at all.
+    """
+    indicator = manifest.indicators[0]
+    partner = next(p for p in manifest.planted if p.id == indicator.id[:-len("-id")])
+    assert abs(partner.line - indicator.line) <= 3, "the pair must be adjacent for this to test anything"
+
+    findings = [{"RuleID": "aws-access-key-id", "File": indicator.file,
+                 "StartLine": indicator.line, "Secret": indicator.value, "Commit": ""}]
+    (tmp_path / "adj.json").write_text(json.dumps(findings))
+    run_index = _write_runs(tmp_path, manifest, [{
+        "tool": "id-only", "version": "1", "parser": "gitleaks", "mode": "default",
+        "capabilities": ["working-tree", "history", "verification"], "path": "adj.json",
+    }])
+    run = score(manifest, run_index, tmp_path).runs[0]
+    assert partner.id in run.missed_planted_ids
+    assert run.indicators_reported == [indicator.id]

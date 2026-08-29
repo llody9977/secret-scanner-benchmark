@@ -42,6 +42,35 @@ def test_has_planted_and_decoys(corpus):
     assert "feature/payments" in manifest.branches
 
 
+def test_access_key_ids_are_indicators_not_planted_secrets(corpus):
+    """Ground truth has three populations and they do not overlap.
+
+    An AWS access key id is planted in the corpus and recorded in the manifest,
+    but as an indicator: it is not confidential on its own, so it cannot count
+    toward recall. Regression guard for the run-5 ground-truth correction.
+    """
+    _, manifest = corpus
+    assert manifest.stats.indicator_total == len(manifest.indicators) > 0
+    assert all(i.secret_type == "aws-access-key-id" for i in manifest.indicators)
+    assert not any(p.secret_type == "aws-access-key-id" for p in manifest.planted)
+    assert manifest.stats.planted_total == len(manifest.planted)
+
+    ids = [p.id for p in manifest.planted] + [d.id for d in manifest.decoys]
+    ids += [i.id for i in manifest.indicators]
+    assert len(ids) == len(set(ids)), "ground-truth ids must be unique across populations"
+
+
+def test_every_access_key_id_is_paired_with_a_planted_secret_key(corpus):
+    """The pair is still planted whole — only its scoring changed."""
+    _, manifest = corpus
+    secret_keys = [p for p in manifest.planted if p.secret_type == "aws-secret-access-key"]
+    assert len(secret_keys) == len(manifest.indicators)
+    for indicator in manifest.indicators:
+        assert indicator.id.endswith("-id")
+        partner = indicator.id[:-len("-id")]
+        assert any(p.id == partner for p in secret_keys)
+
+
 def test_history_only_secrets_are_absent_from_head(corpus):
     repo, manifest = corpus
     head_blob = subprocess.run(

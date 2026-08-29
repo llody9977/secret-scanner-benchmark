@@ -61,7 +61,15 @@ def render_markdown(card: ScoreCard) -> str:
     lines.append(f"- Corpus seed: `{card.seed}`")
     lines.append(f"- Corpus HEAD: `{card.corpus_head_commit}`")
     lines.append(f"- Generator: `ssbench {card.generator_version}`")
-    lines.append(f"- Planted secrets: **{card.planted_total}**  ·  Decoys: **{card.decoy_total}**")
+    lines.append(f"- Planted secrets: **{card.planted_total}**  ·  Decoys: **{card.decoy_total}**"
+                 f"  ·  Indicators: **{card.indicator_total}**")
+    if card.indicator_total:
+        lines.append("")
+        lines.append("*Indicators are credential identifiers that are not themselves "
+                     "confidential — AWS access key ids. They are not planted secrets: "
+                     "missing one is not a miss, and reporting one is not a false "
+                     "positive. Reported counts are shown per tool, and count toward "
+                     "neither precision nor recall.*")
     lines.append("")
 
     lines.append("## Per-tool totals")
@@ -98,7 +106,8 @@ def render_markdown(card: ScoreCard) -> str:
         lines.append("")
         lines.append(f"TP {run.overall.tp} · FP {run.overall.fp} · FN {run.overall.fn} · "
                      f"N/A {run.overall.na} · Σ {run.overall.planted}/{run.planted_total} · "
-                     f"decoys triggered {len(run.decoys_triggered)}/{run.decoy_total}")
+                     f"decoys triggered {len(run.decoys_triggered)}/{run.decoy_total} · "
+                     f"indicators reported {len(run.indicators_reported)}/{card.indicator_total}")
         lines.append("")
         lines.append("### By secret type")
         lines.append("")
@@ -120,6 +129,10 @@ def render_markdown(card: ScoreCard) -> str:
         if run.decoys_triggered:
             lines.append(f"**Decoys triggered ({len(run.decoys_triggered)}):** `{'`, `'.join(run.decoys_triggered)}`")
             lines.append("")
+        if run.indicators_reported:
+            lines.append(f"**Indicators reported ({len(run.indicators_reported)}, "
+                         f"scored on neither axis):** `{'`, `'.join(run.indicators_reported)}`")
+            lines.append("")
 
     return "\n".join(lines) + "\n"
 
@@ -138,6 +151,10 @@ def print_console(card: ScoreCard, console: Optional[Console] = None) -> None:
         )
     console.print(table)
     console.print(f"[dim]Σ (TP+FN+N/A) must equal {card.planted_total} on every row.[/]")
+    if card.indicator_total:
+        console.print(f"[dim]Indicators reported (not scored): " + ", ".join(
+            f"{r.tool}/{r.mode} {len(r.indicators_reported)}/{card.indicator_total}"
+            for r in card.runs) + "[/]")
 
     cov = card.coverage
     if cov:

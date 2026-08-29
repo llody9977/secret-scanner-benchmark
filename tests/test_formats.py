@@ -29,6 +29,27 @@ def test_aws_access_key_encodes_account_zero():
     assert len(key.companion.value) == 40
 
 
+def test_aws_access_key_id_is_an_indicator_not_a_secret():
+    """The id is half a credential, not a credential.
+
+    It travels in cleartext in every signed request, so it cannot be scored as
+    a planted secret; the 40-character secret access key beside it is the
+    confidential half and carries the ground truth.
+    """
+    key = aws.build_access_key_pair(SeededRNG(1))
+    assert key.is_secret is False
+    assert key.secret_type == "aws-access-key-id"
+    assert key.companion.is_secret is True
+    assert key.companion.secret_type == "aws-secret-access-key"
+
+
+def test_aws_temporary_key_id_is_also_an_indicator():
+    key = aws.build_temporary_access_key(SeededRNG(3))
+    assert key.value.startswith("ASIA")
+    assert key.is_secret is False
+    assert key.companion.is_secret is True
+
+
 def test_github_valid_checksum_verifies():
     spec = github.build_token(SeededRNG(2), prefix="ghp", valid_checksum=True)
     assert spec.checksum_valid is True

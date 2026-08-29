@@ -1,35 +1,71 @@
 # Benchmark results
 
-Snapshot of one CI run. The workflow regenerates this every push and on a
-monthly schedule; rulesets drift, so a snapshot older than a few weeks is stale.
+Snapshot of one run. The workflow regenerates this every push and on a monthly
+schedule; rulesets drift, so a snapshot older than a few weeks is stale.
 Reproduce with `python generator/generate.py --seed "$(cat corpus/seed)"` then
-the six scanners, or just read the latest `results` artifact from
+the six scanners, or read the latest `results` artifact from
 [Actions](https://github.com/llody9977/secret-scanner-benchmark/actions).
 
 | | |
 |---|---|
-| Run | [#5](https://github.com/llody9977/secret-scanner-benchmark/actions/runs/33239296691), commit `2c88f4a` |
+| Run | #6 — rescore of the run #5 scanner reports against corrected ground truth |
 | Date | 2026-08-29 |
 | Corpus | seed `20260829`, HEAD `07e07fadb192ef0610047cc82b404e441d15d44d` |
-| Planted | 45 secrets · 18 decoys · 37 present at HEAD · 8 history-only |
+| Ground truth | 41 planted secrets · 18 decoys · **4 indicators** · 34 present at HEAD · 7 history-only |
+| Tool versions | Gitleaks 8.30.1 · Betterleaks 1.8.1 · TruffleHog 3.97.1 · Kingfisher 2.0.0 · Titus 1.2.8 · detect-secrets 1.5.0 |
+
+> **What changed since run #5.** Run #5 counted standalone AWS access key IDs
+> (`AKIA…`, `ASIA…`) as planted secrets. That was wrong. An access key ID is a
+> credential *identifier*, not an authenticator: AWS transmits it in cleartext
+> in the `Authorization` header of every signed request and records it in
+> CloudTrail, and it authenticates nothing without the paired secret access key
+> ([AWS IAM documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)).
+> The four IDs are now scored as **indicators** — a third ground-truth
+> population that counts toward neither recall nor precision. The planted total
+> falls from 45 to 41. The corpus files are byte-identical (same HEAD commit),
+> so this is a rescore of the same scanner output, not a different corpus.
+>
+> The correction reverses the headline. Run #5's "Titus leads on recall and is
+> the only tool with unique catches" was an artifact of counting IDs: **both of
+> Titus's unique catches were access key IDs.** With them removed, Betterleaks
+> leads and no tool in the field has a unique catch.
+
+## Ground truth has three populations
+
+| Population | Count | Missing one is | Reporting one is |
+|---|---:|---|---|
+| Planted secret | 41 | a false negative | a true positive |
+| Decoy | 18 | correct behaviour | a false positive |
+| Indicator | 4 | correct behaviour | neither — tallied separately |
+
+An **indicator** is a value that is part of a credential and a genuine
+investigative signal, but is not itself confidential. AWS access key IDs are
+the only case in this corpus. A scanner that flags one has surfaced something
+useful for incident response — it names the account and the key to disable —
+and nothing secret. Scoring it as recall would credit tools for finding a value
+that is not a secret; scoring it as a false positive would penalise a
+legitimate signal. It is counted on neither axis.
+
+The AWS *secret* access key beside each ID remains a planted secret, and it is
+where the real result is.
 
 ## Per-tool totals
 
-| Tool | Version | Mode | TP | FP | FN | N/A | Σ | Precision | Recall | F1 |
-|------|---------|------|----|----|----|-----|---|-----------|--------|-----|
-| Gitleaks | 8.30.1 | default | 35 | 1 | 10 | 0 | 45 | 97.2% | 77.8% | 86.4% |
-| Betterleaks | 1.8.1 | default | 39 | 2 | 6 | 0 | 45 | 95.1% | 86.7% | **90.7%** |
-| TruffleHog | 3.97.1 | all-results | 22 | 0 | 23 | 0 | 45 | 100.0% | 48.9% | 65.7% |
-| TruffleHog | 3.97.1 | verified-only | 0 | 0 | 45 | 0 | 45 | — | 0.0% | — |
-| Kingfisher | 2.0.0 | default | 24 | 1 | 21 | 0 | 45 | 96.0% | 53.3% | 68.6% |
-| Titus | 1.2.8 | default | 41 | 4 | 4 | 0 | 45 | 91.1% | 91.1% | **91.1%** |
-| detect-secrets | 1.5.0 | default | 26 | 13 | 11 | 8 | 45 | 66.7% | 70.3% | 68.4% |
+| Tool | Version | Mode | TP | FP | FN | N/A | Σ | Precision | Recall | F1 | Indicators |
+|------|---------|------|----|----|----|-----|---|-----------|--------|-----|-----------:|
+| Gitleaks | 8.30.1 | default | 35 | 1 | 6 | 0 | 41 | 97.2% | 85.4% | 90.9% | 0/4 |
+| Betterleaks | 1.8.1 | default | 39 | 2 | 2 | 0 | 41 | 95.1% | 95.1% | **95.1%** | 0/4 |
+| TruffleHog | 3.97.1 | all-results | 22 | 0 | 19 | 0 | 41 | 100.0% | 53.7% | 69.8% | 0/4 |
+| TruffleHog | 3.97.1 | verified-only | 0 | 0 | 41 | 0 | 41 | — | 0.0% | — | 0/4 |
+| Kingfisher | 2.0.0 | default | 24 | 1 | 17 | 0 | 41 | 96.0% | 58.5% | 72.7% | 0/4 |
+| Titus | 1.2.8 | default | 37 | 4 | 4 | 0 | 41 | 90.2% | 90.2% | 90.2% | **3/4** |
+| detect-secrets | 1.5.0 | default | 26 | 13 | 8 | 7 | 41 | 66.7% | 76.5% | 71.2% | 0/4 |
 
 `Σ` = TP + FN + N/A. Every planted secret is exactly one of caught, missed, or
-out-of-reach, so `Σ` equals the planted total (45) on every row — the scorer
-fails the run if it does not. `N/A` = the tool cannot reach that placement
-(detect-secrets does not walk history). FP is a separate axis: findings matching
-nothing planted, bounded by the 18 decoys plus spurious noise. TruffleHog
+out-of-reach, so `Σ` equals the planted total (41) on every row — the scorer
+fails the run if it does not. FP is a separate axis. `N/A` = the tool cannot
+reach that placement (detect-secrets does not walk history). `Indicators` is the
+count of access key IDs reported, scored on neither axis. TruffleHog
 `verified-only` is excluded from the coverage analysis below.
 
 ## Headline
@@ -38,60 +74,76 @@ nothing planted, bounded by the 18 decoys plus spurious noise. TruffleHog
   string-array and `"".join()`-ed, sitting only in git history (added six
   commits back, scrubbed at HEAD). Catching it needs history traversal *and*
   resistance to the split-string obfuscation. No tool has both.
-- **Caught by exactly one tool: 2** — `aws-temp-key` and `hist-aws`, both only
-  by Titus. Both are `AKIA`/`ASIA` access-key IDs (see below).
-- **Union coverage: 44/45.** Layering gets you almost everything the set can
+- **Caught by exactly one tool: 0.** No tool in this field finds anything the
+  rest of the field misses. This is a change from run #5, and it is entirely
+  the AWS correction.
+- **Union coverage: 40/41.** Layering gets you almost everything the set can
   find; it does not get you everything.
+- **Zero spurious false positives, field-wide.** Every false positive reported
+  by every tool is one of the 18 planted decoys. Nothing invented noise out of
+  ordinary source code.
 
 ## Cross-tool coverage
 
-The complementarity question — does the best tool subsume the others, and what
-combination covers the corpus?
-
 | Tool | Caught | Unique to it |
 |------|-------:|--------------|
-| Titus | 41/45 | `aws-temp-key`, `hist-aws` |
-| Betterleaks | 39/45 | — |
-| Gitleaks | 35/45 | — |
-| detect-secrets | 26/45 | — |
-| Kingfisher | 24/45 | — |
-| TruffleHog (all) | 22/45 | — |
+| Betterleaks | 39/41 | — |
+| Titus | 37/41 | — |
+| Gitleaks | 35/41 | — |
+| detect-secrets | 26/41 | — |
+| Kingfisher | 24/41 | — |
+| TruffleHog (all) | 22/41 | — |
 
-- **Betterleaks strictly dominates Gitleaks, Kingfisher and TruffleHog** — every
-  secret any of those three catch, Betterleaks also catches, plus more. A
-  Gitleaks user loses nothing by switching. (Titus likewise covers everything
-  Kingfisher does.)
-- **Only Titus has unique catches** (2). Every other tool's hits are a subset of
-  what the rest of the field already covers.
-- **Smallest set for 44/45: Titus + Gitleaks** (or Titus + Betterleaks). Two
-  tools is the whole story — a third adds nothing but noise.
+- **Betterleaks catches everything Gitleaks, Kingfisher and TruffleHog catch,
+  and more** — a strict superset on this corpus. Titus likewise covers
+  everything Kingfisher and detect-secrets cover.
+- **No tool has a unique catch.** Every tool's hit-set is contained in the
+  union of the others.
+- **Smallest set for 40/41: Betterleaks + Titus.** Titus contributes exactly
+  one secret Betterleaks misses (`openai-legacy`, the value-on-the-next-line
+  obfuscation). Betterleaks + detect-secrets also reaches 40/41.
 - **The one gap, `hist-openai`, is not closed by adding tools.** It is an
-  obfuscated secret in history; the fix is process (pre-commit hooks, short-lived
-  credentials, history rewriting on rotation), not another scanner.
+  obfuscated secret in history; the fix is process (pre-commit hooks,
+  short-lived credentials, history rewriting on rotation), not another scanner.
 
 ## What the results show
 
-### 1. No single tool is close to complete
+### 1. No single tool is complete
 
-Best recall is Titus at 91.1%. The next four sit between 48.9% and 86.7%. The
-article's title holds: nothing catches everything, and the gap between "best
-tool" and "all tools" is real (44/45 vs 41/45).
+Best recall is Betterleaks at 95.1%. The rest of the field runs from 53.7% to
+90.2%. The gap between "best tool" and "all tools" is one secret (40/41 vs
+39/41) — narrower than run #5 suggested, but the article's title still holds:
+nothing catches everything, and what nothing catches is the obfuscated
+history case, not a tool-selection problem.
 
-### 2. AWS access-key IDs are a systematic blind spot
+### 2. The AWS gap is in the secret key, not the key ID
 
-`AKIA…` / `ASIA…` IDs: **Titus 4/4, everyone else 0/4** (Gitleaks, Betterleaks,
-TruffleHog, Kingfisher). The paired 40-char *secret* keys are caught fine by
-Gitleaks and Betterleaks (4/4) — it is specifically the ID pattern that four of
-six tools skip.
+Correcting the ground truth did not remove an AWS finding — it relocated it.
 
-*Caveat (inference, not fact):* the synthetic IDs encode AWS account `0`. Some
-detectors validate the account-ID region or require the ID within proximity of
-a secret key. Part of this gap may be a corpus artifact rather than a tool
-weakness. Re-test with a real-format, revoked ID before citing it as a verdict.
+| Tool | AWS secret access key | AWS access key ID (indicator) |
+|---|:---:|:---:|
+| Gitleaks | 4/4 | 0/4 |
+| Betterleaks | 4/4 | 0/4 |
+| Titus | 4/4 | 3/4 |
+| detect-secrets | 2/4 (1 N/A) | 0/4 |
+| TruffleHog | **0/4** | 0/4 |
+| Kingfisher | **0/4** | 0/4 |
+
+TruffleHog and Kingfisher miss every AWS secret access key in the corpus — the
+confidential half, the one that grants access. That is a real detection gap and
+a more serious one than the ID result it replaces: a 40-character base64 string
+with no prefix and no checksum is exactly the shape a pattern-detector engine
+has no rule for, and neither tool runs a general entropy channel to catch it by
+other means.
+
+Titus is the only tool that reports access key IDs at all (3 of 4 — it misses
+the one split across a string concatenation). That is worth knowing for
+incident response, where the ID is what you feed to `aws iam
+delete-access-key`. It is not recall.
 
 ### 3. The verification trap, demonstrated
 
-TruffleHog `verified-only`: **0 / 45**. Every synthetic secret is non-live, so
+TruffleHog `verified-only`: **0 / 41**. Every synthetic secret is non-live, so
 verified-only mode reports nothing — recall 0%, a result that is not merely
 wrong but backwards. Run any verification-capable tool this way against a
 synthetic corpus and you will conclude it is useless. Always run `all-results`
@@ -100,11 +152,12 @@ filter.
 
 ### 4. Detector-only tools miss the generic and the obfuscated
 
-TruffleHog `all-results` (48.9%) and Kingfisher (53.3%) are pattern-detector
+TruffleHog `all-results` (53.7%) and Kingfisher (58.5%) are pattern-detector
 engines with little or no entropy channel. They miss every generic
-high-entropy string, JWTs, `mongodb`/`postgres` URIs where the password is the
-secret, split-string obfuscation, and the base64-wrapped blob. They are also
-the most *precise* (100% / 96%) — a real trade-off, not a defect.
+high-entropy string, every AWS secret access key, JWTs, `mongodb`/`postgres`
+URIs where the password is the secret, split-string obfuscation, and the
+base64-wrapped blob. They are also the most *precise* (100% / 96%) — a real
+trade-off, not a defect.
 
 ### 5. Test-mode Stripe keys split the field
 
@@ -118,12 +171,16 @@ The base64-blob placement (a key wrapped in `export …=` then base64-encoded):
 caught only by Gitleaks and Betterleaks (1/1), missed by the other four. Only
 the Gitleaks lineage decodes and re-scans base64 payloads here.
 
-### 7. detect-secrets: broad recall, heavy noise
+### 7. detect-secrets: broad recall, heavy noise — but all of it on the decoys
 
-70.3% recall on the placements it can reach, but 13 spurious false positives
-plus 10 decoys triggered — git SHAs, a base64 PNG, `changeme`, `${VAR}`
-placeholders. Precision 66.7%. Entropy plus keywords casts a wide net. Its 8
-`N/A` (history + branch) are correctly *not* counted as misses.
+76.5% recall on the placements it can reach, at 66.7% precision. It emits **13
+false-positive findings, all of them on planted decoy content, resolving to 10
+distinct decoys** — git SHAs, a base64 PNG, `changeme`, `${VAR}` placeholders,
+the provider documentation samples. Three of the thirteen are a second or third
+rule firing on a decoy another rule already matched. Nothing spurious; the net
+is simply wide enough to catch everything shaped like a secret, including the
+things deliberately planted to look like one. Its 7 `N/A` (history + branch) are
+correctly *not* counted as misses.
 
 ### 8. The jwt.io sample token is the universal false positive
 
@@ -134,32 +191,37 @@ tools — everyone except TruffleHog. If you maintain an allowlist, start there.
 
 | Placement | Gitleaks | Betterleaks | TruffleHog | Kingfisher | Titus | detect-secrets |
 |-----------|:--------:|:-----------:|:----------:|:----------:|:-----:|:--------------:|
-| working-tree | 7/11 | 9/11 | 4/11 | 6/11 | 11/11 | 11/11 |
+| working-tree | 7/10 | 9/10 | 4/10 | 6/10 | 10/10 | 10/10 |
 | dotenv | 5/6 | 6/6 | 5/6 | 4/6 | 6/6 | 4/6 |
 | json-fixture | 5/5 | 5/5 | 4/5 | 4/5 | 5/5 | 5/5 |
 | terraform-vars | 3/4 | 4/4 | 3/4 | 3/4 | 4/4 | 4/4 |
-| ci-log-artifact | 3/4 | 3/4 | 1/4 | 1/4 | 3/4 | 1/4 |
-| dockerfile-env | 2/2 | 2/2 | 1/2 | 1/2 | 1/2 | 0/2 |
+| ci-log-artifact | 3/3 | 3/3 | 1/3 | 1/3 | 2/3 | 1/3 |
+| dockerfile-env | 2/2 | 2/2 | 1/2 | 1/2 | 1/2 | 1/2 |
 | jupyter-output | 1/1 | 1/1 | 0/1 | 1/1 | 1/1 | 0/1 |
-| minified-bundle | 2/3 | 2/3 | 1/3 | 1/3 | 3/3 | 1/3 |
+| minified-bundle | 2/2 | 2/2 | 1/2 | 1/2 | 2/2 | 1/2 |
 | base64-blob | 1/1 | 1/1 | 0/1 | 0/1 | 0/1 | 0/1 |
-| history-depth | 2/4 | 2/4 | 1/4 | 1/4 | 3/4 | N/A |
+| history-depth | 2/3 | 2/3 | 1/3 | 1/3 | 2/3 | N/A |
 | reverted-commit | 2/2 | 2/2 | 0/2 | 0/2 | 2/2 | N/A |
 | non-default-branch | 2/2 | 2/2 | 2/2 | 2/2 | 2/2 | N/A |
 
-History placements: Gitleaks and Betterleaks walk history but their `2/4` on
+History placements: Gitleaks and Betterleaks walk history but their `2/3` on
 history-depth is the obfuscation, not the traversal. TruffleHog and Kingfisher
 under-perform on `reverted-commit` (0/2) because they miss those secret *types*
 (Stripe test key, generic hex), not because they cannot see the commits.
 
 ## Recommendation
 
-- **One tool:** Titus or Betterleaks. Titus for recall (91%) and the only unique
-  catches in the field; Betterleaks for the recall/precision balance (87% / 95%)
-  and lighter false-positive load. Betterleaks strictly dominates Gitleaks here,
-  so a Gitleaks pipeline can switch with nothing to lose.
-- **Two tools:** Titus + Betterleaks → 44/45. A third tool adds only noise on
-  this corpus.
+Read these as conclusions about **detection coverage on this corpus, at these
+versions, in these invocations**. They are not a procurement verdict: this
+benchmark measures nothing about configuration burden, output handling,
+integration surface, ruleset maintenance, project maturity or governance fit.
+Those belong in a pilot, not in a recall table.
+
+- **One tool:** Betterleaks. Highest recall (95.1%), highest F1 (95.1%), two
+  false positives, both on planted decoys. Titus is the close alternative and
+  the only tool that surfaces access key IDs for response.
+- **Two tools:** Betterleaks + Titus → 40/41. The second tool buys exactly one
+  additional secret; decide whether that is worth the triage load.
 - **Pre-commit:** detect-secrets or Betterleaks `--pre-commit`; accept that
   history and other surfaces are out of scope there.
 - **Do not** rely on verified-only output as a gate, and do not benchmark a
@@ -167,3 +229,17 @@ under-perform on `reverted-commit` (0/2) because they miss those secret *types*
 - **The last secret is a process problem.** `hist-openai` survives every tool
   and every combination — an obfuscated credential in history is the case to
   design your rotation and pre-commit story around, not your scanner choice.
+
+## Provenance and limits
+
+- Run #5's scanner reports were produced on `ubuntu-24.04` in GitHub Actions.
+  Run #6 re-ran the same six tools at the same pinned versions on `darwin/arm64`
+  against a byte-identical corpus, and scored them with the corrected ground
+  truth. The two runs agree on every per-tool total.
+- Outbound verification callbacks were blocked in the run #6 environment. Both
+  verification-capable tools were invoked in modes that retain unverified
+  findings (`--results=verified,unknown,unverified`, `--validation-filter all`),
+  so this does not affect the counts — but it is why `verified-only` is reported
+  separately rather than treated as a result.
+- Every credential is synthetic and non-functional. No result here says
+  anything about how these tools behave against live credentials.

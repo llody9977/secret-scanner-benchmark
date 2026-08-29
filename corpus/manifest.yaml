@@ -25,15 +25,15 @@ placement_requires:
   reverted-commit: history
   non-default-branch: history
 stats:
-  planted_total: 45
+  planted_total: 41
   decoy_total: 18
+  indicator_total: 4
   by_category:
     generic: 13
     private-key: 5
-    structured: 27
+    structured: 23
   by_secret_type:
     anthropic-api-key: 2
-    aws-access-key-id: 4
     aws-secret-access-key: 4
     cohere-api-key: 1
     deepseek-api-key: 1
@@ -65,19 +65,19 @@ stats:
     stripe-webhook-secret: 1
   by_placement:
     base64-blob: 1
-    ci-log-artifact: 4
+    ci-log-artifact: 3
     dockerfile-env: 2
     dotenv: 6
-    history-depth: 4
+    history-depth: 3
     json-fixture: 5
     jupyter-output: 1
-    minified-bundle: 3
+    minified-bundle: 2
     non-default-branch: 2
     reverted-commit: 2
     terraform-vars: 4
-    working-tree: 11
-  present_at_head: 37
-  history_only: 8
+    working-tree: 10
+  present_at_head: 34
+  history_only: 7
 planted:
 - id: gh-pat-valid
   secret_type: github-token-ghp
@@ -157,21 +157,6 @@ planted:
   expected_detectable: true
   notes: fine-grained PAT; longer body, no separately verifiable checksum here.
 - id: aws-key-plain
-  secret_type: aws-access-key-id
-  category: structured
-  value: '<redacted: synthetic; regenerate from corpus/seed>'
-  value_sha256: 4f6b22aa5698777c4b86a42b410a761a7c041acf5ac295fe62a4c6fa75fdabbb
-  checksum_valid: null
-  branch: main
-  file: src/app/config.py
-  line: 14
-  placement: working-tree
-  obfuscation: plain
-  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
-  present_at_head: true
-  expected_detectable: true
-  notes: no checksum exists for this format; account id 0 is embedded and decodes to 0.
-- id: aws-key-plain-companion
   secret_type: aws-secret-access-key
   category: generic
   value: '<redacted: synthetic; regenerate from corpus/seed>'
@@ -185,23 +170,9 @@ planted:
   introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
   present_at_head: true
   expected_detectable: true
-  notes: 40-char base64, no prefix; detection relies on entropy + context.
+  notes: 40-char base64, no prefix; detection relies on entropy + context. This is the confidential half
+    of the pair — the planted secret.
 - id: aws-key-concat
-  secret_type: aws-access-key-id
-  category: structured
-  value: '<redacted: synthetic; regenerate from corpus/seed>'
-  value_sha256: e1d134f0c55fcfefd1621dadf5dd5a3cd1eddff8f7756796a4a0a56c67f92adb
-  checksum_valid: null
-  branch: main
-  file: public/assets/app.min.js
-  line: 1
-  placement: minified-bundle
-  obfuscation: concat
-  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
-  present_at_head: true
-  expected_detectable: true
-  notes: no checksum exists for this format; account id 0 is embedded and decodes to 0.
-- id: aws-key-concat-companion
   secret_type: aws-secret-access-key
   category: generic
   value: '<redacted: synthetic; regenerate from corpus/seed>'
@@ -215,23 +186,9 @@ planted:
   introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
   present_at_head: true
   expected_detectable: true
-  notes: 40-char base64, no prefix; detection relies on entropy + context.
+  notes: 40-char base64, no prefix; detection relies on entropy + context. This is the confidential half
+    of the pair — the planted secret.
 - id: aws-temp-key
-  secret_type: aws-access-key-id
-  category: structured
-  value: '<redacted: synthetic; regenerate from corpus/seed>'
-  value_sha256: 64f4218e3ea4e2428bc7990f582696a9b4815608e16afc397b208627732c521c
-  checksum_valid: null
-  branch: main
-  file: artifacts/deploy.log
-  line: 5
-  placement: ci-log-artifact
-  obfuscation: plain
-  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
-  present_at_head: true
-  expected_detectable: true
-  notes: no checksum exists for this format; account id 0 is embedded and decodes to 0.
-- id: aws-temp-key-companion
   secret_type: aws-secret-access-key
   category: generic
   value: '<redacted: synthetic; regenerate from corpus/seed>'
@@ -245,7 +202,8 @@ planted:
   introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
   present_at_head: true
   expected_detectable: true
-  notes: 40-char base64, no prefix; detection relies on entropy + context.
+  notes: 40-char base64, no prefix; detection relies on entropy + context. This is the confidential half
+    of the pair — the planted secret.
 - id: stripe-secret
   secret_type: stripe-secret-key
   category: structured
@@ -637,21 +595,6 @@ planted:
   expected_detectable: false
   notes: 'the canonical case nothing catches: a memorable password.'
 - id: hist-aws
-  secret_type: aws-access-key-id
-  category: structured
-  value: '<redacted: synthetic; regenerate from corpus/seed>'
-  value_sha256: 40cc8cd734ecab97c7b4648a9c394ba2c9d135cd4bd12b174c1143f149648877
-  checksum_valid: null
-  branch: main
-  file: src/app/legacy_settings.py
-  line: 8
-  placement: history-depth
-  obfuscation: plain
-  introduced_commit: 9e2c6310bd0f78c8335afd6775259ec9db7f17cc
-  present_at_head: false
-  expected_detectable: true
-  notes: no checksum exists for this format; account id 0 is embedded and decodes to 0.
-- id: hist-aws-companion
   secret_type: aws-secret-access-key
   category: generic
   value: '<redacted: synthetic; regenerate from corpus/seed>'
@@ -665,7 +608,8 @@ planted:
   introduced_commit: 9e2c6310bd0f78c8335afd6775259ec9db7f17cc
   present_at_head: false
   expected_detectable: true
-  notes: 40-char base64, no prefix; detection relies on entropy + context.
+  notes: 40-char base64, no prefix; detection relies on entropy + context. This is the confidential half
+    of the pair — the planted secret.
 - id: hist-gh-valid
   secret_type: github-token-ghp
   category: structured
@@ -919,3 +863,60 @@ decoys:
   line: 32
   placement: decoy-file
   reason: a certificate is public material; not a private key
+indicators:
+- id: aws-key-plain-id
+  secret_type: aws-access-key-id
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 4f6b22aa5698777c4b86a42b410a761a7c041acf5ac295fe62a4c6fa75fdabbb
+  branch: main
+  file: src/app/config.py
+  line: 14
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  reason: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
+    the paired secret access key. Scored as an indicator, never as a planted secret. No checksum exists
+    for this format; account id 0 is embedded and decodes to 0.'
+- id: aws-key-concat-id
+  secret_type: aws-access-key-id
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: e1d134f0c55fcfefd1621dadf5dd5a3cd1eddff8f7756796a4a0a56c67f92adb
+  branch: main
+  file: public/assets/app.min.js
+  line: 1
+  placement: minified-bundle
+  obfuscation: concat
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  reason: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
+    the paired secret access key. Scored as an indicator, never as a planted secret. No checksum exists
+    for this format; account id 0 is embedded and decodes to 0.'
+- id: aws-temp-key-id
+  secret_type: aws-access-key-id
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 64f4218e3ea4e2428bc7990f582696a9b4815608e16afc397b208627732c521c
+  branch: main
+  file: artifacts/deploy.log
+  line: 5
+  placement: ci-log-artifact
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  reason: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
+    the paired secret access key. Scored as an indicator, never as a planted secret. No checksum exists
+    for this format; account id 0 is embedded and decodes to 0.'
+- id: hist-aws-id
+  secret_type: aws-access-key-id
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 40cc8cd734ecab97c7b4648a9c394ba2c9d135cd4bd12b174c1143f149648877
+  branch: main
+  file: src/app/legacy_settings.py
+  line: 8
+  placement: history-depth
+  obfuscation: plain
+  introduced_commit: 9e2c6310bd0f78c8335afd6775259ec9db7f17cc
+  present_at_head: false
+  reason: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
+    the paired secret access key. Scored as an indicator, never as a planted secret. No checksum exists
+    for this format; account id 0 is embedded and decodes to 0.'

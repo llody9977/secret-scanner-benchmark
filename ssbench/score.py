@@ -16,6 +16,15 @@ A finding that matches nothing planted is a false positive. A finding that
 matches a decoy is a false positive and is also named in ``decoys_triggered``.
 A planted secret whose placement needs a capability the run lacks is N/A, never
 a miss.
+
+Ground truth has three populations, not two. Alongside planted secrets and
+decoys there are **indicators**: credential identifiers that are not themselves
+confidential (an AWS access key id is the only case at present). A finding that
+resolves to an indicator is scored on neither axis — not a true positive,
+because nothing secret was found; not a false positive, because the value is a
+legitimate signal. It is tallied in ``indicators_reported`` and nowhere else.
+Indicators are matched before planted secrets so that a hit on an access key id
+cannot be credited, by line proximity, to the secret access key beside it.
 """
 
 from __future__ import annotations
@@ -27,6 +36,7 @@ from typing import Dict, List, Optional, Tuple
 from ssbench.models import (
     Decoy,
     Finding,
+    Indicator,
     Manifest,
     Metrics,
     PlantedSecret,
@@ -59,6 +69,7 @@ class _Index:
     def __init__(self, manifest: Manifest) -> None:
         self.planted = manifest.planted
         self.decoys = manifest.decoys
+        self.indicators = manifest.indicators
         self.by_hash: Dict[str, List[PlantedSecret]] = defaultdict(list)
         self.by_file: Dict[str, List[PlantedSecret]] = defaultdict(list)
         for p in self.planted:
@@ -76,30 +87,48 @@ class _Index:
             return True
         return abs(planted.line - finding.line) <= LINE_TOLERANCE
 
-    def candidates(self, finding: Finding):
-        """Score every planted secret against a finding.
+    def _match_strength(self, finding: Finding, item, hashes: set, raw: str) -> int:
+        """0 = no match; 4 hash + location, 3 hash, 2 substring + location,
+        1 substring or location alone."""
+        aligned = self._location_aligns(finding, item)
+        if item.value_sha256 in hashes:
+            return 4 if aligned else 3
+        if raw and len(raw) >= 8 and (raw in item.value or item.value in raw):
+            return 2 if aligned else 1
+        if aligned and finding.line is not None:
+            return 1
+        return 0
 
-        Returns ``(planted, score)`` pairs, higher score = stronger match:
-        4 hash + location, 3 hash, 2 substring + location, 1 location only.
-        Duplicate-valued planted secrets are separated by the location term.
+    def candidates(self, finding: Finding):
+        """Rank every ground-truth item against a finding.
+
+        Returns ``(item, kind, strength, line_distance)`` tuples over both
+        planted secrets and indicators. Strength dominates; line distance breaks
+        ties, which is what keeps a finding on an AWS access key id from being
+        credited to the secret access key on the adjacent line.
         """
         hashes = set(finding.secret_hashes())
         raw = (finding.raw_secret or "").strip("'\"` \t\r\n")
         out = []
-        for p in self.planted:
-            aligned = self._location_aligns(finding, p)
-            if p.value_sha256 in hashes:
-                out.append((p, 4 if aligned else 3))
-            elif raw and len(raw) >= 8 and (raw in p.value or p.value in raw):
-                out.append((p, 2 if aligned else 1))
-            elif aligned and finding.line is not None:
-                out.append((p, 1))
-        return out
+        for kind, items in (("planted", self.planted), ("indicator", self.indicators)):
+            for item in items:
+                strength = self._match_strength(finding, item, hashes, raw)
+                if strength:
+                    distance = abs(item.line - finding.line) if finding.line is not None else 0
+                    out.append((item, kind, strength, distance))
+        return sorted(out, key=lambda c: (-c[2], c[3]))
+
+    def match_indicator(self, finding: Finding) -> Optional[Indicator]:
+        """The finding's best interpretation, if that interpretation is an indicator."""
+        ranked = self.candidates(finding)
+        if ranked and ranked[0][1] == "indicator":
+            return ranked[0][0]
+        return None
 
     def match_planted(self, finding: Finding, claimed: Optional[set] = None) -> Optional[PlantedSecret]:
         claimed = claimed or set()
-        ranked = sorted(self.candidates(finding), key=lambda pair: -pair[1])
-        for planted, _ in ranked:
+        ranked = [c for c in self.candidates(finding) if c[1] == "planted"]
+        for planted, _, _, _ in ranked:
             if planted.id not in claimed:
                 return planted
         return ranked[0][0] if ranked else None
@@ -135,11 +164,17 @@ def _assign(findings: List[Finding], index: _Index):
     """
     hits: Dict[str, PlantedSecret] = {}
     decoys_triggered: List[str] = []
+    indicators_reported: List[str] = []
     false_positives: List[Finding] = []
     claimed: set = set()
 
     ordered = sorted(findings, key=lambda f: (f.line is None, f.file or ""))
     for finding in ordered:
+        indicator = index.match_indicator(finding)
+        if indicator is not None:
+            # A credential identifier, not a credential. Scored on neither axis.
+            indicators_reported.append(indicator.id)
+            continue
         planted = index.match_planted(finding, claimed)
         if planted is not None and planted.id not in claimed:
             claimed.add(planted.id)
@@ -152,12 +187,12 @@ def _assign(findings: List[Finding], index: _Index):
         if decoy is not None:
             decoys_triggered.append(decoy.id)
         false_positives.append(finding)
-    return hits, decoys_triggered, false_positives
+    return hits, decoys_triggered, false_positives, sorted(set(indicators_reported))
 
 
 def score_run(manifest: Manifest, run: ToolRun, findings: List[Finding], index: _Index) -> RunScore:
     caps = set(run.capabilities)
-    hits, decoys_triggered, false_positives = _assign(findings, index)
+    hits, decoys_triggered, false_positives, indicators_reported = _assign(findings, index)
 
     overall = Metrics()
     by_type = _metrics_bucket()
@@ -211,6 +246,7 @@ def score_run(manifest: Manifest, run: ToolRun, findings: List[Finding], index: 
         false_positives=false_positives,
         missed_planted_ids=missed,
         decoys_triggered=sorted(set(decoys_triggered)),
+        indicators_reported=indicators_reported,
     )
 
 
@@ -334,6 +370,7 @@ def score(manifest: Manifest, run_index: RunIndex, results_dir: Path) -> ScoreCa
         coverage=coverage,
         planted_total=manifest.stats.planted_total,
         decoy_total=manifest.stats.decoy_total,
+        indicator_total=manifest.stats.indicator_total,
     )
 
 
@@ -352,7 +389,7 @@ def verify_manifest_values(manifest: Manifest) -> List[str]:
     ``ssbench verify --seed``, which regenerates and compares the HEAD commit).
     """
     bad = []
-    for item in (*manifest.planted, *manifest.decoys):
+    for item in (*manifest.planted, *manifest.decoys, *manifest.indicators):
         if item.value.startswith("<redacted"):
             continue
         if sha256_hex(item.value) != item.value_sha256:

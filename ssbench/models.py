@@ -59,9 +59,36 @@ class Decoy(BaseModel):
     reason: str
 
 
+class Indicator(BaseModel):
+    """A credential *identifier* planted in the corpus — not a secret.
+
+    An AWS access key id is the canonical case: it is half of a credential and
+    a genuine investigative signal, but it is transmitted in cleartext by
+    design and authenticates nothing on its own. It is scored on neither axis.
+    Failing to report one is not a miss (it is not in ``planted_total``);
+    reporting one is not a false positive (unlike a decoy). Tools that do
+    report them get a separate, uncounted tally, because "which tools surface
+    key ids" is a real question — it is just not a recall question.
+    """
+
+    id: str
+    secret_type: str
+    value: str
+    value_sha256: str
+    branch: str
+    file: str
+    line: int
+    placement: str
+    obfuscation: str
+    introduced_commit: Optional[str] = None
+    present_at_head: bool = True
+    reason: str = ""
+
+
 class ManifestStats(BaseModel):
     planted_total: int
     decoy_total: int
+    indicator_total: int = 0
     by_category: Dict[str, int]
     by_secret_type: Dict[str, int]
     by_placement: Dict[str, int]
@@ -80,6 +107,7 @@ class Manifest(BaseModel):
     stats: ManifestStats
     planted: List[PlantedSecret]
     decoys: List[Decoy]
+    indicators: List[Indicator] = Field(default_factory=list)
 
 
 # --------------------------------------------------------------------------- #
@@ -179,6 +207,11 @@ class RunScore(BaseModel):
     false_positives: List[Finding]
     missed_planted_ids: List[str]
     decoys_triggered: List[str]
+    indicators_reported: List[str] = Field(
+        default_factory=list,
+        description="credential identifiers (e.g. AWS access key ids) this run "
+        "reported. Neither a true positive nor a false positive — informational.",
+    )
 
 
 class CoverageAnalysis(BaseModel):
@@ -214,3 +247,4 @@ class ScoreCard(BaseModel):
     coverage: Optional[CoverageAnalysis] = None
     planted_total: int
     decoy_total: int
+    indicator_total: int = 0

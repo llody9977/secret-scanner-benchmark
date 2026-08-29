@@ -22,8 +22,9 @@ runnable.
 be used.
 
 **Latest results:** [docs/RESULTS.md](docs/RESULTS.md) — best single-tool recall
-91% (Titus); Betterleaks strictly dominates Gitleaks; two tools reach 44/45; one
-obfuscated secret in history is caught by nothing.
+95% (Betterleaks); no tool has a unique catch; two tools reach 40/41; one
+obfuscated secret in history is caught by nothing; every false positive in the
+field is a planted decoy.
 
 ---
 
@@ -78,8 +79,18 @@ after the key.
 base64 PNG, and the literal example keys from provider docs. A scanner must
 **not** report these; the false-positive count is meaningless without them.
 
-Current corpus: **45 planted secrets, 18 decoys** (37 visible at HEAD, 8
-history-only). Regenerate `corpus/manifest.yaml` after changing the plan:
+**Indicators** — AWS access key IDs (`AKIA…`, `ASIA…`). These are planted, but
+as a third population that is scored on neither axis. An access key ID is a
+credential *identifier*, not an authenticator: AWS sends it in cleartext in
+every signed request and it authenticates nothing without the paired secret
+access key, so failing to report one is not a miss and reporting one is not a
+false positive. The 40-character secret access key beside it is the planted
+secret. See [the AWS IAM
+documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html).
+
+Current corpus: **41 planted secrets, 18 decoys, 4 indicators** (34 visible at
+HEAD, 7 history-only). Regenerate `corpus/manifest.yaml` after changing the
+plan:
 
 ```bash
 python generator/generate.py --seed "$(cat corpus/seed)" --output ./bench --record
@@ -140,6 +151,11 @@ so a precise hit claims a duplicate-valued secret before a location-less one.
   run has the capability to see that placement*.
 - **N/A** — a planted secret whose placement needs a capability the run lacks
   (history for a working-tree-only tool). Never scored as a miss.
+- **Indicator** — a finding resolving to a credential identifier rather than a
+  credential. Scored on neither axis and tallied in `indicators_reported`.
+  Indicators are matched *before* planted secrets, so a hit on an AWS access
+  key ID cannot be credited by line proximity to the secret access key beside
+  it.
 
 Output: `results/results.json`, `results/results.md`, and a console table.
 Across the default-mode runs it also reports the two numbers the analysis turns
