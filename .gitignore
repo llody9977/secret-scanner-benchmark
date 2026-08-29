@@ -1,0 +1,33 @@
+# Generated scannable corpus (build artifact — regenerate from corpus/seed)
+/bench/
+/build-corpus/
+/results/
+/scan-output/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Tooling — no AI/LLM artifacts in the repo
+.claude/
+CLAUDE.md
+.cursor/
+.aider*
+.serena/
+.aider.*
+.mcp.json

@@ -1,0 +1,921 @@
+# Ground truth for the secret-scanner benchmark corpus.
+# Regenerate the full manifest (with values) from the committed seed:
+#   python generator/generate.py --seed "$(cat corpus/seed)" --output ./bench
+# Values are redacted here on purpose (synthetic, but they match real
+# secret patterns). value_sha256 is the real hash. See SECURITY.md.
+schema_version: '1.0'
+seed: 20260829
+generator_version: 0.1.0
+created: '2025-01-01T00:00:00Z'
+corpus_head_commit: 07e07fadb192ef0610047cc82b404e441d15d44d
+branches:
+- main
+- feature/payments
+placement_requires:
+  working-tree: working-tree
+  dotenv: working-tree
+  json-fixture: working-tree
+  jupyter-output: working-tree
+  dockerfile-env: working-tree
+  terraform-vars: working-tree
+  ci-log-artifact: working-tree
+  minified-bundle: working-tree
+  base64-blob: working-tree
+  history-depth: history
+  reverted-commit: history
+  non-default-branch: history
+stats:
+  planted_total: 45
+  decoy_total: 18
+  by_category:
+    generic: 13
+    private-key: 5
+    structured: 27
+  by_secret_type:
+    anthropic-api-key: 2
+    aws-access-key-id: 4
+    aws-secret-access-key: 4
+    cohere-api-key: 1
+    deepseek-api-key: 1
+    generic-high-entropy-b64: 1
+    generic-high-entropy-hex: 2
+    github-token-gho: 1
+    github-token-ghp: 3
+    github-token-ghs: 1
+    github-token-github_pat: 1
+    google-api-key: 1
+    groq-api-key: 1
+    huggingface-token: 1
+    internal-service-key: 1
+    jwt-hs256: 1
+    low-entropy-password: 1
+    mongodb-uri: 1
+    npm-access-token: 1
+    openai-api-key: 2
+    openai-project-key: 1
+    postgres-uri: 2
+    private-key-ec: 2
+    private-key-ed25519-headerless: 1
+    private-key-openssh: 1
+    private-key-rsa: 1
+    sendgrid-api-key: 1
+    slack-bot-token: 1
+    slack-webhook-url: 1
+    stripe-secret-key: 2
+    stripe-webhook-secret: 1
+  by_placement:
+    base64-blob: 1
+    ci-log-artifact: 4
+    dockerfile-env: 2
+    dotenv: 6
+    history-depth: 4
+    json-fixture: 5
+    jupyter-output: 1
+    minified-bundle: 3
+    non-default-branch: 2
+    reverted-commit: 2
+    terraform-vars: 4
+    working-tree: 11
+  present_at_head: 37
+  history_only: 8
+planted:
+- id: gh-pat-valid
+  secret_type: github-token-ghp
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 001b51420b647f09d01c985df36725e00bb39bbf40c891ce6ca8ddacd2290c43
+  checksum_valid: true
+  branch: main
+  file: src/app/config.py
+  line: 8
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: personal access token; CRC32 checksum is correct.
+- id: gh-pat-broken
+  secret_type: github-token-ghp
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: a7c3a8e78107647a32d736ffee6ebbca58c43dd4685a66b558a5a81414cde7a7
+  checksum_valid: false
+  branch: main
+  file: src/app/config.py
+  line: 11
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: personal access token; checksum deliberately broken. A validating scanner should reject this;
+    a regex-only scanner will still match.
+- id: gh-server-valid
+  secret_type: github-token-ghs
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 11aaf7bdeb8aeda1aa347a59fa35ad578e7ac6abcff22be8d8b083a520633ec2
+  checksum_valid: true
+  branch: main
+  file: deploy/.env.production
+  line: 5
+  placement: dotenv
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: server-to-server token; CRC32 checksum is correct.
+- id: gh-oauth-broken
+  secret_type: github-token-gho
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: fd82e2a614a3933939a3d3fefa80137ef2c7653517077c0be6049dd66890e119
+  checksum_valid: false
+  branch: main
+  file: tests/fixtures/session.json
+  line: 4
+  placement: json-fixture
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: OAuth access token; checksum deliberately broken. A validating scanner should reject this; a
+    regex-only scanner will still match.
+- id: gh-fine-grained
+  secret_type: github-token-github_pat
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: df6a4c50850154b22181bd3c471fa107576dce0b540933de05bb5ef76d38c319
+  checksum_valid: null
+  branch: main
+  file: infra/prod.tfvars
+  line: 5
+  placement: terraform-vars
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: fine-grained PAT; longer body, no separately verifiable checksum here.
+- id: aws-key-plain
+  secret_type: aws-access-key-id
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 4f6b22aa5698777c4b86a42b410a761a7c041acf5ac295fe62a4c6fa75fdabbb
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 14
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: no checksum exists for this format; account id 0 is embedded and decodes to 0.
+- id: aws-key-plain-companion
+  secret_type: aws-secret-access-key
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: bd780976c3d95ce1479269f8a186532aa9ce0d5a506c39b488f2c854106f467e
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 17
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: 40-char base64, no prefix; detection relies on entropy + context.
+- id: aws-key-concat
+  secret_type: aws-access-key-id
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: e1d134f0c55fcfefd1621dadf5dd5a3cd1eddff8f7756796a4a0a56c67f92adb
+  checksum_valid: null
+  branch: main
+  file: public/assets/app.min.js
+  line: 1
+  placement: minified-bundle
+  obfuscation: concat
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: no checksum exists for this format; account id 0 is embedded and decodes to 0.
+- id: aws-key-concat-companion
+  secret_type: aws-secret-access-key
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 68b6c208f3699bb360fc9060b84d7f86374f88e28f518292b7370521c80d896b
+  checksum_valid: null
+  branch: main
+  file: public/assets/app.min.js
+  line: 1
+  placement: minified-bundle
+  obfuscation: concat
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: 40-char base64, no prefix; detection relies on entropy + context.
+- id: aws-temp-key
+  secret_type: aws-access-key-id
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 64f4218e3ea4e2428bc7990f582696a9b4815608e16afc397b208627732c521c
+  checksum_valid: null
+  branch: main
+  file: artifacts/deploy.log
+  line: 5
+  placement: ci-log-artifact
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: no checksum exists for this format; account id 0 is embedded and decodes to 0.
+- id: aws-temp-key-companion
+  secret_type: aws-secret-access-key
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: b742d5cc7cc7d23e9464066f45152fe22f4b833ed02f88d7172fb5c617befd2e
+  checksum_valid: null
+  branch: main
+  file: artifacts/deploy.log
+  line: 8
+  placement: ci-log-artifact
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: 40-char base64, no prefix; detection relies on entropy + context.
+- id: stripe-secret
+  secret_type: stripe-secret-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 9942779eb295c785a3d0254bff075162701145b219cc4a9e96320faceead6b58
+  checksum_valid: null
+  branch: main
+  file: deploy/.env.production
+  line: 8
+  placement: dotenv
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: test-mode secret key; live-mode format is identical with sk_live_.
+- id: stripe-webhook
+  secret_type: stripe-webhook-secret
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 63471d9d2f2aeffd34c2c1822eea1bec1839594250b005e2e5c1cbd5f8c630b1
+  checksum_valid: null
+  branch: main
+  file: infra/prod.tfvars
+  line: 8
+  placement: terraform-vars
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: webhook signing secret.
+- id: slack-bot
+  secret_type: slack-bot-token
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: f0dedab9a2e0946b37d29fa37b2fd9f2c2fd80f75c0f3d3531ebadfdd6a89fc8
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 20
+  placement: working-tree
+  obfuscation: meaningless-var
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: numeric team/bot ids zeroed; only the trailing segment is random.
+- id: slack-webhook
+  secret_type: slack-webhook-url
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 860ea6f1b7dc6f531562be4f6155e1f47f815fb6ddbb55480c07af4126828a47
+  checksum_valid: null
+  branch: main
+  file: Dockerfile
+  line: 6
+  placement: dockerfile-env
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: incoming-webhook URL; the path tail is the secret.
+- id: sendgrid
+  secret_type: sendgrid-api-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 2607ff7224fc7761fd4733c2df8c85e65b602ddf85ae4b8c8e5359626e76bba1
+  checksum_valid: null
+  branch: main
+  file: tests/fixtures/session.json
+  line: 5
+  placement: json-fixture
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: ''
+- id: google-api
+  secret_type: google-api-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 52967a699b424487aa813a5ca29553f61424ef83690760b8abb0d69baaf16140
+  checksum_valid: null
+  branch: main
+  file: notebooks/explore.ipynb
+  line: 12
+  placement: jupyter-output
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: ''
+- id: npm-token
+  secret_type: npm-access-token
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 441f3f66e2977c15fe5d1d68150bf4af5b2eb56a6fadd89a33de655ae7d92787
+  checksum_valid: null
+  branch: main
+  file: deploy/.env.production
+  line: 11
+  placement: dotenv
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: granular access token format; legacy UUID form would be cf3fd8e7-0842-7694-4cb0-96c9ca935c3a.
+- id: openai-legacy
+  secret_type: openai-api-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: c2f74c55e107c5d1592c9f227ee36041b3fe43e9faf2871bec8003ef91a4f99f
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 23
+  placement: working-tree
+  obfuscation: value-next-line
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: legacy sk- format.
+- id: openai-proj
+  secret_type: openai-project-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: d40aa28411d8db6c3261b1a563de060474247eeec5e54593a826fe4a4751c0ef
+  checksum_valid: null
+  branch: main
+  file: deploy/.env.production
+  line: 14
+  placement: dotenv
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: sk-proj- format with the literal infix real keys carry.
+- id: anthropic
+  secret_type: anthropic-api-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: ffca83615b96948ba1186c831d66b23e90a7c67485a348ba2bddcb0828f1ad5b
+  checksum_valid: null
+  branch: main
+  file: infra/prod.tfvars
+  line: 11
+  placement: terraform-vars
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: ''
+- id: huggingface
+  secret_type: huggingface-token
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: b3467daf106fda37ff9830206a7501d01d357791268043db393417b5dffb365b
+  checksum_valid: null
+  branch: main
+  file: artifacts/deploy.log
+  line: 11
+  placement: ci-log-artifact
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: ''
+- id: deepseek
+  secret_type: deepseek-api-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: b9037e0dfdff6889b1b9e3b5eb17951f0b178fb887dd50ac32398472ff2591fa
+  checksum_valid: null
+  branch: main
+  file: tests/fixtures/session.json
+  line: 6
+  placement: json-fixture
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: sk- + 32 hex; collides in shape with other sk- formats.
+- id: groq
+  secret_type: groq-api-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: d9361508689b0671ec29ad927e25555e012695eb89ca116cd4baff5c258fa7ce
+  checksum_valid: null
+  branch: main
+  file: public/assets/app.min.js
+  line: 1
+  placement: minified-bundle
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: ''
+- id: cohere-noprefix
+  secret_type: cohere-api-key
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: e0336185af3448312292e7e37966704ebbfdda47f7a0d531e60fc8acd09ee99d
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 28
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: no distinctive prefix; detection depends on the variable name.
+- id: rsa-key
+  secret_type: private-key-rsa
+  category: private-key
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: f539a6fde02755f198c8c80b074618d1e6854d57de94b6edbea4ed11ec67653b
+  checksum_valid: null
+  branch: main
+  file: deploy/.env.production
+  line: 17
+  placement: dotenv
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: checked-in synthetic keypair; grants access to nothing.
+- id: ed25519-key-headerless
+  secret_type: private-key-ed25519-headerless
+  category: private-key
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 5a360aff59b6a204aa950ebc8f02cee51c4ea22cda949b54dbf937163096adc7
+  checksum_valid: null
+  branch: main
+  file: config/bootstrap.b64
+  line: 1
+  placement: base64-blob
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: PEM armour stripped; defeats header-anchored regex rules.
+- id: ec-key
+  secret_type: private-key-ec
+  category: private-key
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 3d08e6752b8d14add80357c4a2dfd2477706066f2cc633300361d0ed6e76f615
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 31
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: checked-in synthetic keypair; grants access to nothing.
+- id: openssh-key
+  secret_type: private-key-openssh
+  category: private-key
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 0be4cbce390f08a8447b1e4828a5c92e0c7f0cd0561228e3629ecc824c922bf1
+  checksum_valid: null
+  branch: main
+  file: tests/fixtures/session.json
+  line: 7
+  placement: json-fixture
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: checked-in synthetic keypair; grants access to nothing.
+- id: jwt
+  secret_type: jwt-hs256
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: b66836e814154b889e8307fd9386d607d8f9971487f96ba5941cbd0acf41fa02
+  checksum_valid: null
+  branch: main
+  file: artifacts/deploy.log
+  line: 14
+  placement: ci-log-artifact
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: HS256 JWT; signature is random bytes and verifies against nothing.
+- id: postgres-uri
+  secret_type: postgres-uri
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 21bf4186bba6d2e7250390919783d4d60f80690241544a44fec7a17dbad51276
+  checksum_valid: null
+  branch: main
+  file: deploy/.env.production
+  line: 47
+  placement: dotenv
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: password is the sensitive part of the URI.
+- id: postgres-uri-lowent
+  secret_type: postgres-uri
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: b1092ab9e8149593a623bb6c5edfa0ab3f9c536ee1004a4a2e1d3d4c1735b1fd
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 38
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: false
+  notes: low-entropy password; expected miss for entropy-only detection.
+- id: mongodb-uri
+  secret_type: mongodb-uri
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 6ebf121d2ebbed79bfef30d1266a829a9937697476e4128e3dd8b409cf6bd8f7
+  checksum_valid: null
+  branch: main
+  file: infra/prod.tfvars
+  line: 14
+  placement: terraform-vars
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: ''
+- id: generic-hex
+  secret_type: generic-high-entropy-hex
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 3cfe9cb7aff1c25ca28b50faf7cd5325250c5b2f0568c219179897fa841a35d4
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 41
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: true
+  notes: 64 hex chars, no provider identity; entropy + context only.
+- id: generic-b64
+  secret_type: generic-high-entropy-b64
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: c816b0f7831f6ab87ba835a84471b44b22e0fa4ae5e6be2588cb51ad8d74c5e3
+  checksum_valid: null
+  branch: main
+  file: Dockerfile
+  line: 9
+  placement: dockerfile-env
+  obfuscation: plain
+  introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
+  present_at_head: true
+  expected_detectable: true
+  notes: 43-char base64url, no provider identity.
+- id: internal-key
+  secret_type: internal-service-key
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: d8ef05262a099a4dc5b233a6894bbdc9a2167a5de5dd4c5691f2ff09a17a472e
+  checksum_valid: null
+  branch: main
+  file: tests/fixtures/session.json
+  line: 8
+  placement: json-fixture
+  obfuscation: meaningless-var
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  expected_detectable: true
+  notes: internal service credential; no vendor shape at all.
+- id: low-entropy-pw
+  secret_type: low-entropy-password
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: a5c95e887dbf1c0a49fd01bced847d64a1a134ec2a7d09332c85d361aeb0f9b8
+  checksum_valid: null
+  branch: main
+  file: src/app/config.py
+  line: 44
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  expected_detectable: false
+  notes: 'the canonical case nothing catches: a memorable password.'
+- id: hist-aws
+  secret_type: aws-access-key-id
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 40cc8cd734ecab97c7b4648a9c394ba2c9d135cd4bd12b174c1143f149648877
+  checksum_valid: null
+  branch: main
+  file: src/app/legacy_settings.py
+  line: 8
+  placement: history-depth
+  obfuscation: plain
+  introduced_commit: 9e2c6310bd0f78c8335afd6775259ec9db7f17cc
+  present_at_head: false
+  expected_detectable: true
+  notes: no checksum exists for this format; account id 0 is embedded and decodes to 0.
+- id: hist-aws-companion
+  secret_type: aws-secret-access-key
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: ea6344a3eaf527d1d69cec3042ab6943502ea7681e993878604892c8dfac9cde
+  checksum_valid: null
+  branch: main
+  file: src/app/legacy_settings.py
+  line: 11
+  placement: history-depth
+  obfuscation: plain
+  introduced_commit: 9e2c6310bd0f78c8335afd6775259ec9db7f17cc
+  present_at_head: false
+  expected_detectable: true
+  notes: 40-char base64, no prefix; detection relies on entropy + context.
+- id: hist-gh-valid
+  secret_type: github-token-ghp
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 388dd07828fcef61ec5d7ac556b4ad77b15effdaca871cb2614817afbd9d4c8b
+  checksum_valid: true
+  branch: main
+  file: src/app/legacy_settings.py
+  line: 14
+  placement: history-depth
+  obfuscation: plain
+  introduced_commit: 9e2c6310bd0f78c8335afd6775259ec9db7f17cc
+  present_at_head: false
+  expected_detectable: true
+  notes: personal access token; CRC32 checksum is correct.
+- id: hist-openai
+  secret_type: openai-api-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 23c589fe96e3bead4d5ab8df7ade2959573f18bf75cac5a562d461ea8a674c8d
+  checksum_valid: null
+  branch: main
+  file: src/app/legacy_settings.py
+  line: 17
+  placement: history-depth
+  obfuscation: array-join
+  introduced_commit: 9e2c6310bd0f78c8335afd6775259ec9db7f17cc
+  present_at_head: false
+  expected_detectable: true
+  notes: legacy sk- format.
+- id: revert-stripe
+  secret_type: stripe-secret-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 43eaeb73b9a315785340897219aa3e1285f20bf14eb936517752b41deb7aa96d
+  checksum_valid: null
+  branch: main
+  file: src/app/hotfix.py
+  line: 8
+  placement: reverted-commit
+  obfuscation: plain
+  introduced_commit: 75d4c484b9181e249817af30e88c9757dbc9216f
+  present_at_head: false
+  expected_detectable: true
+  notes: test-mode secret key; live-mode format is identical with sk_live_.
+- id: revert-generic
+  secret_type: generic-high-entropy-hex
+  category: generic
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: b859958f24a73fa5ee3e7318e28d93c7098d438d5ca06a721903cad688b6d532
+  checksum_valid: null
+  branch: main
+  file: src/app/hotfix.py
+  line: 11
+  placement: reverted-commit
+  obfuscation: plain
+  introduced_commit: 75d4c484b9181e249817af30e88c9757dbc9216f
+  present_at_head: false
+  expected_detectable: true
+  notes: 64 hex chars, no provider identity; entropy + context only.
+- id: branch-anthropic
+  secret_type: anthropic-api-key
+  category: structured
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 1001add90dccb2266d11fca54502243c191162120262e2bb7fb2a84eec867d0e
+  checksum_valid: null
+  branch: feature/payments
+  file: src/app/payments.py
+  line: 8
+  placement: non-default-branch
+  obfuscation: plain
+  introduced_commit: a9abb28206cd3a212714e4cc26189ad2bb454a03
+  present_at_head: false
+  expected_detectable: true
+  notes: ''
+- id: branch-ec384
+  secret_type: private-key-ec
+  category: private-key
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 4f5cc49c00c1cc9a9b436dfa422eed9528649c11034b557c659a6b9b53978556
+  checksum_valid: null
+  branch: feature/payments
+  file: src/app/payments.py
+  line: 11
+  placement: non-default-branch
+  obfuscation: plain
+  introduced_commit: a9abb28206cd3a212714e4cc26189ad2bb454a03
+  present_at_head: false
+  expected_detectable: true
+  notes: checked-in synthetic keypair; grants access to nothing.
+decoys:
+- id: decoy-00
+  decoy_type: uuid4
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: d01444d4666b5cdca2ea0315115424c268ba0b5914eeda0c8b80928112fc135e
+  branch: main
+  file: src/app/identifiers.py
+  line: 8
+  placement: decoy-file
+  reason: random UUID; high entropy, carries no secret
+- id: decoy-01
+  decoy_type: uuid4
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: a147edb9d5b73222c9385549c879b6a750b85402aaae50a8fb5a95e561407c39
+  branch: main
+  file: src/app/identifiers.py
+  line: 11
+  placement: decoy-file
+  reason: random UUID in a log-like context
+- id: decoy-02
+  decoy_type: git-sha1
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 519dfe4e5009a3e24db8a6c72708f7c37958db91ef51713c627ac3654d23d3da
+  branch: main
+  file: src/app/identifiers.py
+  line: 14
+  placement: decoy-file
+  reason: 40 hex chars is a git object id, not a token
+- id: decoy-03
+  decoy_type: git-sha256
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: d0e57340742854eec9fa2562078fe4e8dce8f341d18e87f569355fc2dd6091e8
+  branch: main
+  file: src/app/identifiers.py
+  line: 17
+  placement: decoy-file
+  reason: sha256 content digest
+- id: decoy-04
+  decoy_type: npm-integrity
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: f3371b42d75bf3cc419518e24a3ab9b2620b2fec54d37e1cc7516f4706528d67
+  branch: main
+  file: src/app/identifiers.py
+  line: 20
+  placement: decoy-file
+  reason: subresource-integrity hash from a lockfile
+- id: decoy-05
+  decoy_type: docker-image-digest
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 42425b852c0f1e41104045e5f73e8ddd2acf578408d92c508b5e7e1826b9b2c1
+  branch: main
+  file: src/app/identifiers.py
+  line: 23
+  placement: decoy-file
+  reason: OCI image digest pinned in a Dockerfile
+- id: decoy-06
+  decoy_type: base64-png
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 28e5b7eeca75e067103bc28c8750c07ffa826ec4e9b7cd0813b368f780bdad7c
+  branch: main
+  file: src/app/identifiers.py
+  line: 26
+  placement: decoy-file
+  reason: base64 of a 1x1 PNG; a real asset payload
+- id: decoy-07
+  decoy_type: hex-color-run
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: baf6541a10cd9645478de873647126aa1501389a0e311497dafca9e939fdafe6
+  branch: main
+  file: src/app/identifiers.py
+  line: 29
+  placement: decoy-file
+  reason: short hex string that entropy rules over-weight
+- id: decoy-08
+  decoy_type: aws-doc-example-id
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3
+  branch: main
+  file: src/app/identifiers.py
+  line: 32
+  placement: decoy-file
+  reason: the published AWS docs example; correct behaviour is to ignore it
+- id: decoy-09
+  decoy_type: aws-doc-example-secret
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 78314b11be2e581549ac1c4f616563fad3fdf0c3b71678f6e2299182080e0598
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 8
+  placement: decoy-file
+  reason: the published AWS docs example secret; allowlisted by design
+- id: decoy-10
+  decoy_type: jwt-io-sample
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 7f75367e7881255134e1375e723d1dea8ad5f6a4fdb79d938df1f1754a830606
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 11
+  placement: decoy-file
+  reason: the jwt.io demo token; appears in countless READMEs
+- id: decoy-11
+  decoy_type: placeholder-your-key
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 3b2dcaf24ae9d888ee7462d4d6441791455ae2dc58b6811600c119778fc40263
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 14
+  placement: decoy-file
+  reason: literal placeholder text
+- id: decoy-12
+  decoy_type: placeholder-angle
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 9804ec9e25b2f0b1b472860045106b2ae42749c4c1c3692f1223fa1765728d2e
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 17
+  placement: decoy-file
+  reason: angle-bracket placeholder
+- id: decoy-13
+  decoy_type: placeholder-env-ref
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 9b6d39e19506b826607e73ef88d67fc69e2e800d01cefe53a75d23f26227f6b3
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 20
+  placement: decoy-file
+  reason: shell variable reference, not a value
+- id: decoy-14
+  decoy_type: placeholder-changeme
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 057ba03d6c44104863dc7361fe4578965d1887360f90a0895882e58a6248fc86
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 23
+  placement: decoy-file
+  reason: obvious non-secret default
+- id: decoy-15
+  decoy_type: example-key-literal
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: ba92f39f3d1f43dbdd2eecf78e5c66b297d1b9983ff7f34671b0c587def0e8da
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 26
+  placement: decoy-file
+  reason: Stripe publishable-style literal built entirely from zeros
+- id: decoy-16
+  decoy_type: lorem-high-entropy
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: baa86f5c8dadc27e92c0e261c5fcdd6c2e2788bfc29b5bff5750349445005fc0
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 29
+  placement: decoy-file
+  reason: random-looking build hash used for cache busting
+- id: decoy-17
+  decoy_type: certificate-pem
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: 91ff633cf2ff265654be198aba7636f097638899e9f5ecf88d6265b56b4d4a04
+  branch: main
+  file: src/app/vendor_samples.py
+  line: 32
+  placement: decoy-file
+  reason: a certificate is public material; not a private key

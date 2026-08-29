@@ -1,0 +1,187 @@
+name: benchmark
+
+# Builds the synthetic corpus, runs every free/self-hostable scanner against it
+# in an isolated job, and scores the results against corpus/manifest.yaml.
+#
+# Design constraints (from the article, section four):
+#   * one job per tool so a single failure does not mask the rest (fail-fast: false)
+#   * fetch-depth: 0 so history-capable tools actually see history
+#   * every verification-capable tool runs twice: verified-only AND all-results
+#   * SARIF/JSON per tool uploaded as an artifact, then scored by scoring/score.py
+#   * every action and tool pinned to an exact version, recorded in the output
+#   * no repository secret is ever injected — the corpus is the only input
+#
+# Actions are pinned to release tags here for readability; for production use,
+# repin each to its 40-char commit SHA.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ssbench/**"
+      - "generator/**"
+      - "scoring/**"
+      - "corpus/seed"
+      - ".github/workflows/benchmark.yml"
+  schedule:
+    # Rulesets drift; re-run monthly so a stale result is obvious.
+    - cron: "0 6 1 * *"
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+  GITLEAKS_VERSION: "8.28.0"
+  TRUFFLEHOG_VERSION: "3.90.9"
+  DETECT_SECRETS_VERSION: "1.5.0"
+
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install ssbench
+        run: pip install -e .
+      - name: Generate corpus
+        run: |
+          SEED="$(cat corpus/seed)"
+          echo "seed=$SEED" >> "$GITHUB_STEP_SUMMARY"
+          python generator/generate.py --seed "$SEED" --output ./bench
+      - name: Fail if the committed manifest is stale
+        run: |
+          RECORDED="$(python -c "import yaml,sys; print(yaml.safe_load(open('corpus/manifest.yaml'))['corpus_head_commit'])")"
+          FRESH="$(python -c "import yaml,sys; print(yaml.safe_load(open('bench/manifest.yaml'))['corpus_head_commit'])")"
+          echo "recorded=$RECORDED fresh=$FRESH"
+          test "$RECORDED" = "$FRESH" || {
+            echo "::error::corpus/manifest.yaml is out of date — regenerate with: python generator/generate.py --seed \$(cat corpus/seed) --output ./bench --record"
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4.4.3
+        with:
+          name: corpus
+          path: bench/
+          include-hidden-files: true
+          retention-days: 7
+
+  scan:
+    needs: generate
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: [gitleaks, trufflehog, detect-secrets]
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/download-artifact@v4.1.8
+        with:
+          name: corpus
+          path: bench
+      - run: mkdir -p scan-output
+
+      # --- gitleaks: regex + entropy, walks history, no verification ----------
+      - name: gitleaks
+        if: matrix.tool == 'gitleaks'
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version | tee scan-output/gitleaks.version
+          # 'gitleaks git' walks full history; exit code is non-zero on findings.
+          gitleaks git ./bench --report-format json --report-path scan-output/gitleaks.json --no-banner --exit-code 0
+
+      # --- trufflehog: regex detectors + live verification ------------------
+      - name: trufflehog
+        if: matrix.tool == 'trufflehog'
+        run: |
+          curl -sSL "https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/trufflehog_${TRUFFLEHOG_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin trufflehog
+          trufflehog --version 2>&1 | tee scan-output/trufflehog.version
+          # Run 1: all results (unverified included) — the correct mode for a synthetic corpus.
+          trufflehog git file://./bench --json --no-update --results=verified,unknown,unverified \
+            > scan-output/trufflehog-all.json || true
+          # Run 2: verified only — every synthetic secret is non-live, so this is
+          # expected to be ~empty. Reported to show the benchmarking trap explicitly.
+          trufflehog git file://./bench --json --no-update --only-verified \
+            > scan-output/trufflehog-verified.json || true
+
+      # --- detect-secrets: regex + entropy + keyword, working tree only ------
+      - name: detect-secrets
+        if: matrix.tool == 'detect-secrets'
+        run: |
+          pip install "detect-secrets==${DETECT_SECRETS_VERSION}"
+          detect-secrets --version | tee scan-output/detect-secrets.version
+          # Scans the checked-out tree (HEAD), not history — by design.
+          ( cd bench && detect-secrets scan --all-files ) > scan-output/detect-secrets.json
+
+      - uses: actions/upload-artifact@v4.4.3
+        with:
+          name: scan-${{ matrix.tool }}
+          path: scan-output/
+          retention-days: 7
+
+  score:
+    needs: scan
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -e .
+      - uses: actions/download-artifact@v4.1.8
+        with:
+          name: corpus
+          path: bench
+      - uses: actions/download-artifact@v4.1.8
+        with:
+          pattern: scan-*
+          merge-multiple: true
+          path: scan-output
+      - name: Build the run index
+        run: |
+          python - <<'PY'
+          import pathlib, yaml
+          out = pathlib.Path("scan-output")
+
+          def version(name: str) -> str:
+              f = out / f"{name}.version"
+              return f.read_text().strip().splitlines()[-1] if f.exists() else "unknown"
+
+          runs = []
+          if (out / "gitleaks.json").exists():
+              runs.append(dict(tool="gitleaks", version=version("gitleaks"), parser="gitleaks",
+                               mode="default", capabilities=["working-tree", "history"],
+                               path="gitleaks.json"))
+          if (out / "trufflehog-all.json").exists():
+              runs.append(dict(tool="trufflehog", version=version("trufflehog"), parser="trufflehog",
+                               mode="all-results", capabilities=["working-tree", "history", "verification"],
+                               path="trufflehog-all.json"))
+          if (out / "trufflehog-verified.json").exists():
+              runs.append(dict(tool="trufflehog", version=version("trufflehog"), parser="trufflehog",
+                               mode="verified-only", capabilities=["working-tree", "history", "verification"],
+                               path="trufflehog-verified.json", counts_toward_coverage=False))
+          if (out / "detect-secrets.json").exists():
+              runs.append(dict(tool="detect-secrets", version=version("detect-secrets"), parser="detect-secrets",
+                               mode="default", capabilities=["working-tree"],
+                               path="detect-secrets.json"))
+
+          (out / "index.yaml").write_text(yaml.safe_dump({"runs": runs}, sort_keys=False))
+          print(yaml.safe_dump({"runs": runs}, sort_keys=False))
+          PY
+      - name: Score
+        run: |
+          python scoring/score.py --manifest ./bench/manifest.yaml --results ./scan-output --out ./results
+          {
+            echo "## Benchmark results"
+            echo
+            cat results/results.md
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4.4.3
+        with:
+          name: results
+          path: results/
+          retention-days: 30
