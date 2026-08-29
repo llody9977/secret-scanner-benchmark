@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Sixty-Second Credential — Secrets in the Software Supply Chain</title>
+<meta name="description" content="A leaked secret is now exploited faster than any human process can revoke it. The threat, three 2025-26 exposures and what they cost, and the control set that actually moves risk. Part 1 of Secrets in the Software Supply Chain.">
+<meta name="author" content="Secrets in the Software Supply Chain">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#1d4ed8">
+<link rel="canonical" href="https://llody9977.github.io/secret-scanner-benchmark/part-1.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Sixty-Second Credential">
+<meta property="og:description" content="A leaked secret is now exploited faster than any human process can revoke it. The threat, three 2025-26 exposures and what they cost, and the control set that actually moves risk. Part 1 of Secrets in the Software Supply Chain.">
+<meta property="og:url" content="https://llody9977.github.io/secret-scanner-benchmark/part-1.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='25' r='9' fill='none' stroke='white' stroke-width='5'/%3E%3Cpath d='M32 33v18M32 44h8' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/series.css">
+</head>
+<body>
+<div class="page">
+<div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
+<span aria-current="page">Part 1 &middot; Threat</span>
+<a href="part-2.html">Part 2 &middot; Engineering</a>
+<a href="part-3.html">Part 3 &middot; Governance</a></div>
+  <header class="masthead">
+    <p class="kicker">Application Security &middot; Secrets &amp; Machine Identity</p>
+    <h1>The Sixty&#8209;Second Credential</h1>
+    <p class="dek">A leaked secret is now exploited faster than any human process can revoke it. That single fact decides what secret scanning can and cannot do for you.</p>
+    <div class="byline">
+      <span>Part 1 of 3 &middot; Threat and business case</span>
+      <span>Research current to August 2026</span>
+      <span>~5,200 words &middot; 26 min</span>
+    </div>
+  </header>
+
+  <!-- ============ EXECUTIVE SUMMARY ============ -->
+  <section id="summary" style="margin-top:0">
+    <div class="exec">
+      <h2>Executive summary</h2>
+      <ol class="exec-list">
+        <li>Secret exposure is no longer a hygiene problem. It is now a primary path into cloud estates, CI/CD pipelines, and SaaS data. A valid credential does not defeat MFA &mdash; it removes the occasion for it. Interactive authentication already happened upstream when the credential was issued, so presenting the credential never triggers it again.</li>
+        <li>Volume is rising sharply. GitGuardian's <em>State of Secrets Sprawl 2026</em> counted roughly 28.65 million hardcoded secrets added to public GitHub in 2025, up 34 percent year on year &mdash; the largest single-year jump it has recorded. Credentials for AI services rose 81 percent in the same period.<sup class="fn"><a id="fnref-1" href="#fn-1">1</a></sup></li>
+        <li>Automation has compressed the attacker's timeline to near zero. Harvesters watch public commit streams continuously; industry reporting puts the median time from a secret hitting a public repository to first attacker use at under sixty seconds,<sup class="fn"><a id="fnref-2" href="#fn-2">2</a></sup> and Comparitech's controlled honeypot measured first abuse at about one minute.<sup class="fn"><a id="fnref-3" href="#fn-3">3</a></sup> How much of that pipeline is AI rather than ordinary scripted automation is less well evidenced than the timing itself &mdash; section one separates the two.</li>
+        <li>AI has also increased the supply of secrets, though the headline figure is narrower than it is usually quoted. GitGuardian measured <strong>Claude Code-assisted commits in its own dataset</strong> leaking secrets at 3.2 percent against a 1.5 percent baseline across all public commits.<sup class="fn"><a id="fnref-1b" href="#fn-1">1</a></sup> That is one assistant, on one vendor's telemetry &mdash; not a measurement of AI-generated code in general. Separately, the Cloud Security Alliance found AI-generated code introducing security defects in about 45 percent of tasks.<sup class="fn"><a id="fnref-4" href="#fn-4">4</a></sup></li>
+        <li>Placement decides whether scanning prevents or merely observes. Pre-commit and pre-receive scanning are preventive; post-commit scanning is detective. The category is routinely sold as though all of it prevented. Section three sets out the full taxonomy and the evidence for each part's limits.</li>
+        <li>The decisive failure is remediation, not detection. GitGuardian found 64 percent of secrets confirmed valid in 2022 were still valid in January 2026.<sup class="fn"><a id="fnref-1c" href="#fn-1">1</a></sup> Detection without revocation produces a finding, not a risk reduction.</li>
+        <li>A large and rising share of exposure originates outside your own pipeline. Verizon's 2026 <em>Data Breach Investigations Report</em> found third-party involvement in 48 percent of breaches, up from 30 percent.<sup class="fn"><a id="fnref-5" href="#fn-5">5</a></sup> That establishes that third-party involvement is common and growing &mdash; not that your worst incident will originate with a third party.</li>
+        <li>The controls that actually move risk make the secret worthless: short-lived and workload-bound credentials, automated revocation on detection, and a rotation service level agreement with a named owner. Scanning tells you where to point them.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ THE ASYMMETRY ============ -->
+  <section id="asymmetry">
+    <div class="sec-head">
+      <span class="sec-label">The shape of the problem</span>
+      <h2>Three numbers that set the strategy</h2>
+    </div>
+    <div class="tiles">
+      <div class="tile" data-tone="critical">
+        <span class="tile-label">Attacker clock</span>
+        <span class="tile-fig">&lt;60<span class="unit">seconds</span></span>
+        <span class="tile-note">Reported median from a secret appearing in a public repository to first use by an attacker.<sup class="fn"><a id="fnref-2b" href="#fn-2">2</a></sup></span>
+      </div>
+      <div class="tile" data-tone="critical">
+        <span class="tile-label">Defender clock</span>
+        <span class="tile-fig">27<span class="unit">days</span></span>
+        <span class="tile-note">Self-reported average time to remediate a leaked secret, from a survey of 1,000 IT decision-makers.<sup class="fn"><a id="fnref-17" href="#fn-17">17</a></sup></span>
+      </div>
+      <div class="tile" data-tone="critical">
+        <span class="tile-label">Revocation gap</span>
+        <span class="tile-fig">64<span class="unit">%</span></span>
+        <span class="tile-note">Share of secrets confirmed valid in 2022 that GitGuardian found still valid in January 2026.<sup class="fn"><a id="fnref-1d" href="#fn-1">1</a></sup></span>
+      </div>
+    </div>
+    <div class="col flow" style="margin-top:2rem">
+      <p>Those three figures are the argument. The attacker operates in seconds because discovery is automated. The defender operates in weeks because remediation is human. And the credential does not expire on its own, so the gap between the two clocks never closes without someone closing it.</p>
+      <p><strong>A caveat on comparing them.</strong> These three numbers come from different populations measured in different ways, and none is a like-for-like counterpart of another. The sixty-second figure is a median across credentials that reached a public surface, where automated harvesting applies; it says nothing about a secret in a private repository. The 27-day figure is self-reported by decision-makers about their own organisations, and "remediate" is their word, not necessarily "revoked at the provider." The 64 percent is a longitudinal validity check on one vendor's historical detections.</p>
+      <p>One comparison in particular is worth refusing. IBM's widely quoted 247-day mean time to identify and contain a breach<sup class="fn"><a id="fnref-6" href="#fn-6">6</a></sup> describes a different process: it averages across organisations that had not yet discovered they were breached. Once a scanner has fired, discovery has already happened, and the relevant interval is detection-to-revocation &mdash; hours or days in a competent programme, not months. Setting 247 days against sixty seconds makes the rhetoric stronger and the analysis worse.</p>
+      <p>What survives the caveats is the shape rather than the ratio: automated exploitation is measured in seconds, human remediation in days to weeks, and a large fraction of credentials are never revoked at all. Every control decision below follows from that shape. A control that shaves days off the defender's clock is competing in the wrong race. A control that shortens the credential's useful life, constrains what it can do, or revokes it without a human in the loop is competing in the right one.</p>
+    </div>
+  </section>
+
+  <!-- ============ PART 1: WHAT CHANGED ============ -->
+  <section id="whatchanged">
+    <div class="sec-head">
+      <span class="sec-label">Section one &middot; Trend</span>
+      <h2>AI changed both sides of the ledger</h2>
+    </div>
+
+    <div class="col flow">
+      <p>The convenient story is that AI helps attackers. The accurate story is that AI has simultaneously increased the number of secrets in circulation and removed the time it takes to find them. Both movements are measurable, and they compound.</p>
+    </div>
+
+    <h3 class="col">Supply: more secrets, in more places</h3>
+    <div class="col flow">
+      <p>Public GitHub absorbed about 28.65 million hardcoded secrets in 2025 according to GitGuardian, a 34 percent increase on the prior year and the largest single-year jump it has recorded.<sup class="fn"><a id="fnref-1e" href="#fn-1">1</a></sup> That growth is partly a denominator effect, and it is worth being precise about it. GitGuardian reports public commit volume rose about 43 percent and the active developer base about 33 percent over the same period, which implies the per-commit leak rate actually fell slightly, from roughly 1.6 percent to about 1.5 percent.</p>
+      <p>That last calculation is mine, derived from three published aggregates rather than reported directly, and it matters for an honest reading: the industry is not getting dramatically worse at avoiding secrets in code. It is producing far more code. Rate improvements of a few percent are being swamped by volume, and risk is a function of volume.</p>
+      <p>Three things are new in the composition of that volume, all from the same GitGuardian dataset:<sup class="fn"><a id="fnref-1f" href="#fn-1">1</a></sup></p>
+      <ul>
+        <li><strong>AI service credentials grew 81 percent</strong> to about 1.28 million detected leaks in 2025, including roughly 113,000 DeepSeek API keys. Eight of the ten fastest-growing detector categories tie to AI services. LLM supporting infrastructure &mdash; orchestration, retrieval, vector stores &mdash; leaked about five times faster than the model providers themselves.</li>
+        <li><strong>One coding assistant leaked at roughly twice the baseline rate</strong> &mdash; and the scope of that finding matters. GitGuardian measured <em>Claude Code-assisted commits</em> specifically, within its own detection dataset, at a 3.2 percent secret-leak rate against a 1.5 percent baseline across all public GitHub commits. It is not a controlled comparison, not a measurement of AI-generated code generally, and not evidence about any other assistant. Read as a signal that assistant-authored commits deserve their own risk treatment, it is useful; read as "AI code leaks twice as much," it is overstated. Separately and by a different method, the Cloud Security Alliance reviewed more than 100 models across 80 coding tasks and found AI-generated code introducing security defects in about 45 percent of tasks.<sup class="fn"><a id="fnref-4b" href="#fn-4">4</a></sup> Assistants reproduce the patterns in their training data, and hardcoded keys are well represented there.</li>
+        <li><strong>New file types nobody governs.</strong> Model Context Protocol configuration files alone accounted for 24,008 unique exposed secrets, of which 2,117 were still valid. These files sit on developer workstations and in agent deployments, largely outside the repository scanning perimeter that most programs are built around.</li>
+      </ul>
+    </div>
+
+    <h3 class="col">Demand: discovery is now instant and triaged</h3>
+    <div class="col flow">
+      <p>Automated harvesting of public commit streams is not new, and it is worth separating what is well evidenced here from what is merely asserted, because the AI framing is doing more work in the trade press than the evidence supports.</p>
+      <p><strong>Well evidenced.</strong> Harvesting and credential validation run continuously at scale, and have for years. The Cloud Security Alliance's tracking of one credential-theft operation between December 2025 and January 2026 catalogued around 35,000 attack sessions, averaging 972 per day, with automated scanning for exposed endpoints and validation before resale.<sup class="fn"><a id="fnref-20" href="#fn-20">20</a></sup> None of that requires a language model.</p>
+      <p><strong>Also well evidenced, and newer.</strong> LLM agents are now demonstrably operating post-exploitation at machine speed. The same research documents an incident in May 2026 in which an agent made twelve API calls across eleven distinct points of presence in a 22-second burst and completed a full database dump in under two minutes.<sup class="fn"><a id="fnref-20b" href="#fn-20">20</a></sup> That is what an attacker does <em>after</em> a credential works.</p>
+      <p><strong>Asserted rather than demonstrated.</strong> The specific claim &mdash; repeated widely, including in the industry analysis this article cites for the sixty-second figure &mdash; is that a model now reasons about each harvested key: what it unlocks, whether it is live, what privilege it carries, and therefore what to act on first.<sup class="fn"><a id="fnref-2c" href="#fn-2">2</a></sup> That is plausible, and it is consistent with the two evidenced facts above. I could not find a primary source documenting it as an observed capability. Treat it as a characterisation of where this is going, not as a measured one; the timing data below stands on its own without it.</p>
+      <p>The consequence shows in the timings. Comparitech's honeypot research placed first abuse of a deliberately leaked AWS key at about one minute after publication, with over 1,000 <code>RunInstances</code> calls in the following minute and 547 distinct source addresses participating; most activity landed within the first hour.<sup class="fn"><a id="fnref-3b" href="#fn-3">3</a></sup> Current industry reporting puts the median public-repository-to-first-use interval under sixty seconds.<sup class="fn"><a id="fnref-2d" href="#fn-2">2</a></sup></p>
+      <p>Read that against the defender's loop. A scanner detects the commit, raises an alert, a triage queue receives it, someone identifies the owning team, the owner confirms the credential is real, and only then is it revoked. Even an excellent programme measures that in hours. The credential was used in the first minute.</p>
+    </div>
+
+    <figure>
+      <div class="figframe">
+        <svg viewBox="0 0 880 330" role="img" aria-label="Two loops running from the same leaked commit: the attacker loop completes discovery, validation and use inside one minute, while the defender loop takes hours to reach revocation, leaving an exploitation window that the scanner cannot close.">
+          <defs>
+            <marker id="p1arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+            </marker>
+            <marker id="p1arrowc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="crit-fill" d="M 0 0 L 10 5 L 0 10 z"></path>
+            </marker>
+          </defs>
+
+          <rect x="8" y="132" width="118" height="60" fill="none" stroke="currentColor" stroke-width="1.5"></rect>
+          <text x="67" y="157" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="currentColor">commit</text>
+          <text x="67" y="174" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="currentColor" opacity="0.7">secret pushed</text>
+
+          <path d="M 126 150 L 168 92" fill="none" class="crit-line" stroke-width="1.5" marker-end="url(#p1arrowc)"></path>
+          <path d="M 126 174 L 168 232" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#p1arrow)"></path>
+
+          <text x="176" y="42" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="1.4" class="crit-text">ATTACKER LOOP — AUTOMATED</text>
+          <line x1="176" y1="52" x2="872" y2="52" class="crit-line" stroke-width="1" opacity="0.4"></line>
+
+          <rect x="176" y="66" width="126" height="52" fill="none" class="crit-line" stroke-width="1.5"></rect>
+          <text x="239" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">event stream</text>
+          <text x="239" y="105" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">harvester</text>
+
+          <line x1="302" y1="92" x2="340" y2="92" class="crit-line" stroke-width="1.5" marker-end="url(#p1arrowc)"></line>
+          <text x="321" y="82" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">~5s</text>
+
+          <rect x="340" y="66" width="126" height="52" fill="none" class="crit-line" stroke-width="1.5"></rect>
+          <text x="403" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">LLM triage:</text>
+          <text x="403" y="105" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">live? scope?</text>
+
+          <line x1="466" y1="92" x2="504" y2="92" class="crit-line" stroke-width="1.5" marker-end="url(#p1arrowc)"></line>
+          <text x="485" y="82" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">~15s</text>
+
+          <rect x="504" y="66" width="126" height="52" fill="none" class="crit-line" stroke-width="1.5"></rect>
+          <text x="567" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">API call with</text>
+          <text x="567" y="105" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">valid token</text>
+
+          <line x1="630" y1="92" x2="668" y2="92" class="crit-line" stroke-width="1.5" marker-end="url(#p1arrowc)"></line>
+
+          <rect class="crit-fill crit-line" x="668" y="66" width="150" height="52" stroke-width="1.5"></rect>
+          <text x="743" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="700" class="crit-inv">persistence,</text>
+          <text x="743" y="105" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="700" class="crit-inv">data, compute</text>
+
+          <text x="818" y="140" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" class="crit-text">complete in &lt; 60 seconds</text>
+
+          <text x="176" y="212" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="1.4" fill="currentColor">DEFENDER LOOP — HUMAN IN THE PATH</text>
+          <line x1="176" y1="222" x2="872" y2="222" stroke="currentColor" stroke-width="1" opacity="0.3"></line>
+
+          <rect x="176" y="236" width="126" height="52" fill="none" stroke="currentColor" stroke-width="1.5"></rect>
+          <text x="239" y="258" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">scanner</text>
+          <text x="239" y="275" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">detects</text>
+
+          <line x1="302" y1="262" x2="340" y2="262" stroke="currentColor" stroke-width="1.5" marker-end="url(#p1arrow)"></line>
+          <text x="321" y="252" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">min</text>
+
+          <rect x="340" y="236" width="126" height="52" fill="none" stroke="currentColor" stroke-width="1.5"></rect>
+          <text x="403" y="258" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">triage queue,</text>
+          <text x="403" y="275" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">find owner</text>
+
+          <line x1="466" y1="262" x2="504" y2="262" stroke="currentColor" stroke-width="1.5" marker-end="url(#p1arrow)"></line>
+          <text x="485" y="252" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">hrs</text>
+
+          <rect x="504" y="236" width="126" height="52" fill="none" stroke="currentColor" stroke-width="1.5"></rect>
+          <text x="567" y="258" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">confirm, plan</text>
+          <text x="567" y="275" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">rotation</text>
+
+          <line x1="630" y1="262" x2="668" y2="262" stroke="currentColor" stroke-width="1.5" marker-end="url(#p1arrow)"></line>
+          <text x="649" y="252" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">days</text>
+
+          <rect x="668" y="236" width="150" height="52" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"></rect>
+          <text x="743" y="258" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">revoke</text>
+          <text x="743" y="275" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">&amp; rotate</text>
+
+          <text x="818" y="310" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="currentColor">64% never get here</text>
+        </svg>
+      </div>
+      <figcaption>The same commit starts two loops. Detection speed is not the constraint &mdash; the scanner fires in the same minute the attacker does. The constraint is everything between detection and revocation, all of which is human, and the fact that a large majority of exposed credentials are never revoked at all.<sup class="fn"><a href="#fn-1">1</a></sup></figcaption>
+    </figure>
+  </section>
+
+  <!-- ============ PART 2: THREE EXPOSURES ============ -->
+  <section id="cases">
+    <div class="sec-head">
+      <span class="sec-label">Section two &middot; Evidence</span>
+      <h2>Three exposures, three different roles for a secret</h2>
+    </div>
+
+    <div class="col flow">
+      <p>These three were selected not because they were the largest, but because each shows a secret playing a structurally different role in the attack. Treating them as one category &mdash; "leaked credentials" &mdash; is what causes programmes to buy one control and assume it covers all three.</p>
+    </div>
+
+    <div class="cases" style="margin-top:2rem">
+
+      <article class="case">
+        <span class="case-role">Role 1 &middot; Secret as pivot</span>
+        <h3>Salesloft Drift &rarr; Salesforce (UNC6395)</h3>
+        <dl class="case-meta">
+          <div><dt>Window</dt><dd>Mar&ndash;Jun 2025 access; 8&ndash;18 Aug 2025 exfiltration</dd></div>
+          <div><dt>Entry</dt><dd>Compromised Salesloft GitHub account</dd></div>
+          <div><dt>Secret type</dt><dd>OAuth bearer tokens for customer integrations</dd></div>
+          <div><dt>Blast radius</dt><dd>700+ downstream organisations</dd></div>
+        </dl>
+        <div class="flow">
+          <p>Per Mandiant's investigation as reported by TechTarget, attackers held access to Salesloft's GitHub repositories from as early as March 2025, then pivoted into the Drift application's AWS environment and took OAuth tokens issued for Drift customers' integrations. Those tokens were then used to query customers' Salesforce instances directly.<sup class="fn"><a id="fnref-7" href="#fn-7">7</a></sup><sup class="fn"><a id="fnref-8" href="#fn-8">8</a></sup></p>
+          <p>The detail that matters for a security programme is what the attackers did next. Google's Threat Intelligence Group reported that, having stolen the data, they ran an automated Python tool across it searching for <strong>further secrets</strong> &mdash; specifically AWS access keys and Snowflake tokens embedded in support cases and CRM records.<sup class="fn"><a id="fnref-7b" href="#fn-7">7</a></sup> A support ticket where a customer pasted a key in 2023 becomes an access path in 2025.</p>
+          <p><strong>Business impact.</strong> Drift, which CX Today reports serves over 5,000 brands including IBM, Shopify and Stripe, was taken offline entirely from early September 2025 while the vendor rebuilt it; Salesforce suspended the integration.<sup class="fn"><a id="fnref-9" href="#fn-9">9</a></sup> Named affected organisations included Cloudflare, Palo Alto Networks, Zscaler, CyberArk, JFrog and PagerDuty.<sup class="fn"><a id="fnref-8b" href="#fn-8">8</a></sup> Every one of them absorbed unplanned incident response, mass credential rotation, customer notification, and regulatory assessment &mdash; for a breach in a chatbot vendor they had onboarded as a marketing tool.</p>
+          <p><strong>The lesson.</strong> These were valid OAuth bearer tokens. MFA was not defeated &mdash; it had already been satisfied upstream, when a customer administrator authorised the integration, and presenting a bearer token never re-triggers it. That is the property that makes stolen tokens valuable, and it is why password policy and MFA strength had no opportunity to act here. On the customer side, only integration scoping, token lifetime, and anomaly detection on token use were in a position to change the outcome.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <span class="case-role">Role 2 &middot; Secret as payload</span>
+        <h3>Shai-Hulud 2.0 &mdash; the self-propagating npm worm</h3>
+        <dl class="case-meta">
+          <div><dt>Window</dt><dd>From 24 Nov 2025</dd></div>
+          <div><dt>Entry</dt><dd>Poisoned npm packages, preinstall hook</dd></div>
+          <div><dt>Secret type</dt><dd>Cloud keys, npm tokens, GitHub Actions secrets</dd></div>
+          <div><dt>Blast radius</dt><dd>~1,000 packages; 25,000+ repositories' credentials leaked</dd></div>
+        </dl>
+        <div class="flow">
+          <p>This is the case where secrets are not the way in &mdash; they are the objective. Per Sysdig's analysis, the worm executed during <code>preinstall</code>, downloaded the Bun runtime, and ran roughly 10MB of obfuscated code that harvested credentials from every direction at once: cloud provider SDK modules for AWS, GCP and Azure; environment variables; <code>.npmrc</code> files; GitHub Actions repository secrets via injected workflows; and <strong>TruffleHog &mdash; a legitimate secret scanner &mdash; repurposed to sweep the filesystem</strong>.<sup class="fn"><a id="fnref-10" href="#fn-10">10</a></sup></p>
+          <p>Harvested material was published into newly created public GitHub repositories as five structured JSON files. The worm then found npm tokens, validated them, identified the token owner's most-downloaded packages, and republished those with itself inside.<sup class="fn"><a id="fnref-10b" href="#fn-10">10</a></sup> Secrets were both the loot and the propagation mechanism. CISA issued an advisory covering the campaign.<sup class="fn"><a id="fnref-11" href="#fn-11">11</a></sup></p>
+          <p><strong>Business impact.</strong> Sysdig put credentials for more than 25,000 GitHub repositories in the clear.<sup class="fn"><a id="fnref-10c" href="#fn-10">10</a></sup> GitGuardian's analysis of one compromised-machine dataset from the campaign found 294,842 secret occurrences across 6,943 machines, resolving to 33,185 unique secrets &mdash; and <strong>59 percent of those machines were CI/CD runners</strong>, not developer laptops.<sup class="fn"><a id="fnref-1g" href="#fn-1">1</a></sup> For affected organisations the cost was not a data breach filing; it was an enterprise-wide emergency rotation of every credential a build agent could see, with the build system frozen while it happened.<sup class="fn"><a id="fnref-12" href="#fn-12">12</a></sup></p>
+          <p><strong>The lesson.</strong> Your own scanning tooling defines what an attacker who lands on a build agent can find. If a scanner can enumerate your secrets from the filesystem, so can malware &mdash; and it will, using the same tool.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <span class="case-role">Role 3 &middot; Secret as initial access</span>
+        <h3>LiteLLM / TeamPCP &mdash; an unrevoked token in the toolchain</h3>
+        <dl class="case-meta">
+          <div><dt>Window</dt><dd>Tags rewritten 19 Mar 2026; packages published 24 Mar 2026, 10:39 UTC</dd></div>
+          <div><dt>Entry</dt><dd>Unpinned third-party GitHub Action (trivy-action)</dd></div>
+          <div><dt>Secret type</dt><dd>PyPI publishing token exfiltrated from the CI runner</dd></div>
+          <div><dt>Blast radius</dt><dd>~3.4M daily downloads of the package during the window</dd></div>
+        </dl>
+        <div class="flow">
+          <p>The mechanics of this one are widely misreported, and the misreporting changes the lesson.</p>
+          <p>On 19 March 2026, attackers rewrote git tags in the <code>trivy-action</code> GitHub Action repository to point at a malicious release. LiteLLM's CI referenced that action <strong>without pinning it to a commit</strong>, so the next build pulled the poisoned version, which exfiltrated the <code>PYPI_PUBLISH</code> token from the GitHub Actions runner environment.<sup class="fn"><a id="fnref-19" href="#fn-19">19</a></sup></p>
+          <p>What happened next is where most accounts go wrong. The attacker did <strong>not</strong> push malicious code through LiteLLM's release pipeline. They used the stolen token to upload straight to PyPI as an authenticated publisher. The maintainers are explicit: "GitHub releases only go up to <code>v1.82.6.dev1</code> &mdash; versions 1.82.7 and 1.82.8 on PyPI were uploaded directly by the attacker."<sup class="fn"><a id="fnref-18" href="#fn-18">18</a></sup> The official build system was bypassed, not subverted. Anyone auditing the GitHub releases would have seen nothing wrong.</p>
+          <p>The payload used a <code>.pth</code> file, which Python executes at interpreter startup without an explicit import, and harvested environment variables, SSH keys, AWS, GCP and Azure credentials, Kubernetes tokens and database passwords, exfiltrating to an attacker-registered domain.<sup class="fn"><a id="fnref-18b" href="#fn-18">18</a></sup></p>
+          <p><strong>The exposure window is disputed.</strong> LiteLLM's own security update says the packages were live from 10:39 UTC on 24 March "for about 40 minutes before being quarantined by PyPI."<sup class="fn"><a id="fnref-18c" href="#fn-18">18</a></sup> Snyk's reconstruction puts 1.82.7 at 10:39 UTC, 1.82.8 at 10:52 UTC, and PyPI quarantine at roughly 13:38 UTC &mdash; about three hours.<sup class="fn"><a id="fnref-19b" href="#fn-19">19</a></sup> The gap is probably what each is measuring: detection versus quarantine versus removal from the index versus the point downloads actually stopped. Against roughly 3.4 million daily downloads, the difference between forty minutes and three hours is not rhetorical.</p>
+          <p><strong>Business impact.</strong> A vendor analysis reports exposure covering over 2,500 companies and 434,000 CI/CD pipelines.<sup class="fn"><a id="fnref-13" href="#fn-13">13</a></sup> That figure is single-source and uncorroborated; treat it as reported. What is not in doubt is the remediation shape: because the stolen material included publishing credentials and cloud keys, the response was not "patch the package" but rebuild environments from clean sources and rotate every credential the build process could reach.</p>
+          <p><strong>The lesson.</strong> Three failures compounded, and only the third is about revocation. An unpinned third-party action let an attacker into the build. A long-lived publishing token sat in the runner environment where that action could read it. And the token was not rotated when the upstream Trivy compromise became known &mdash; five days elapsed between the tag rewrite and the malicious upload. The first failure is dependency hygiene; the second is credential architecture; the third is revocation latency. A programme that fixed only the third would still have lost the token.</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Business impact, compared</caption>
+        <thead>
+          <tr>
+            <th scope="col">Dimension</th>
+            <th scope="col">Salesloft Drift</th>
+            <th scope="col">Shai-Hulud 2.0</th>
+            <th scope="col">LiteLLM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Primary cost</th><td>Third-party data breach and notification</td><td>Enterprise-wide emergency rotation</td><td>Pipeline rebuild and rotation</td></tr>
+          <tr><th scope="row">Product outcome</th><td>Vendor product taken offline</td><td>Registry-wide trust damage</td><td>Package versions pulled</td></tr>
+          <tr><th scope="row">Who absorbs it</th><td>Vendor's customers</td><td>Every consumer of the dependency</td><td>Every consumer of the dependency</td></tr>
+          <tr><th scope="row">Would repo scanning have prevented it?</th><td class="no">No &mdash; tokens were legitimately issued</td><td class="no">No &mdash; scanning was the attacker's tool</td><td class="no">No &mdash; the token was never in a repository</td></tr>
+          <tr><th scope="row">What would have helped</th><td>Short token lifetime, scoped integrations, anomaly detection on token use</td><td>Ephemeral CI credentials, no static secrets on runners, egress controls</td><td>Pinned action SHAs, OIDC trusted publishing instead of a stored token, rotation on upstream compromise</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col flow" style="margin-top:2rem">
+      <p>Read the fourth row again. In three of the most consequential secret-driven incidents of the last eighteen months, repository secret scanning would not have prevented any of them. That is not an argument against scanning. It is an argument about where scanning sits in the control set &mdash; which is what <a href="part-2.html">Part 2</a> takes apart in detail.</p>
+    </div>
+  </section>
+
+  <!-- ============ PART 3: DOES SCANNING WORK ============ -->
+  <section id="verdict">
+    <div class="sec-head">
+      <span class="sec-label">Section three &middot; The honest verdict</span>
+      <h2>Is secret scanning actually effective?</h2>
+    </div>
+
+    <div class="col flow">
+      <p>The claim worth testing is that secret scanning is a preventive measure that does not work very well. The evidence supports a more precise version &mdash; but getting to it requires first separating five things that the word "scanning" is routinely used to cover.</p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <caption>What each part of a secrets programme actually is</caption>
+        <thead>
+          <tr><th scope="col">Activity</th><th scope="col">Control type</th><th scope="col">What it can honestly claim</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Pre-commit and pre-receive scanning</th><td class="yes">Preventive</td><td>The secret never reaches the remote. Bounded by "of the types the ruleset covers."</td></tr>
+          <tr><th scope="row">Post-commit scanning</th><td class="no">Detective</td><td>The secret is already there. This tells you about it.</td></tr>
+          <tr><th scope="row">Validity checking</th><td class="part">Prioritisation</td><td>Ranks findings. Neither prevents nor fixes anything.</td></tr>
+          <tr><th scope="row">Revocation and rotation</th><td class="part">Corrective</td><td>The only step that actually removes the exposure.</td></tr>
+          <tr><th scope="row">Short-lived, scoped, workload-bound identity</th><td class="yes">Preventive architecture</td><td>Reduces what a stolen credential is worth, and for how long.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col flow" style="margin-top:2rem">
+      <p>With that taxonomy in place the argument is narrower and harder to dismiss as positioning against the scanning market. <strong>Pre-receive scanning genuinely prevents. Post-commit scanning genuinely detects. The category is marketed as though the second inherited the properties of the first</strong> &mdash; and the great majority of deployed scanning, including every scheduled full-history scan and every CI job that runs after the push, is the second kind.</p>
+      <p>Start with what is genuinely good. Detection quality can be high &mdash; in Basak and colleagues' peer-reviewed comparison of nine tools at North Carolina State University, GitHub's scanner achieved 75 percent precision against 46 percent for the next-best tool evaluated.<sup class="fn"><a id="fnref-14" href="#fn-14">14</a></sup> Push protection, enabled by default on public repositories, blocks credentials before they ever reach a commit, which is real prevention at that one boundary. GitHub reported finding 39 million leaked secrets across the platform in 2024, which is 39 million findings that would otherwise be invisible.<sup class="fn"><a id="fnref-15" href="#fn-15">15</a></sup> None of that is nothing.</p>
+      <p>Then look at the four places the model breaks.</p>
+    </div>
+
+    <div class="gaps">
+      <div class="gap">
+        <span class="gap-name">Gap 1<br>Coverage</span>
+        <div>
+          <p>High-precision detection depends on recognisable token formats. Generic secrets &mdash; database connection strings, internal service passwords, bespoke API keys &mdash; have no distinctive shape, and by GitGuardian's measurement made up around two-thirds of detections.<sup class="fn"><a id="fnref-16" href="#fn-16">16</a></sup> Detector counts differ materially between tools, and only a subset of any tool's detectors are wired into push protection.</p>
+          <p>Meanwhile GitGuardian found 28 percent of incidents originate entirely outside repositories &mdash; in Slack, Jira and Confluence &mdash; and secrets found in collaboration tools were 13 percentage points more likely to be critical. Internal repositories were roughly six times more likely than public ones to contain hardcoded secrets, and receive far less scrutiny.<sup class="fn"><a id="fnref-1h" href="#fn-1">1</a></sup></p>
+        </div>
+      </div>
+      <div class="gap">
+        <span class="gap-name">Gap 2<br>Timing</span>
+        <div>
+          <p>Post-commit scanning is a detection control racing an adversary who wins in under a minute. Even instantaneous detection and a perfect alert leaves the credential exploitable, because the human steps that follow take hours. For any secret that reaches a public surface, the correct assumption is that it is already compromised at the moment of detection.</p>
+        </div>
+      </div>
+      <div class="gap">
+        <span class="gap-name">Gap 3<br>Bypass and blind spots</span>
+        <div>
+          <p>Push protection is real-time only: GitGuardian's analysis notes it does not scan history, and does not re-evaluate a private repository that is later made public; very large pushes can exceed the scan window; and new service token formats are undetected until a detector is written for them.<sup class="fn"><a id="fnref-16b" href="#fn-16">16</a></sup> Developers can also bypass a block by declaring a false positive or a test credential &mdash; logged and notified, but permitted.</p>
+        </div>
+      </div>
+      <div class="gap">
+        <span class="gap-name">Gap 4<br>Remediation</span>
+        <div>
+          <p>This is the one that decides the verdict. GitGuardian found 64 percent of secrets confirmed valid in 2022 were still valid in January 2026, and roughly 70 percent were still live in early 2025.<sup class="fn"><a id="fnref-1i" href="#fn-1">1</a></sup> The finding was generated; the credential was not revoked. Prioritising by validity alone does not rescue this either &mdash; the same research found that approach missed 46 percent of critical secrets.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <span class="sec-label">Verdict</span>
+      <p>Pre-receive scanning is a real preventive control, bounded by its ruleset. Everything downstream of the push is detective, and the market sells the whole category on the first one's properties. Detection reliably tells you what leaked; on its own it does nothing about the exposure, because only revocation removes it and the credential stays valid until someone acts.</p>
+      <p>The practical implication is a budget one. Spending more on better detection produces more findings against a remediation pipeline that already fails to close two-thirds of them. Marginal return is higher in pushing scanning earlier &mdash; to the pre-receive boundary, where it is genuinely preventive &mdash; and in revocation automation and credential lifetime, than in widening detection coverage.</p>
+    </div>
+
+    <div class="col flow" style="margin-top:2rem">
+      <p>One caveat, stated plainly, because the sourcing deserves it. Much of the leak-volume and validity data in this article comes from GitGuardian, which sells a secret-detection platform, and its measurement of the problem is not disinterested. The specific numbers should be treated as directional. The structural argument does not depend on them: it depends on the fact that a valid credential does not expire, which is a property of the credential, not of anyone's telemetry.</p>
+    </div>
+  </section>
+
+  <!-- ============ WHAT TO DO ============ ============ -->
+  <section id="guidance">
+    <div class="sec-head">
+      <span class="sec-label">Section four &middot; What to do</span>
+      <h2>Build the control set in this order</h2>
+    </div>
+
+    <div class="col flow">
+      <p>The ordering principle is simple: prefer controls that make the secret worthless over controls that find it. Each rung down the ladder is a fallback for what the rung above could not cover, not an alternative to it.</p>
+    </div>
+
+    <div class="ladder">
+      <div class="rung" data-tier="1">
+        <div class="rung-head"><span class="rung-tier">Tier 1 &middot; Highest leverage</span></div>
+        <h4>Constrain the credential: short-lived, scoped, and bound</h4>
+        <p>A credential that does not exist cannot leak. But be careful with the standard claim that a fifteen-minute token is "worth almost nothing" &mdash; it is not true, and stating it that way produces bad architecture. Fifteen minutes is ample for an automated attacker to exfiltrate a dataset, create persistence, mint a second credential, stand up cloud resources, alter an access policy, or destroy something. LiteLLM's payload harvested and exfiltrated at interpreter startup; the CSA-documented agent dumped a database in under two minutes.<sup class="fn"><a href="#fn-20">20</a></sup></p>
+        <p>What a short lifetime actually removes is <em>persistence</em> and the window for replay, not initial impact. Expiry alone does not beat a sixty-second attacker; nothing in this tier does on its own. What raises the cost meaningfully is the combination: <strong>short-lived, tightly scoped, sender-constrained where possible, and continuously monitored</strong>.</p>
+        <p>Two mechanisms are worth keeping apart here, because they are routinely conflated and they do different work:</p>
+        <ul>
+          <li><strong>Workload identity federation</strong> removes the <em>long-lived bootstrap credential</em> and puts issuance under policy control &mdash; no static key sits in the runner for malware to read. That is a large win, and it is the one most organisations should chase first. But note what it does not do: the access token the federation exchange returns is, on most cloud providers, an ordinary <strong>bearer</strong> token. Steal the string before it expires and it works for whoever holds it.</li>
+          <li><strong>Sender-constrained credentials</strong> &mdash; mTLS-bound tokens, DPoP, and other proof-of-possession schemes &mdash; are what actually defeat replay of the string itself, because using the token requires a key the thief did not get. Support is patchy and protocol-dependent, which is why this is a "where the protocol allows" control rather than a baseline one.</li>
+        </ul>
+        <p>Put plainly: federation shrinks what there is to steal, and binding makes what remains unusable to the thief. Neither substitutes for the other, and neither on its own answers the sixty-second problem.</p>
+        <ul>
+          <li>Workload identity federation for CI to cloud &mdash; OIDC-based, no stored keys in the runner. This addresses the failure mode in Shai-Hulud, where 59 percent of harvested machines were CI runners, and the one in LiteLLM, where a long-lived publishing token sat in the runner environment. Trusted publishing to package registries is the same idea. Remember that the token it issues is still usually a bearer token: federation removes the standing credential, it does not make the short-lived one unstealable.</li>
+          <li>Sender-constrained tokens &mdash; mTLS-bound, DPoP, or equivalent &mdash; wherever the protocol supports them, so possession of the string alone is not sufficient to use it. This is the only item in the list that actually defeats replay.</li>
+          <li>Short-lived, scoped tokens for service-to-service and third-party integrations. Ask every SaaS vendor the maximum lifetime of an issued OAuth token, and treat "indefinite" as a finding.</li>
+          <li>Vault-brokered dynamic credentials for databases and internal services, with time-to-live in minutes.</li>
+          <li>Instance and pod identity instead of provisioned keys wherever the platform supports it.</li>
+          <li>Scope every one of the above to the narrowest permission set that works &mdash; a short-lived credential with administrative rights is a fast route to a durable one.</li>
+        </ul>
+      </div>
+
+      <div class="rung" data-tier="2">
+        <div class="rung-head"><span class="rung-tier">Tier 2 &middot; Closes the timing gap</span></div>
+        <h4>Automate revocation, not alerting</h4>
+        <p>The measurable failure is that findings do not become revocations. Remove the human from the revocation path for the classes where you safely can.</p>
+        <ul>
+          <li>Auto-revoke on detection for any secret found on a public surface. Break the build if you must; the credential is already compromised.</li>
+          <li>Where auto-revoke is too risky, auto-rotate: issue the replacement first, then invalidate the old one.</li>
+          <li>Set and report a rotation SLA by exposure class (table below), owned by an engineering leader, not by the security team.</li>
+          <li>Wire validity checking into triage so that "still live" is a field on the ticket, not a manual step &mdash; while remembering that validity alone misclassifies a large share of critical findings.</li>
+        </ul>
+      </div>
+
+      <div class="rung" data-tier="3">
+        <div class="rung-head"><span class="rung-tier">Tier 3 &middot; Contains the blast radius</span></div>
+        <h4>Assume the credential will be used</h4>
+        <p>Design so that a stolen valid credential yields the least possible reach. This is what would have limited all three case studies.</p>
+        <ul>
+          <li>Least-privilege scoping on every machine identity, reviewed on the same cycle as human access. Machine identities outnumber human ones by a wide margin and are governed far less.<sup class="fn"><a href="#fn-2">2</a></sup></li>
+          <li>Network and IP conditions on high-value credentials, so a valid token from an unexpected origin fails.</li>
+          <li>Anomaly detection on credential use &mdash; new region, new source ASN, unusual API surface &mdash; since valid-credential abuse produces no authentication failures to alert on.</li>
+          <li>Third-party integration inventory with scope and token lifetime recorded. Salesloft Drift was a marketing chatbot with a path to CRM data.</li>
+          <li>Egress controls on build agents, which had no legitimate reason to reach the exfiltration endpoints in either supply-chain case.</li>
+        </ul>
+      </div>
+
+      <div class="rung" data-tier="4">
+        <div class="rung-head"><span class="rung-tier">Tier 4 &middot; Necessary, insufficient</span></div>
+        <h4>Detect broadly, and past the repository</h4>
+        <p>Scanning earns its place as the sensor that tells the tiers above where to act &mdash; and at the pre-receive boundary, as a preventive control in its own right. Deploy it at both. Do not fund the detective part as if it were the preventive one. <a href="part-2.html">Part 2</a> covers how to choose and test a scanner; <a href="part-3.html">Part 3</a> covers where to install it and what each placement lets you claim.</p>
+        <ul>
+          <li><strong>Server-side push protection first.</strong> This is the enforcement boundary: it applies to every push from every clone regardless of what any individual developer has installed, and it produces a server-side log of both blocks and bypasses. Enable it with bypass requiring a justification that generates a reviewed record.</li>
+          <li><strong>Local pre-commit and pre-push hooks second, as defence in depth</strong> &mdash; not as the primary control. They give the fastest feedback and keep noise out of the pipeline, but they are user-installed and user-removable: <code>--no-verify</code> disables them, and a fresh clone has none until someone runs the setup. Treat them as a developer convenience that reduces load on the boundary above, and never as the thing you evidence to an assessor.</li>
+          <li>Historical scanning of full git history, not just current HEAD &mdash; and re-scan any repository at the moment its visibility changes.</li>
+          <li>Extend coverage beyond repositories to Slack, Jira, Confluence, ticket systems, wikis, container images, IaC state files, MCP configuration files, and CI logs.</li>
+          <li>Explicitly govern AI coding assistants: block secret patterns in generated output, and treat assistant-authored commits as a higher-risk population, because empirically they are.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Suggested rotation SLA by exposure class</caption>
+        <thead>
+          <tr>
+            <th scope="col">Exposure class</th>
+            <th scope="col">Assume compromised?</th>
+            <th scope="col">Revoke within</th>
+            <th scope="col">Owner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Public repository, public paste, public registry</th><td>Yes, immediately</td><td class="num">1 hour</td><td>Service owner, auto-triggered</td></tr>
+          <tr><th scope="row">Third-party or vendor breach disclosure</th><td>Yes</td><td class="num">24 hours</td><td>Integration owner</td></tr>
+          <tr><th scope="row">Build agent or CI runner compromise</th><td>Yes, all reachable credentials</td><td class="num">24 hours</td><td>Platform engineering</td></tr>
+          <tr><th scope="row">Internal repository or wiki</th><td>Treat as likely</td><td class="num">7 days</td><td>Service owner</td></tr>
+          <tr><th scope="row">Collaboration tool (Slack, Jira, Confluence)</th><td>Treat as likely</td><td class="num">7 days</td><td>Service owner</td></tr>
+          <tr><th scope="row">Any credential with no expiry, no exposure</th><td>No</td><td class="num">90 days</td><td>Platform engineering</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="wide">Measure the right things</h3>
+    <div class="col flow">
+      <p>Most secrets programmes report detection volume, which is a measure of how much code was written, not how much risk was removed. Three metrics are worth putting in front of a risk committee:</p>
+      <ul>
+        <li><strong>Mean time to revocation</strong>, from detection to confirmed invalidation, segmented by exposure class. This is the number that maps to the sixty-second problem.</li>
+        <li><strong>Percentage of findings still valid at 30 days.</strong> If your figure resembles the industry's 64 percent, detection spend is not converting into risk reduction.</li>
+        <li><strong>Percentage of machine identities with a bounded lifetime.</strong> This is the leading indicator; it is the only metric that improves the other two structurally rather than through effort.</li>
+      </ul>
+      <p>A supporting fourth, if you have supply-chain exposure: time to complete a full credential rotation across the CI estate, measured by exercise rather than estimate. Both supply-chain cases above turned on that number, and most organisations do not know theirs.</p>
+    </div>
+  </section>
+
+  <!-- ============ NEXT ============ -->
+  <div class="nextup">
+    <span class="sec-label">Next in this series</span>
+    <a href="part-2.html">Part 2 &mdash; Nothing Catches Everything</a>
+    <p>How secret scanners actually work, which ones are worth running, and a reproducible benchmark you can point at your own toolchain to find out what it misses.</p>
+  </div>
+
+  <!-- ============ SOURCING ============ -->
+  <section id="sourcing">
+    <div class="sourcing">
+      <h4>Assumptions, sourcing, and confidence</h4>
+      <p><strong>Established.</strong> Incident facts for Salesloft Drift and Shai-Hulud 2.0 are corroborated across vendor research, a CISA advisory and mainstream security press. Breach economics and initial-access shares come from the 2026 IBM Cost of a Data Breach Report and the 2026 Verizon DBIR.</p>
+      <p><strong>Single-source or vendor-sourced.</strong> Secret volume, validity persistence, AI-service leak growth and MCP configuration figures derive predominantly from GitGuardian's annual research; GitGuardian sells secret detection. The 27-day remediation figure is from a GitGuardian/CyberArk survey, self-reported by IT decision-makers rather than measured. LiteLLM scale figures (2,500+ companies, 434,000 pipelines) remain single-source from CloudSEK and uncorroborated. The sub-sixty-second median exploitation figure is industry reporting, corroborated in order of magnitude by independent honeypot research.</p>
+      <p><strong>Contested and superseded.</strong> The LiteLLM exposure window is genuinely disputed: 40 minutes per the maintainers, roughly three hours per Snyk's reconstruction. Widely circulated accounts stating that LiteLLM's build system produced the malicious releases are superseded by the maintainers' own record, which shows GitHub releases stopping at v1.82.6.dev1 and the packages uploaded directly with a stolen token.</p>
+      <p><strong>Asserted rather than demonstrated.</strong> The claim that attackers use language models to classify harvested credentials by validity, privilege and value is widely repeated but I found no primary source documenting it as an observed capability. It is labelled as a characterisation in section one. What <em>is</em> documented is automated harvesting and validation at scale, and LLM agents operating at machine speed post-exploitation.</p>
+      <p><strong>Inference, flagged.</strong> The per-commit leak-rate calculation (approximately 1.6 percent to 1.5 percent) is derived here from published aggregates for secret count, commit count and developer growth. It is not a reported statistic and carries the compounding uncertainty of three separate figures.</p>
+      <p><strong>Assumption.</strong> Guidance assumes an enterprise with cloud infrastructure, an active CI/CD estate, and third-party SaaS integrations. Organisations with predominantly on-premises, low-change environments should weight tier 3 containment above tier 1 elimination.</p>
+    </div>
+
+    <div class="refs">
+      <h3>References</h3>
+      <ol>
+        <li id="fn-1">GitGuardian, <a href="https://blog.gitguardian.com/the-state-of-secrets-sprawl-2026/"><em>The State of Secrets Sprawl 2026</em></a>, March 2026. Source for leak volumes, AI-service growth, validity persistence, MCP configuration findings, non-repository incident share, and the Shai-Hulud compromised-machine dataset. <a class="backref" href="#fnref-1">&#8617;</a></li>
+        <li id="fn-2">Security Boulevard, <a href="https://securityboulevard.com/2026/08/when-ai-hackers-meet-machine-identity-the-ignored-attack-surface/">"When AI Hackers Meet Machine Identity: The Ignored Attack Surface"</a>, August 2026. Source for the sub-sixty-second median, the AI triage layer, and machine-identity ratios. <a class="backref" href="#fnref-2">&#8617;</a></li>
+        <li id="fn-3">Comparitech, <a href="https://www.comparitech.com/blog/information-security/github-honeypot/">"It takes hackers 1 minute to find and abuse credentials exposed on GitHub"</a>. Honeypot methodology, one-minute first abuse, 547 source addresses, RunInstances volume. <a class="backref" href="#fnref-3">&#8617;</a></li>
+        <li id="fn-4">Cloud Security Alliance, <a href="https://labs.cloudsecurityalliance.org/research/csa-research-note-ai-generated-code-security-vibe-coding-202/"><em>Vibe Coding Security Crisis: Credential Sprawl and SDLC Debt</em></a>, March 2026. AI-assisted commit leak rates and AI code defect rates. <a class="backref" href="#fnref-4">&#8617;</a></li>
+        <li id="fn-5">Verizon, <a href="https://www.verizon.com/business/resources/Td15/reports/2026-dbir-data-breach-investigations-report.pdf"><em>2026 Data Breach Investigations Report</em></a>; see also GitGuardian's <a href="https://blog.gitguardian.com/initial-access-changed-the-attack-path-did-not-findinds-from-the-verizon-2026-dbir/">analysis of it</a>. Initial access vectors, credential abuse share, third-party involvement at 48 percent. <a class="backref" href="#fnref-5">&#8617;</a></li>
+        <li id="fn-6">IBM, <em>Cost of a Data Breach Report 2026</em>, as summarised by <a href="https://www.helpnetsecurity.com/2026/07/30/ibm-cost-of-a-data-breach-2026/">Help Net Security</a>, July 2026. Global average of $4.99M, 247-day mean time to identify and contain, shadow AI incidence. <a class="backref" href="#fnref-6">&#8617;</a></li>
+        <li id="fn-7">TechTarget, <a href="https://www.techtarget.com/searchsecurity/news/366630934/News-brief-Salesloft-Drift-breach-update-and-timeline">"News brief: Salesloft Drift breach update and timeline"</a>. Mandiant root-cause findings, 700+ affected organisations, Google Threat Intelligence Group on the AWS key and Snowflake token search. <a class="backref" href="#fnref-7">&#8617;</a></li>
+        <li id="fn-8">UpGuard, <a href="https://www.upguard.com/blog/salesloft-drift-breach">"Salesloft Drift Breach: What Happened and How Does It Affect Me?"</a>. Attack chain detail and named victims. <a class="backref" href="#fnref-8">&#8617;</a></li>
+        <li id="fn-9">CX Today, <a href="https://www.cxtoday.com/customer-analytics-intelligence/the-salesloft-drift-chatbot-is-set-to-go-offline-after-customers-suffer-big-breaches/">"The SalesLoft Drift Chatbot Is Set to Go Offline After Customers Suffer Big Breaches"</a>, September 2025. Product shutdown, 5,000+ brands served. <a class="backref" href="#fnref-9">&#8617;</a></li>
+        <li id="fn-10">Sysdig, <a href="https://www.sysdig.com/blog/return-of-the-shai-hulud-worm-affects-over-25-000-github-repositories">"Return of the Shai-Hulud worm affects over 25,000 GitHub repositories"</a>. Execution mechanics, TruffleHog use, exfiltration structure, propagation logic. <a class="backref" href="#fnref-10">&#8617;</a></li>
+        <li id="fn-11">CISA, <a href="https://www.cisa.gov/news-events/alerts/2025/09/23/widespread-supply-chain-compromise-impacting-npm-ecosystem">"Widespread Supply Chain Compromise Impacting npm Ecosystem"</a>, September 2025. <a class="backref" href="#fnref-11">&#8617;</a></li>
+        <li id="fn-12">Microsoft Security, <a href="https://www.microsoft.com/en-us/security/blog/2025/12/09/shai-hulud-2-0-guidance-for-detecting-investigating-and-defending-against-the-supply-chain-attack/">"Shai-Hulud 2.0: Guidance for detecting, investigating, and defending"</a>, December 2025. Remediation scope. <a class="backref" href="#fnref-12">&#8617;</a></li>
+        <li id="fn-13">CloudSEK, <a href="https://www.cloudsek.com/blog/ai-supply-chain-breach-2500-companies-434000-cicd-pipelines">"LiteLLM Supply Chain Attack: 2,500+ Companies Exposed"</a>, 2026. Cited only for the 2,500-companies / 434,000-pipelines scale figures, which remain single-source and uncorroborated. Its account of the attack mechanics is superseded by the first-party and Snyk sources at notes 18 and 19. <a class="backref" href="#fnref-13">&#8617;</a></li>
+        <li id="fn-14">S. K. Basak, J. Cox, B. Reaves and L. Williams (North Carolina State University), <a href="https://arxiv.org/abs/2307.00714">"A Comparative Study of Software Secrets Reporting by Secret Detection Tools"</a>, ESEM 2023. Precision and recall across nine tools on the SecretBench corpus. <a class="backref" href="#fnref-14">&#8617;</a></li>
+        <li id="fn-15">GitHub, <a href="https://github.blog/security/application-security/next-evolution-github-advanced-security/">"GitHub found 39M secret leaks in 2024. Here's what we're doing to help"</a>, April 2025. <a class="backref" href="#fnref-15">&#8617;</a></li>
+        <li id="fn-16">GitGuardian, <a href="https://blog.gitguardian.com/github-push-protection-enhancing-open-source-security-with-limitations-to-consider/">"GitHub Push Protection: Benefits and Key Limitations Explained"</a>. Detector coverage, generic secret share, history and visibility-change gaps. Vendor-authored comparison; read with that in mind. <a class="backref" href="#fnref-16">&#8617;</a></li>
+        <li id="fn-17">GitGuardian and CyberArk, <a href="https://blog.gitguardian.com/voice-of-practitioners-2024/"><em>Voice of Practitioners 2024</em></a>, October 2024. Survey of 1,000 IT decision-makers across the US, UK, Germany and France; source of the 27-day average remediation time. Vendor-sponsored, and self-reported by decision-makers rather than measured &mdash; see the caveat in section one. <a class="backref" href="#fnref-17">&#8617;</a></li>
+        <li id="fn-18">LiteLLM (BerriAI), <a href="https://docs.litellm.ai/blog/security-update-march-2026">"Security Update: Suspected Supply Chain Incident"</a>, March 2026, and the maintainers' <a href="https://github.com/BerriAI/litellm/issues/24518">incident thread, issue #24518</a>. First-party source for the direct-upload finding ("GitHub releases only go up to v1.82.6.dev1"), the payload behaviour, and the ~40-minute window. <a class="backref" href="#fnref-18">&#8617;</a></li>
+        <li id="fn-19">Snyk, <a href="https://snyk.io/blog/poisoned-security-scanner-backdooring-litellm/">"How a Poisoned Security Scanner Became the Key to Backdooring LiteLLM"</a>, 2026. Reconstruction of the trivy-action tag rewrite of 19 March, the unpinned-action path, the <code>PYPI_PUBLISH</code> token exfiltration, and a quarantine time of ~13:38 UTC that conflicts with the first-party 40-minute figure. <a class="backref" href="#fnref-19">&#8617;</a></li>
+        <li id="fn-20">Cloud Security Alliance, <a href="https://labs.cloudsecurityalliance.org/research/csa-research-note-llmjacking-offensive-ai-tooling-20260618-c/">"LLMjacking Evolves: Stolen AI Compute as Attack Infrastructure"</a>, June 2026. Source for the ~35,000 catalogued attack sessions at 972/day with automated credential validation, and for the May 2026 LLM-agent incident (12 API calls in 22 seconds; database dump under two minutes). Note what it does <em>not</em> contain: any documented instance of a model triaging harvested keys by privilege or value. <a class="backref" href="#fnref-20">&#8617;</a></li>
+      </ol>
+    </div>
+  </section>
+
+  <footer class="colophon">
+    <span>Secrets in the Software Supply Chain &middot; Part 1 of 3</span>
+    <span>Research current to August 2026</span>
+  </footer>
+
+</div>
+</body>
+</html>
