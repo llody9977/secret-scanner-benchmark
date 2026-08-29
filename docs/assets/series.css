@@ -187,11 +187,12 @@ h3.col, h3.wide { margin-left: calc(var(--rail) + var(--gutter)); }
 .exec > h2 { font-size: var(--t-2); margin: 0 0 1.4rem; max-width: 32ch; }
 .exec-list { list-style: none; counter-reset: exec; margin: 0; padding: 0; display: grid; gap: 1.15rem; }
 .exec-list li {
-  counter-increment: exec; display: grid; grid-template-columns: 2.4rem 1fr;
-  gap: 0.9rem; align-items: baseline; max-width: 68ch;
+  counter-increment: exec; position: relative;
+  padding-left: 3rem; max-width: 71ch;
 }
 .exec-list li::before {
   content: counter(exec, decimal-leading-zero);
+  position: absolute; left: 0; top: 0.28em;
   font-family: var(--mono); font-size: var(--t-xs); font-weight: 700;
   color: var(--blue); font-variant-numeric: tabular-nums;
 }
@@ -327,8 +328,8 @@ pre code { background: none; padding: 0; font-size: inherit; }
 .ph p, .ph ul { margin-top: 0.6rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); max-width: 70ch; }
 
 /* ---------- footnotes & references ---------- */
-sup.fn { font-size: 0.66em; line-height: 0; vertical-align: super; font-family: var(--mono); font-weight: 700; }
-sup.fn a { text-decoration: none; padding: 0 0.08em; color: var(--blue); }
+sup.fn { font-size: 0.7em; line-height: 0; vertical-align: super; font-family: var(--mono); font-weight: 500; }
+sup.fn a { text-decoration: none; padding: 0 0.05em; color: var(--blue); }
 sup.fn a:hover { text-decoration: underline; }
 .refs { margin-left: calc(var(--rail) + var(--gutter)); }
 .refs > h3 {
