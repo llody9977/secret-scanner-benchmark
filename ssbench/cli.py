@@ -81,7 +81,12 @@ def verify(
     if bad:
         console.print(f"[red]hash mismatch: {bad}[/]")
         raise typer.Exit(code=1)
-    console.print(f"[green]manifest self-consistent[/] — {manifest_model.stats.planted_total} planted values hash OK")
+    checked = sum(1 for p in manifest_model.planted if not p.value.startswith("<redacted"))
+    if checked:
+        console.print(f"[green]manifest self-consistent[/] — {checked} planted values hash OK")
+    else:
+        console.print("[green]manifest well-formed[/] — values are redacted; "
+                      "run with --seed to verify by regeneration")
 
     if seed is not None:
         regenerated = run_generate(seed, workdir)

@@ -29,6 +29,21 @@ from provider documentation (`AKIAIOSFODNN7EXAMPLE`, the jwt.io demo token).
 These are only ever in the decoy set, never the planted set, so a correct
 "ignore" is scored as a correct ignore rather than a miss.
 
+## Redaction in the committed manifest
+
+`corpus/manifest.yaml` in git redacts the literal `value` of every planted
+secret and decoy, keeping `value_sha256` and everything else. The values are
+synthetic but they match real provider patterns, so a checked-in file full of
+them trips push protection and raises secret-scanning alerts on every fork and
+mirror. GitHub push protection did flag ~a dozen of them on the first push
+attempt — a data point the benchmark analysis keeps. For the same reason the
+five PEM keys in `ssbench/formats/keys.py` are stored base64-encoded and decoded
+at import.
+
+Nothing is hidden: the full values are a pure function of `corpus/seed` and are
+written to `bench/manifest.yaml` by `generator/generate.py`. The scorer uses
+that generated manifest, not the committed one.
+
 ## What the corpus is not
 
 - **Not a set of live canary tokens.** There is no tripwire credential here. If

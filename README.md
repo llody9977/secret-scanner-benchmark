@@ -76,10 +76,21 @@ python generator/generate.py --seed "$(cat corpus/seed)" --output ./bench --reco
 ## The manifest
 
 `corpus/manifest.yaml` is the ground truth. Each planted secret records its
-type, category, exact value and SHA-256, the file and line, the placement, the
-obfuscation, whether it is present at HEAD, and the commit that introduced it.
-For history-only placements the line number refers to the file *as introduced*,
-not at HEAD (where the secret is gone).
+type, category, SHA-256, the file and line, the placement, the obfuscation,
+whether it is present at HEAD, and the commit that introduced it. For
+history-only placements the line number refers to the file *as introduced*, not
+at HEAD (where the secret is gone).
+
+The **committed** manifest redacts the literal secret strings — they are
+synthetic but they match real secret patterns, and a checked-in file full of
+them is a push-protection and secret-scanning landmine for every fork and mirror
+(GitHub push protection did flag them; that is noted in the analysis). The
+`value` fields are restored in the manifest that `generator/generate.py` writes
+next to the corpus, which the scorer uses. Regenerate the full manifest anytime:
+
+```bash
+python generator/generate.py --seed "$(cat corpus/seed)" --output ./bench
+```
 
 `corpus_head_commit` pins the deterministic HEAD of the generated repository.
 CI regenerates and fails if the committed manifest no longer matches — a stale
@@ -89,8 +100,9 @@ corpus is always visible.
 ssbench verify --manifest corpus/manifest.yaml --seed 20260829
 ```
 
-checks the manifest is self-consistent and, with `--seed`, regenerates and
-confirms the HEAD commit is identical.
+checks the manifest is well-formed and, with `--seed`, regenerates the corpus
+and confirms the HEAD commit is identical — the real integrity guarantee when
+values are redacted.
 
 ---
 
