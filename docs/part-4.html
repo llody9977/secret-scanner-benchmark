@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Unnamed Control — Secrets in the Software Supply Chain</title>
+<meta name="description" content="Where scanners belong in the pipeline, what governance can honestly claim from them, the friction they impose, and which standards require them — with the clause numbers. Part 4 of Secrets in the Software Supply Chain.">
+<meta name="author" content="Secrets in the Software Supply Chain">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#1d4ed8">
+<link rel="canonical" href="https://llody9977.github.io/secret-scanner-benchmark/part-4.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Unnamed Control">
+<meta property="og:description" content="Where scanners belong in the pipeline, what governance can honestly claim from them, the friction they impose, and which standards require them — with the clause numbers. Part 4 of Secrets in the Software Supply Chain.">
+<meta property="og:url" content="https://llody9977.github.io/secret-scanner-benchmark/part-4.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='25' r='9' fill='none' stroke='white' stroke-width='5'/%3E%3Cpath d='M32 33v18M32 44h8' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/series.css?v=127747f25c">
+</head>
+<body>
+<div class="page">
+<div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
+<a href="part-1.html">Part 1 &middot; Threat</a>
+<a href="part-2.html">Part 2 &middot; Detection</a>
+<a href="part-4.html">Part 3 &middot; Implementation</a>
+<span aria-current="page">Part 4 &middot; Governance</span></div>
+  <header class="masthead">
+    <p class="kicker">Application Security &middot; Governance &amp; Assurance</p>
+    <h1>The Unnamed Control</h1>
+    <p class="dek">Almost every framework auditors test against requires secret scanning by implication. Only two name it. That gap explains most of what goes wrong in governing this control.</p>
+    <div class="byline">
+      <span>Part 4 of 4 &middot; Governance</span>
+      <span>Research current to August 2026</span>
+      <span>~4,100 words &middot; 21 min</span>
+    </div>
+  </header>
+
+  <!-- ============ EXEC ============ -->
+  <section id="summary" style="margin-top:0">
+    <div class="exec">
+      <h2>Executive summary</h2>
+      <ol class="exec-list">
+        <li>Two frameworks name hardcoded secrets explicitly and carry real force: <strong>PCI DSS v4.0.1 requirement 8.6.2</strong>, mandatory since 31 March 2025, and <strong>OWASP ASVS 5.0.0 requirement 13.3.1</strong>. Everything else &mdash; ISO 27001, SOC 2, NIST SSDF, CIS &mdash; reaches the control by inference.<sup class="fn"><a id="fnref-1" href="#fn-1">1</a></sup><sup class="fn"><a id="fnref-2" href="#fn-2">2</a></sup></li>
+        <li>That inference gap is not academic. It is why secret scanning is funded inconsistently, owned ambiguously, and evidenced badly. An auditor will map it to SOC 2 CC6.1, a criterion that never mentions secrets.<sup class="fn"><a id="fnref-3" href="#fn-3">3</a></sup></li>
+        <li>Where you install the scanner determines what you can claim. <strong>Server-side pre-receive push protection is the control to lead with</strong> &mdash; it is the only preventive placement that applies to every push regardless of local setup and cannot be removed by the developer it constrains. Local hooks are defence in depth; everything downstream of the push is detective, and should be described that way in a control narrative.</li>
+        <li>Governance routinely measures the wrong thing. Detection volume rises with headcount. GitGuardian and CyberArk's practitioner survey found average time to remediate a leaked secret was <strong>27 days</strong> &mdash; that is the number that maps to risk.<sup class="fn"><a id="fnref-4" href="#fn-4">4</a></sup></li>
+        <li>The friction is real and measured. Precision across nine tools ranged from 1 to 75 percent in peer-reviewed testing;<sup class="fn"><a id="fnref-5" href="#fn-5">5</a></sup> a USENIX study found developers "often bypass prevention approaches when workflow changes create friction," citing excessive false positives directly.<sup class="fn"><a id="fnref-6" href="#fn-6">6</a></sup></li>
+        <li>The same survey found <strong>79 percent of organisations had experienced a secrets leak</strong>, while <strong>75 percent of respondents expressed strong confidence</strong> in their secrets management &mdash; and reported only 44 percent of developers following best practice.<sup class="fn"><a id="fnref-4b" href="#fn-4">4</a></sup> Confidence is not the control.</li>
+        <li>There is enforcement precedent. The FTC's complaint against Uber describes a plaintext AWS access key posted to GitHub as the proximate cause of two breaches &mdash; and expressly notes the second key was in a <strong>private</strong> repository.<sup class="fn"><a id="fnref-7" href="#fn-7">7</a></sup></li>
+        <li>Governance that works looks like: named owners per credential class, a rotation SLA by exposure class, a friction budget the security team spends deliberately, and metrics reported on revocation rather than detection.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ WHERE SCANNERS GO ============ -->
+  <section id="placement">
+    <div class="sec-head">
+      <span class="sec-label">Section one &middot; Placement</span>
+      <h2>Where the scanner sits decides what you can claim</h2>
+    </div>
+
+    <div class="col flow">
+      <p>"We have secret scanning" is not a control statement. It does not say what is prevented, what is merely observed, who feels the cost, or what evidence exists. Six placements are available, and they differ on all four.</p>
+      <p>The vocabulary below follows the taxonomy in <a href="part-1.html">Part 1</a>: pre-commit and pre-receive scanning are <strong>preventive</strong>; post-commit scanning is <strong>detective</strong>; validity checking is <strong>prioritisation</strong>; revocation and rotation are <strong>corrective</strong>; and short-lived, scoped, workload-bound identity is <strong>preventive architecture</strong> sitting outside this pipeline altogether. Using those words precisely in a control narrative is most of what separates an assertion an assessor accepts from one they probe.</p>
+    </div>
+
+    <figure>
+      <div class="figframe">
+        <svg viewBox="0 0 880 356" role="img" aria-label="Six control points across the development pipeline: IDE, pre-commit hook, push protection, pull request CI, post-merge scheduled scan, and non-repository surfaces. Only the IDE, pre-commit and push-protection points are preventive; the remainder are detective. Synchronous developer friction is highest at the earliest points and absent at the last two, which still carry triage cost.">
+          <defs>
+            <marker id="p3arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <!-- preventive / detective bands -->
+          <text x="14" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="1.2" class="ok-text">PREVENTIVE — the secret never lands</text>
+          <line x1="14" y1="40" x2="424" y2="40" class="ok-line" stroke-width="1.5"></line>
+          <text x="444" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="1.2" class="crit-text">DETECTIVE — the secret already exists</text>
+          <line x1="444" y1="40" x2="866" y2="40" class="crit-line" stroke-width="1.5"></line>
+
+          <!-- boxes -->
+          <rect x="14" y="76" width="124" height="66" fill="none" class="ok-line" stroke-width="1.5"></rect>
+          <text x="76" y="102" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="currentColor">1 IDE</text>
+          <text x="76" y="119" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">inline warning</text>
+          <text x="76" y="133" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">as you type</text>
+
+          <rect x="152" y="76" width="124" height="66" fill="none" class="ok-line" stroke-width="1.5"></rect>
+          <text x="214" y="102" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="currentColor">2 PRE-COMMIT</text>
+          <text x="214" y="119" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">local hook,</text>
+          <text x="214" y="133" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">bypassable</text>
+
+          <rect x="290" y="76" width="124" height="66" fill="none" class="ok-line" stroke-width="2.5"></rect>
+          <text x="352" y="102" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="currentColor">3 PUSH</text>
+          <text x="352" y="119" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">server-side,</text>
+          <text x="352" y="133" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">enforceable</text>
+
+          <rect x="452" y="76" width="124" height="66" fill="none" class="crit-line" stroke-width="1.5"></rect>
+          <text x="514" y="102" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="currentColor">4 PR / CI</text>
+          <text x="514" y="119" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">blocks merge,</text>
+          <text x="514" y="133" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">not the leak</text>
+
+          <rect x="590" y="76" width="124" height="66" fill="none" class="crit-line" stroke-width="1.5"></rect>
+          <text x="652" y="102" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="currentColor">5 SCHEDULED</text>
+          <text x="652" y="119" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">full history,</text>
+          <text x="652" y="133" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">all branches</text>
+
+          <rect x="728" y="76" width="138" height="66" fill="none" class="crit-line" stroke-width="1.5" stroke-dasharray="4 3"></rect>
+          <text x="797" y="102" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="currentColor">6 NON-REPO</text>
+          <text x="797" y="119" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">chat, tickets,</text>
+          <text x="797" y="133" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.8">images, logs</text>
+
+          <line x1="138" y1="109" x2="152" y2="109" stroke="currentColor" stroke-width="1.5" marker-end="url(#p3arrow)"></line>
+          <line x1="276" y1="109" x2="290" y2="109" stroke="currentColor" stroke-width="1.5" marker-end="url(#p3arrow)"></line>
+          <line x1="414" y1="109" x2="452" y2="109" stroke="currentColor" stroke-width="1.5" marker-end="url(#p3arrow)"></line>
+          <line x1="576" y1="109" x2="590" y2="109" stroke="currentColor" stroke-width="1.5" marker-end="url(#p3arrow)"></line>
+
+          <!-- friction band -->
+          <text x="14" y="186" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" letter-spacing="1.1" fill="currentColor" opacity="0.85">DEVELOPER FRICTION</text>
+          <rect x="14" y="196" width="124" height="18" class="crit-fill"></rect>
+          <rect x="152" y="196" width="124" height="18" class="crit-fill"></rect>
+          <rect x="290" y="196" width="124" height="18" class="crit-fill"></rect>
+          <rect x="452" y="196" width="124" height="18" class="crit-fill" opacity="0.55"></rect>
+          <rect x="590" y="196" width="124" height="18" class="crit-fill" opacity="0.15"></rect>
+          <rect x="728" y="196" width="138" height="18" class="crit-fill" opacity="0.15"></rect>
+          <text x="76" y="209" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="crit-inv">HIGH</text>
+          <text x="214" y="209" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="crit-inv">HIGH</text>
+          <text x="352" y="209" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="crit-inv">HIGH</text>
+          <text x="514" y="209" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="crit-inv">MEDIUM</text>
+          <text x="652" y="209" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" fill="currentColor">NONE</text>
+          <text x="797" y="209" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" fill="currentColor">NONE</text>
+
+          <!-- coverage band -->
+          <text x="14" y="248" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" letter-spacing="1.1" fill="currentColor" opacity="0.85">COVERAGE OF THE ESTATE</text>
+          <rect x="14" y="258" width="124" height="18" class="acc-fill" opacity="0.2"></rect>
+          <rect x="152" y="258" width="124" height="18" class="acc-fill" opacity="0.2"></rect>
+          <rect x="290" y="258" width="124" height="18" class="acc-fill"></rect>
+          <rect x="452" y="258" width="124" height="18" class="acc-fill" opacity="0.6"></rect>
+          <rect x="590" y="258" width="124" height="18" class="acc-fill"></rect>
+          <rect x="728" y="258" width="138" height="18" class="acc-fill" opacity="0.6"></rect>
+          <text x="76" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" fill="currentColor">OPT-IN</text>
+          <text x="214" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" fill="currentColor">OPT-IN</text>
+          <text x="352" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">ALL</text>
+          <text x="514" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">PR PATHS</text>
+          <text x="652" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">ALL + HISTORY</text>
+          <text x="797" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">28% OF INCIDENTS</text>
+
+          <text x="14" y="312" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Points 1 and 2 are opt-in and locally bypassable — they reduce noise downstream but evidence nothing.</text>
+          <text x="14" y="328" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Point 3 is the only placement enforceable across every in-scope push — enforceable, not complete: patterns, push size, timeouts and bypass all bound it.</text>
+          <text x="14" y="344" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Points 5 and 6 impose no synchronous developer friction — nobody is waiting — but they still carry triage and operational cost.</text>
+        </svg>
+      </div>
+      <figcaption>The two bands are the governance trade-off in one picture. Synchronous friction is concentrated where prevention is possible; coverage is broadest where prevention is not. Neither band is free: the late points move the cost off the developer's critical path and onto a triage queue, which is a better place for it but not a costless one. A programme that installs only the low-friction points has bought observation, and should not describe it as prevention in a control narrative.</figcaption>
+    </figure>
+
+    <div class="tablewrap">
+      <table class="wide-table">
+        <caption>Control points, and what each one actually gives governance</caption>
+        <thead>
+          <tr>
+            <th scope="col">Placement</th>
+            <th scope="col">Control type</th>
+            <th scope="col">Who feels it</th>
+            <th scope="col">Evidence it produces</th>
+            <th scope="col">How it fails</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1. IDE plugin</th><td class="yes">Preventive</td><td>Developer, continuously</td>
+            <td>None that survives &mdash; local, unlogged</td><td>Uninstalled, or ignored as an underline</td>
+          </tr>
+          <tr>
+            <th scope="row">2. Pre-commit hook</th><td class="part">Preventive, opt-in</td><td>Developer, per commit</td>
+            <td>Weak &mdash; local config, no central log</td><td><code>--no-verify</code>; new clone without hooks installed</td>
+          </tr>
+          <tr>
+            <th scope="row">3. Push protection</th><td class="yes">Preventive</td><td>Developer, at push</td>
+            <td><strong>Strong</strong> &mdash; server-side, blocks and bypasses both logged</td><td>Bypass with a declared justification; no history scan; a private repo later made public</td>
+          </tr>
+          <tr>
+            <th scope="row">4. PR / CI check</th><td class="no">Detective</td><td>Developer, at merge</td>
+            <td><strong>Strong</strong> &mdash; per-PR status, auditable</td><td>The secret is already in the branch and in the remote</td>
+          </tr>
+          <tr>
+            <th scope="row">5. Scheduled full scan</th><td class="no">Detective</td><td>Nobody, until triage</td>
+            <td><strong>Strong</strong> &mdash; full-estate coverage assertion</td><td>Findings land in an unowned queue and age</td>
+          </tr>
+          <tr>
+            <th scope="row">6. Non-repository surfaces</th><td class="no">Detective</td><td>Nobody</td>
+            <td>Coverage of the 28 percent that repos miss<sup class="fn"><a id="fnref-8" href="#fn-8">8</a></sup></td><td>Rarely deployed at all; unclear ownership</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col flow" style="margin-top:2rem">
+      <p>The diagram numbers the placements in pipeline order. <strong>Deployment priority runs differently, and the difference matters.</strong> Start at point 3, server-side push protection: it is the only preventive placement that binds every push from every clone, cannot be removed by the developer it constrains, and writes its own audit trail. Then points 4 and 5 for coverage and history. Only then points 1 and 2, which are genuinely useful &mdash; the earliest feedback is the cheapest to act on &mdash; but which are opt-in, locally bypassable with <code>--no-verify</code>, and absent from every fresh clone until someone installs them. A programme that rolls out pre-commit hooks and calls the control implemented has enforced nothing.</p>
+      <p>The governance conclusion from that table is correspondingly narrow. <strong>Points 3, 4 and 5 are the ones you can evidence to an auditor.</strong> Points 1 and 2 reduce the volume reaching the others, but a control narrative resting on them is resting on developer goodwill and a local config file. Point 6 is the one almost nobody deploys and the one that covers the incident class repository scanning structurally cannot see.</p>
+    </div>
+  </section>
+
+  <!-- ============ EFFECTIVENESS ============ -->
+  <section id="effectiveness">
+    <div class="sec-head">
+      <span class="sec-label">Section two &middot; Effectiveness</span>
+      <h2>What having a scanner does and does not prove</h2>
+    </div>
+
+    <div class="col flow">
+      <p>A deployed scanner proves coverage. It does not prove control. The distinction matters because most secrets programmes report the first and imply the second.</p>
+    </div>
+
+    <div class="tiles" style="margin-top:2rem">
+      <div class="tile" data-tone="critical">
+        <span class="tile-label">Remediation lag</span>
+        <span class="tile-fig">27<span class="unit">days</span></span>
+        <span class="tile-note">Average time to remediate a leaked secret, across 1,000 IT decision-makers surveyed.<sup class="fn"><a id="fnref-4c" href="#fn-4">4</a></sup></span>
+      </div>
+      <div class="tile" data-tone="critical">
+        <span class="tile-label">Experienced a leak</span>
+        <span class="tile-fig">79<span class="unit">%</span></span>
+        <span class="tile-note">Of organisations surveyed; 77 percent of those incidents caused tangible damage.<sup class="fn"><a id="fnref-4d" href="#fn-4">4</a></sup></span>
+      </div>
+      <div class="tile">
+        <span class="tile-label">Confidence gap</span>
+        <span class="tile-fig">75<span class="unit">/ 44%</span></span>
+        <span class="tile-note">Strongly confident in their secrets management, against 44 percent of developers reported as following best practice.<sup class="fn"><a id="fnref-4e" href="#fn-4">4</a></sup></span>
+      </div>
+    </div>
+
+    <div class="col flow" style="margin-top:2rem">
+      <p>Read the third tile carefully, including its weakness. It is a vendor-sponsored survey of IT decision-makers, not of developers, so the 44 percent figure is a manager's report about their engineers rather than a measurement of engineering behaviour. That does not make it useless. A thirty-one point gap between how well leaders think this is going and how well they think their own developers are doing it is a governance signal in itself, whichever number is wrong.</p>
+      <p>The same survey found organisations running an average of six distinct secrets manager instances, and dedicating 32.4 percent of security budgets to secrets management and code security.<sup class="fn"><a id="fnref-4f" href="#fn-4">4</a></sup> Substantial spend, fragmented tooling, and a 27-day remediation lag is a recognisable pattern: the control is bought but not operated.</p>
+    </div>
+
+    <h3 class="wide">The four claims governance usually makes, ranked by how defensible they are</h3>
+    <div class="gaps" style="margin-top:1.5rem">
+      <div class="gap" data-tone="accent">
+        <span class="gap-name">Defensible</span>
+        <div>
+          <p><strong>"Every repository in scope is scanned, and we can show which."</strong> This is a coverage assertion, it is measurable, and a scheduled full scan produces the evidence. Make sure "in scope" is defined by an inventory rather than by which repositories happened to have a workflow file.</p>
+        </div>
+      </div>
+      <div class="gap" data-tone="accent">
+        <span class="gap-name">Defensible</span>
+        <div>
+          <p><strong>"Secrets matching known patterns are blocked at push, and bypasses are logged and reviewed."</strong> Server-side enforcement with an audit trail. This is the strongest single claim available. It is bounded by "known patterns" &mdash; do not drop that qualifier.</p>
+        </div>
+      </div>
+      <div class="gap">
+        <span class="gap-name">Weak</span>
+        <div>
+          <p><strong>"We have no secrets in our code."</strong> Unsupportable. The best measured recall in peer-reviewed testing was 88 percent, and that tool was wrong on more than half its findings.<sup class="fn"><a href="#fn-5">5</a></sup> The honest form is "we detect no secrets of the types our tooling covers," which is a materially smaller statement.</p>
+        </div>
+      </div>
+      <div class="gap">
+        <span class="gap-name">Weak</span>
+        <div>
+          <p><strong>"Findings are remediated."</strong> Only if you measure revocation rather than ticket closure. GitGuardian found 64 percent of secrets valid in 2022 still valid in January 2026;<sup class="fn"><a href="#fn-8">8</a></sup> many of those had tickets. A closed ticket and a revoked credential are different facts and belong in different columns.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="wide">Metrics that belong in a risk committee pack</h3>
+    <div class="col flow">
+      <ul>
+        <li><strong>Coverage:</strong> percentage of repositories in the inventory scanned in the last 30 days, and percentage with push protection enforced.</li>
+        <li><strong>Mean time to revocation</strong> by exposure class &mdash; from detection to confirmed invalidation at the provider, not to ticket closure.</li>
+        <li><strong>Findings still valid at 30 days.</strong> The single best proxy for whether detection is converting into risk reduction.</li>
+        <li><strong>Bypass rate and bypass review latency</strong> for push protection, with the justification text sampled quarterly.</li>
+        <li><strong>Percentage of machine identities with a bounded lifetime.</strong> The leading indicator; the only one that improves the others structurally.</li>
+        <li><strong>Precision, measured not assumed:</strong> triage a random sample of 50 findings per quarter and report what proportion were real. If nobody has ever measured this, that is the first thing to fix.</li>
+      </ul>
+      <p>Detection volume can stay in the pack, but label it as an exposure indicator rather than a performance one. It rises when you hire engineers and falls when you cut scope, and neither movement says anything about control effectiveness.</p>
+    </div>
+  </section>
+
+  <!-- ============ FRICTION ============ -->
+  <section id="friction">
+    <div class="sec-head">
+      <span class="sec-label">Section three &middot; Friction</span>
+      <h2>What this costs the people who live with it</h2>
+    </div>
+
+    <div class="col flow">
+      <p>Security functions routinely underestimate this, and the underestimate is why controls degrade. The friction is measurable and the mechanism by which it defeats the control is documented.</p>
+    </div>
+
+    <h3 class="wide">The false positive tax</h3>
+    <div class="col flow">
+      <p>Precision across the nine tools in the ESEM 2023 study ranged from 1 to 75 percent, with five of nine scoring under 7 percent.<sup class="fn"><a href="#fn-5">5</a></sup> A tool at 6 percent precision produces roughly sixteen false alarms for every real finding. That is not a tuning problem to be solved next quarter; it is the operating condition for a large part of the tool market.</p>
+      <p>One qualification, because it cuts both ways. A 2026 run of six current tools against a purpose-built synthetic corpus put five of the six above 90 percent precision.<sup class="fn"><a id="fnref-21" href="#fn-21">21</a></sup> That is not evidence the problem is solved &mdash; a corpus with eighteen decoys has almost none of the noise a real repository carries, and the same run's author says so explicitly. The governance point is the one that survives both datasets: <strong>precision is a property of a tool meeting a particular codebase, not a property of the tool.</strong> Neither published figure tells you your number. Measure it, on your repositories, and report it.</p>
+      <p>Vendors acknowledge it in their own framing. GitHub, reporting a 75.76 percent reduction in false positives in June 2026, described the problem directly: "too many false positives make alerts harder to trust," and "when alerts feel noisy, developers spend more time triaging and less time fixing real issues."<sup class="fn"><a id="fnref-9" href="#fn-9">9</a></sup> That is a relative improvement against their own prior baseline, not an absolute rate &mdash; no vendor publishes one.</p>
+    </div>
+
+    <h3 class="wide">What developers actually do about it</h3>
+    <div class="col flow">
+      <p>The best evidence here is Krause and colleagues' mixed-methods study presented at USENIX Security 2023, which surveyed 109 developers and interviewed a subset about how they handle secrets in repositories.<sup class="fn"><a href="#fn-6">6</a></sup> Four findings matter for governance:</p>
+      <ul>
+        <li><strong>30.3 percent had personally experienced a secret leakage incident.</strong> This is not a hypothetical control for the population being governed.</li>
+        <li><strong>Developers reported that secret scanners "produce excessive false positives, requiring manual review and causing adoption resistance."</strong> Named directly, by the people using them.</li>
+        <li><strong>"Developers often bypass prevention approaches when workflow changes create friction."</strong> The bypass is a response to friction, not to disagreement with the goal.</li>
+        <li><strong>Maintenance overhead was cited by half the interview participants</strong> as a barrier to adopting secret management tooling, alongside time and cost, and poor documentation for open-source options.</li>
+      </ul>
+      <p>This is consistent with a decade-old and still-unrefuted finding about security tooling generally: Johnson and colleagues at ICSE 2013 found developers abandoned static analysis tools over warning volume and results that "lack enough information to help developers on what the problem is, why it is a problem, what they should be doing different," and strongly preferred tools that run in the background over tools that require stopping work.<sup class="fn"><a id="fnref-10" href="#fn-10">10</a></sup> That study is qualitative; do not attach percentages to it. Its structural point has held for thirteen years.</p>
+    </div>
+
+    <h3 class="wide">A gap worth naming: nobody publishes bypass rates</h3>
+    <div class="col flow">
+      <p>Push protection bypass telemetry exists. GitHub has shipped organisation-level push protection metrics since 2023 and bypass-request metrics since 2024, so the number sits inside every GitHub Enterprise organisation that has it enabled.<sup class="fn"><a id="fnref-11" href="#fn-11">11</a></sup> No aggregate figure has ever been published, by any vendor, and I could find no academic study measuring it.</p>
+      <p>That absence is a governance finding rather than a research gap. The most direct available measure of whether a preventive control is actually preventing &mdash; how often people override it &mdash; is collected everywhere and reported nowhere. If you run this control, you can read your own number this week, and you should, because there is no benchmark to compare it against and no one else is going to produce one.</p>
+    </div>
+
+    <h3 class="wide">Spending the friction budget deliberately</h3>
+    <div class="col flow">
+      <p>Treat developer tolerance as a finite resource allocated on purpose, not consumed by default. Five rules that follow from the evidence above:</p>
+      <ol>
+        <li><strong>Block on high-precision detections only.</strong> Structured, checksum-validated provider tokens block the push. Generic high-entropy findings warn or route to a queue. Blocking on a 6-percent-precision rule trains developers to bypass on reflex.</li>
+        <li><strong>Make the fix easier than the bypass.</strong> The block message should name the credential type, the exact line, the approved storage location, and the command to rotate it. A message that says only "secret detected" converts every block into a support ticket.</li>
+        <li><strong>Give bypass a real path.</strong> A justified, logged, reviewed bypass is a control. A bypass that requires filing an exception with a security team on a two-day SLA is a control that will be routed around, and you will lose the telemetry as well as the secret.</li>
+        <li><strong>Own the baseline centrally, review it in code.</strong> Allowlists should live in the repository, be visible in code review, and expire. Ungoverned allowlists are how a tool quietly stops detecting anything.</li>
+        <li><strong>Publish your own precision number to engineering.</strong> Nothing rebuilds trust in a noisy control faster than the security team measuring and reporting the noise itself, then acting on it.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ WHY REQUIRED ============ -->
+  <section id="standards">
+    <div class="sec-head">
+      <span class="sec-label">Section four &middot; Obligation</span>
+      <h2>Which standards actually require this</h2>
+    </div>
+
+    <div class="col flow">
+      <p>Here is the finding that gives this article its title. Across eight frameworks that an enterprise is plausibly assessed against, <strong>only two name hardcoded secrets in normative text</strong>. The rest reach the control by inference &mdash; which is entirely valid for an auditor, and entirely useless for a security leader trying to get it funded on a compliance argument.</p>
+      <p>The mapping below separates the general enterprise set from the regulated-industry set. Clause identifiers were verified against the sources listed; where a source was paywalled or gated, that is flagged in the sourcing box rather than papered over.</p>
+    </div>
+
+    <div class="tablewrap">
+      <table class="wide-table">
+        <caption>General enterprise frameworks</caption>
+        <thead>
+          <tr>
+            <th scope="col">Framework</th>
+            <th scope="col">Best clause</th>
+            <th scope="col">What it requires</th>
+            <th scope="col">Names secrets?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">OWASP ASVS 5.0.0</th>
+            <td class="num">13.3.1</td>
+            <td>A secrets management solution must be used, and "secrets must not be included in application source code or included in build artifacts." Also 13.3.4 (expiry and rotation), 13.2.1 (service authentication must use short-term tokens or certificates, "not unchanging credentials such as passwords, API keys, or shared accounts").<sup class="fn"><a href="#fn-2">2</a></sup></td>
+            <td class="yes">Yes, explicitly</td>
+          </tr>
+          <tr>
+            <th scope="row">NIST SSDF SP 800-218A<br><span style="font-weight:400;color:var(--ink-mute)">(AI profile)</span></th>
+            <td class="num">PO.5.1</td>
+            <td>"Continuously monitor each environment for plaintext secrets." The most explicit secrets-scanning line in the NIST SSDF family &mdash; but scoped to generative AI and dual-use foundation model development.<sup class="fn"><a id="fnref-12" href="#fn-12">12</a></sup></td>
+            <td class="yes">Yes, AI-scoped</td>
+          </tr>
+          <tr>
+            <th scope="row">ISO/IEC 27001:2022</th>
+            <td class="num">A.5.17, A.8.28, A.8.31</td>
+            <td>Authentication information (allocation, distribution, storage, protection); secure coding; separation of development, test and production environments. Supporting: A.5.16 identity management, A.8.4 access to source code, A.8.24 use of cryptography.<sup class="fn"><a id="fnref-13" href="#fn-13">13</a></sup></td>
+            <td class="no">No &mdash; inference</td>
+          </tr>
+          <tr>
+            <th scope="row">NIST SSDF SP 800-218 v1.1</th>
+            <td class="num">PW.7.2, PW.5.1</td>
+            <td>Perform code review or analysis against the organisation's secure coding standards and triage findings; follow secure coding practices. Supporting: PS.1.1 least privilege on code storage, PO.5.1/5.2 environment protection.<sup class="fn"><a id="fnref-14" href="#fn-14">14</a></sup></td>
+            <td class="no">No &mdash; pure inference</td>
+          </tr>
+          <tr>
+            <th scope="row">SOC 2 (AICPA TSC)</th>
+            <td class="num">CC6.1, CC8.1</td>
+            <td>CC6.1 logical access controls over protected information assets &mdash; its points of focus include "manages credentials for infrastructure and software," which is where a secrets control gets mapped. CC8.1 change management is where the CI gate is evidenced.<sup class="fn"><a href="#fn-3">3</a></sup></td>
+            <td class="no">No &mdash; inference</td>
+          </tr>
+          <tr>
+            <th scope="row">CIS Controls v8.1</th>
+            <td class="num">16.12, 5.5, 4.7</td>
+            <td>Implement code-level security checks (static and dynamic analysis); maintain an inventory of service accounts; manage default accounts. Weakest of the eight for this argument &mdash; no safeguard mentions secrets, hardcoded credentials, or credentials in code.<sup class="fn"><a id="fnref-15" href="#fn-15">15</a></sup></td>
+            <td class="no">No &mdash; weakest</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tablewrap">
+      <table class="wide-table">
+        <caption>Regulated industry &mdash; where the obligation has teeth</caption>
+        <thead>
+          <tr>
+            <th scope="col">Regime</th>
+            <th scope="col">Best clause</th>
+            <th scope="col">What it requires</th>
+            <th scope="col">Names secrets?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">PCI DSS v4.0.1</th>
+            <td class="num">8.6.2</td>
+            <td>Passwords and passphrases for application and system accounts "are not hard coded in scripts, configuration/property files, or bespoke and custom source code." Mandatory since <strong>31 March 2025</strong>. With 8.6.3 (periodic rotation at a risk-analysis-defined frequency) and 6.2.3 (pre-release code review).<sup class="fn"><a href="#fn-1">1</a></sup></td>
+            <td class="yes">Yes &mdash; strongest</td>
+          </tr>
+          <tr>
+            <th scope="row">EU DORA<br><span style="font-weight:400;color:var(--ink-mute)">RTS 2024/1774</span></th>
+            <td class="num">Art. 16(3), Art. 7, Art. 20</td>
+            <td>Source code reviews "covering both static and dynamic testing" prior to deployment; cryptographic key management across the full lifecycle including revocation and destruction; unique identification and authentication of natural persons <em>and systems</em>. Level 1: DORA Art. 9(4)(d) on strong authentication and key protection.<sup class="fn"><a id="fnref-16" href="#fn-16">16</a></sup></td>
+            <td class="no">No &mdash; but mandates the mechanism</td>
+          </tr>
+          <tr>
+            <th scope="row">MAS TRM Guidelines<br><span style="font-weight:400;color:var(--ink-mute)">(Singapore, 2021)</span></th>
+            <td class="num">§6.1, §9.2.2, §10.2</td>
+            <td>Secure coding, source code review and application security testing as a named combined control, including cryptographic practices in the coding standard (6.1.2) and tracking of all discovered defects (6.1.7); a process to manage and monitor system and service accounts (9.2.2); key lifecycle including revocation of compromised keys (10.2.1, 10.2.7).<sup class="fn"><a id="fnref-17" href="#fn-17">17</a></sup></td>
+            <td class="no">No &mdash; inference via 6.1.2 and 10.2.2</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="wide">Three things to get right when you cite these</h3>
+    <div class="col flow">
+      <ol>
+        <li><strong>PCI 8.6.2 has a scoping limit that is routinely misstated.</strong> Requirements 8.6.1 and 8.6.2 apply to application and system accounts <em>"that can be used for interactive login."</em> 8.6.3, the rotation requirement, applies to <strong>all</strong> application and system accounts regardless. A machine credential that cannot interactively log in is out of scope for the no-hardcoding rule and in scope for the rotation rule.<sup class="fn"><a id="fnref-18" href="#fn-18">18</a></sup> Claiming 8.6.2 covers every service credential is the most common error made about this clause, and a QSA will correct it.</li>
+        <li><strong>Do not claim the base NIST SSDF mandates secret scanning.</strong> SP 800-218 v1.1 contains no practice or task whose text names secrets, hardcoded credentials, passwords or cryptographic keys. The mapping runs through PW.5.1 and PW.7.2 by implication. The AI profile, SP 800-218A, is where it becomes explicit &mdash; and citing the AI profile for a non-AI system is a stretch an assessor may not accept.</li>
+        <li><strong>SOC 2 has no clause that names secrets, and that is the useful observation.</strong> A control that essentially every organisation is tested on, that no criterion names, will be scoped by whatever the auditor's mapping happens to be. Define the mapping yourself, in your control narrative, before someone else defines it for you.</li>
+      </ol>
+    </div>
+
+    <h3 class="wide">Enforcement precedent, honestly stated</h3>
+    <div class="col flow">
+      <p>The standards record is stronger than the enforcement record. Two cases are worth knowing, and the second comes with a caveat that must not be dropped.</p>
+      <ul>
+        <li><strong>FTC v. Uber Technologies</strong> (Docket C-4662, revised complaint 2018). The Commission's complaint describes an intruder accessing consumers' personal information in an S3 datastore "using an access key that one of Respondent's engineers had publicly posted to GitHub," and a second incident where "the key was in plain text in code that was posted to a <em>private</em> GitHub repository," reached using passwords exposed in unrelated breaches.<sup class="fn"><a href="#fn-7">7</a></sup> This is a federal regulator, in a complaint that produced a consent order, treating a plaintext key in source code as the proximate cause &mdash; and the private-repository detail defeats the "it is only an internal repo" argument directly. It also aligns with GitGuardian's finding that internal repositories are roughly six times more likely to contain hardcoded secrets than public ones.<sup class="fn"><a href="#fn-8">8</a></sup></li>
+        <li><strong>SEC v. SolarWinds and Brown</strong> (S.D.N.Y., filed October 2023). The complaint quotes a researcher's 2019 notification that a public GitHub repository was "leaking ftp credential belong[ing] to SolarWinds," with the password <code>solarwinds123</code>.<sup class="fn"><a id="fnref-19" href="#fn-19">19</a></sup> <strong>The caveat is essential: in mid-2024 the court dismissed most of the SEC's claims.</strong><sup class="fn"><a id="fnref-20" href="#fn-20">20</a></sup> Cite it as an example of a securities regulator treating a leaked repository credential as material to investor disclosure. Do not cite it as a finding of liability.</li>
+      </ul>
+      <p>I searched for ICO, NYDFS and HHS OCR actions naming hardcoded credentials as a cited cause and found none. The honest position for a governance paper is that Uber is the leading precedent, SolarWinds is the leading contested one, and the enforcement record is thinner than the standards record. Build the case on obligation and incident evidence rather than on fear of a fine.</p>
+    </div>
+  </section>
+
+  <!-- ============ OPERATING MODEL ============ -->
+  <section id="model">
+    <div class="sec-head">
+      <span class="sec-label">Section five &middot; Operating model</span>
+      <h2>Governance that survives contact with engineering</h2>
+    </div>
+
+    <div class="ladder">
+      <div class="rung" data-tier="1">
+        <div class="rung-head"><span class="rung-tier">Element 1 &middot; Ownership</span></div>
+        <h4>Name an owner per credential class, not per finding</h4>
+        <p>The failure mode in every programme that stalls is findings landing in a queue with no owner. Ownership should attach to the credential class and the issuing system, not to whoever last touched the file.</p>
+        <ul>
+          <li>Cloud credentials, CI credentials, database credentials, third-party integration tokens: each gets a named accountable engineering leader.</li>
+          <li>Security owns the detection pipeline and the standard. Engineering owns revocation and the SLA. Do not let those blur &mdash; a security team that owns rotation becomes the bottleneck it was meant to remove.</li>
+          <li>Third-party integration tokens need an owner at onboarding. Salesloft Drift was a marketing tool with a path to CRM data; the owner was marketing, and nobody had recorded that.</li>
+        </ul>
+      </div>
+
+      <div class="rung" data-tier="2">
+        <div class="rung-head"><span class="rung-tier">Element 2 &middot; Policy</span></div>
+        <h4>Write a standard that can be tested, not a principle</h4>
+        <p>"Secrets shall not be stored in source code" is unfalsifiable as written and unenforceable in practice. A testable standard names the artefacts, the approved alternatives, and the deadline &mdash; which is exactly what PCI 8.6.2 does and why it is the strongest clause in the corpus.</p>
+        <ul>
+          <li>Enumerate the artefacts in scope: source files, configuration and property files, scripts, IaC, container images and layers, CI definitions and logs, notebooks, ticket and wiki content.</li>
+          <li>Name the approved storage for each credential class, and make the approved path the easy one.</li>
+          <li>State the rotation SLA per exposure class, with the owner. (<a href="part-1.html">Part 1</a> has a starting table.)</li>
+          <li>Define the exception process, its maximum duration, and who reviews expiry.</li>
+          <li>State the credential architecture standard alongside the storage rule: maximum lifetime, required scoping, and whether the credential must be workload-bound. A standard that only says "do not hardcode" leaves the long-lived unscoped token as a compliant outcome.</li>
+        </ul>
+      </div>
+
+      <div class="rung" data-tier="3">
+        <div class="rung-head"><span class="rung-tier">Element 3 &middot; Evidence</span></div>
+        <h4>Assemble the audit pack before the audit</h4>
+        <p>The evidence that satisfies CC6.1, ISO A.5.17, PCI 8.6.2 and DORA RTS Art. 16(3) is largely the same evidence. Collect it once, map it many times.</p>
+        <ul>
+          <li>Repository inventory with scan coverage and last-scan date per repository.</li>
+          <li>Push protection enforcement status per organisation, plus bypass log with justifications and review records.</li>
+          <li>Findings register with detection timestamp, revocation timestamp, and current validity &mdash; the revocation timestamp is the one auditors increasingly ask for.</li>
+          <li>The secure coding standard itself, with evidence of developer acknowledgement (PCI 6.2.2 requires annual training for development personnel).</li>
+          <li>Exception register with expiry dates and review evidence.</li>
+          <li>Your own measured precision sample, which turns "we have a tool" into "we know how well the tool works."</li>
+        </ul>
+      </div>
+
+      <div class="rung" data-tier="4">
+        <div class="rung-head"><span class="rung-tier">Element 4 &middot; Reporting</span></div>
+        <h4>Report on revocation, escalate on lifetime</h4>
+        <p>The risk committee needs two things from this control: whether exposed credentials are being invalidated, and whether the population of long-lived credentials is shrinking. Everything else is operational detail.</p>
+        <ul>
+          <li>Report mean time to revocation and findings-still-valid-at-30-days every cycle. Segment by exposure class.</li>
+          <li>Report percentage of machine identities with a bounded lifetime as the leading indicator, and treat a flat line as the escalation trigger.</li>
+          <li>Report push protection bypass rate with sampled justifications &mdash; the number nobody publishes, that you can read from your own tenant.</li>
+          <li>Keep detection volume in the pack, labelled as an exposure indicator. It tracks engineering headcount, not control performance.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <span class="sec-label">Closing the series</span>
+      <p>Secret scanning is a detection control that most frameworks require without naming, that most organisations buy without operating, and that no tool performs completely. None of those three facts is a reason not to run it.</p>
+      <p>They are reasons to describe it accurately: preventive at the pre-receive boundary and detective everywhere downstream, a sensor that tells a revocation pipeline where to act, funded on the strength of that pipeline rather than on detector counts, evidenced at the three placements that produce an audit trail, and paid for in developer friction that is spent deliberately rather than consumed by accident.</p>
+      <p>And it is worth resisting the tidy closing line this subject invites. The credential that never existed is the only unambiguous win. A short-lived one is not a win by itself &mdash; fifteen minutes is ample for an automated attacker to take data, create persistence, or mint a longer-lived credential. What genuinely reduces risk is the combination: short-lived, tightly scoped, sender-constrained where the protocol allows, and monitored in use. Note that workload identity federation and sender constraint are different controls &mdash; federation removes the standing credential, while mTLS or DPoP binding is what stops a stolen token from being replayed. Governance that asks "are our credentials short-lived?" has asked a quarter of the question.</p>
+    </div>
+  </section>
+
+  <div class="nextup">
+    <span class="sec-label">The series</span>
+    <a href="part-3.html">Part 3 &mdash; The Governed Pipeline</a>
+    <p>The implementation this article governs: the five control points as running configuration, the reference GitHub workflows, the configured-control regression suite, and the hosted push-protection test. Start at <a href="part-1.html">Part 1 &mdash; The Sixty-Second Credential</a> for the threat picture, or <a href="part-2.html">Part 2 &mdash; Nothing Catches Everything</a> for tool selection and measurement.</p>
+  </div>
+
+  <!-- ============ SOURCING ============ -->
+  <section id="sourcing">
+    <div class="sourcing">
+      <h4>Assumptions, sourcing, and confidence</h4>
+      <p><strong>Verified against primary sources.</strong> NIST SP 800-218 v1.1 and SP 800-218A practice text (NIST PDFs); OWASP ASVS 5.0.0 requirement text (project repository); CIS Controls v8.1 Control 16 safeguards (CIS Assessment Specification); PCI DSS future-dated requirement effective dates (PCI SSC Summary of Changes); DORA RTS 2024/1774 article text (EUR-Lex); FTC and SEC complaint paragraphs (ftc.gov, sec.gov).</p>
+      <p><strong>Verified against secondary sources only &mdash; check before quoting verbatim.</strong> ISO/IEC 27001:2022 control body text (the standard is paywalled; control numbers and titles are corroborated across multiple sources, normative text is not). SOC 2 criteria other than CC6.1 and CC8.1 (the AICPA TSC document is gated). PCI DSS full requirement text (the PCI SSC standard is gated; text taken from a QSA-published matrix reproducing v4.0.1 &mdash; the effective dates are from the public PCI SSC Summary of Changes). MAS TRM paragraph numbering (mas.gov.sg blocks automated retrieval; chapter structure matches the published contents). DORA Article 9(4) paragraph lettering.</p>
+      <p><strong>Not found.</strong> No published push protection bypass rate exists from any vendor or academic source. No ICO, NYDFS or HHS OCR enforcement action naming hardcoded credentials as a cited cause was located. Both absences are stated in the article rather than filled.</p>
+      <p><strong>Vendor-sourced.</strong> The 27-day remediation figure, the 79 percent leak incidence and the 75/44 percent confidence gap come from a survey sponsored by GitGuardian and CyberArk, both of whom sell in this market, and the respondents were IT decision-makers rather than developers. Treated as directional and labelled as such in the text.</p>
+      <p><strong>Assumption.</strong> This assumes an organisation with a git-based SDLC, CI/CD, and an external audit or regulatory obligation. Organisations without an assessment obligation should read section four as a design reference rather than a requirements list.</p>
+    </div>
+
+    <div class="refs">
+      <h3>References</h3>
+      <ol>
+        <li id="fn-1">PCI Security Standards Council, PCI DSS v4.0.1, requirements 8.6.1&ndash;8.6.3, 6.2.1&ndash;6.2.4, 6.3.1&ndash;6.3.2, 7.2.5. Future-dated requirement effective dates (31 March 2025) verified against the PCI SSC's public <a href="https://listings.pcisecuritystandards.org/documents/PCI-DSS-v3-2-1-to-v4-0-Summary-of-Changes-r1.pdf">Summary of Changes from PCI DSS v3.2.1 to v4.0</a>. <a class="backref" href="#fnref-1">&#8617;</a></li>
+        <li id="fn-2">OWASP, <a href="https://raw.githubusercontent.com/OWASP/ASVS/master/5.0/en/0x22-V13-Configuration.md">Application Security Verification Standard 5.0.0, V13 Configuration</a> (released 30 May 2025). Requirements 13.3.1&ndash;13.3.4, 13.2.1, 13.2.3, 13.1.4. Note the chapter renumbering from ASVS 4.0, where the equivalent was 6.4.1 (mapped to CWE-798, Use of Hard-coded Credentials). <a class="backref" href="#fnref-2">&#8617;</a></li>
+        <li id="fn-3">AICPA Trust Services Criteria (2017, revised points of focus 2022), CC6.1 and CC8.1. Criterion text verified against <a href="https://documentation.wazuh.com/current/compliance/tsc/common-criteria/cc6.1.html">two</a> <a href="https://www.compliancebase.org/controls/soc-2/cc6-1">independent secondary sources</a> that agree verbatim; the AICPA document itself is gated. <a class="backref" href="#fnref-3">&#8617;</a></li>
+        <li id="fn-4">GitGuardian and CyberArk, <a href="https://blog.gitguardian.com/voice-of-practitioners-2024/"><em>Voice of Practitioners 2024</em></a>, October 2024. Survey of 1,000 IT decision-makers across the US, UK, Germany and France. Vendor-sponsored; respondents are decision-makers, not developers. <a class="backref" href="#fnref-4">&#8617;</a></li>
+        <li id="fn-5">S. K. Basak, J. Cox, B. Reaves and L. Williams (North Carolina State University), <a href="https://arxiv.org/abs/2307.00714">"A Comparative Study of Software Secrets Reporting by Secret Detection Tools"</a>, ESEM 2023. <a class="backref" href="#fnref-5">&#8617;</a></li>
+        <li id="fn-6">M. Krause, J. H. Klemmer, N. Huaman, D. Wermke, Y. Acar and S. Fahl, <a href="https://www.usenix.org/conference/usenixsecurity23/presentation/krause">"Pushed by Accident: A Mixed-Methods Study on Strategies of Handling Secret Information in Source Code Repositories"</a>, USENIX Security 2023. <a class="backref" href="#fnref-6">&#8617;</a></li>
+        <li id="fn-7">Federal Trade Commission, <a href="https://www.ftc.gov/system/files/documents/cases/152_3054_c-4662_uber_technologies_revised_complaint.pdf"><em>In the Matter of Uber Technologies, Inc.</em>, Docket C-4662, revised complaint</a>, 25 October 2018, paragraphs 21 and 24. <a class="backref" href="#fnref-7">&#8617;</a></li>
+        <li id="fn-8">GitGuardian, <a href="https://blog.gitguardian.com/the-state-of-secrets-sprawl-2026/"><em>The State of Secrets Sprawl 2026</em></a>, March 2026. Validity persistence, non-repository incident share, internal-versus-public repository ratio. Vendor research; directional. <a class="backref" href="#fnref-8">&#8617;</a></li>
+        <li id="fn-9">GitHub, <a href="https://github.blog/security/making-secret-scanning-more-trustworthy-reducing-false-positives-at-scale/">"Making secret scanning more trustworthy: Reducing false positives at scale"</a>, June 2026. Relative reduction against GitHub's own baseline; no absolute rate published. <a class="backref" href="#fnref-9">&#8617;</a></li>
+        <li id="fn-10">B. Johnson, Y. Song, E. Murphy-Hill and R. Bowdidge, <a href="https://dl.acm.org/doi/10.5555/2486788.2486877">"Why Don't Software Developers Use Static Analysis Tools to Find Bugs?"</a>, ICSE 2013. Qualitative study of 20 developers; no percentage breakdowns should be attributed to it. <a class="backref" href="#fnref-10">&#8617;</a></li>
+        <li id="fn-11">GitHub, <a href="https://docs.github.com/en/enterprise-cloud@latest/code-security/concepts/secret-security/push-protection-metrics">"Push protection metrics"</a>; organisation-level metrics available since July 2023 and bypass-request metrics since August 2024. No aggregate figure has been published. <a class="backref" href="#fnref-11">&#8617;</a></li>
+        <li id="fn-12">NIST, <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-218A.pdf">SP 800-218A, <em>Secure Software Development Practices for Generative AI and Dual-Use Foundation Models: An SSDF Community Profile</em></a>, July 2024. PO.5.1: "Continuously monitor each environment for plaintext secrets." <a class="backref" href="#fnref-12">&#8617;</a></li>
+        <li id="fn-13">ISO/IEC 27001:2022, Annex A. Control numbers and titles corroborated across multiple secondary sources including <a href="https://www.isms.online/iso-27001/annex-a-2022/5-17-authentication-information-2022/">ISMS.online on A.5.17</a>; the standard itself is paywalled and normative text was not verified against ISO. <a class="backref" href="#fnref-13">&#8617;</a></li>
+        <li id="fn-14">NIST, <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-218.pdf">SP 800-218 v1.1, <em>Secure Software Development Framework</em></a>, February 2022. Verified: no practice or task in this document names secrets, hardcoded credentials, passwords or cryptographic keys. <a class="backref" href="#fnref-14">&#8617;</a></li>
+        <li id="fn-15">CIS, <a href="https://cas.docs.cisecurity.org/en/latest/source/Controls16/">Controls Assessment Specification, Control 16</a> (v8.1). <a class="backref" href="#fnref-15">&#8617;</a></li>
+        <li id="fn-16">European Commission, <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202401774">Commission Delegated Regulation (EU) 2024/1774</a> (DORA RTS on ICT risk management), Articles 6, 7, 16 and 20&ndash;21; and Regulation (EU) 2022/2554 (DORA) Article 9(4). <a class="backref" href="#fnref-16">&#8617;</a></li>
+        <li id="fn-17">Monetary Authority of Singapore, <a href="https://www.mas.gov.sg/-/media/MAS/Regulations-and-Financial-Stability/Regulatory-and-Supervisory-Framework/Risk-Management/TRM-Guidelines-18-January-2021.pdf"><em>Technology Risk Management Guidelines</em></a>, 18 January 2021. Sections 6.1, 6.2.2, 9.1, 9.2 and 10.2. <a class="backref" href="#fnref-17">&#8617;</a></li>
+        <li id="fn-18">Schellman, <a href="https://www.schellman.com/blog/pci-compliance/pci-dss-service-account-requirements">"PCI DSS service account requirements"</a>. QSA commentary on the interactive-login scoping of 8.6.1 and 8.6.2 versus the universal scope of 8.6.3. <a class="backref" href="#fnref-18">&#8617;</a></li>
+        <li id="fn-19">US Securities and Exchange Commission, <a href="https://www.sec.gov/files/litigation/complaints/2023/comp-pr2023-227.pdf"><em>SEC v. SolarWinds Corp. and Timothy G. Brown</em>, complaint</a>, 30 October 2023, paragraph 83. <a class="backref" href="#fnref-19">&#8617;</a></li>
+        <li id="fn-20">Harvard Law School Forum on Corporate Governance, <a href="https://corpgov.law.harvard.edu/2024/08/03/court-dismisses-most-of-secs-claims-against-solarwinds/">"Court Dismisses Most of SEC's Claims Against SolarWinds"</a>, August 2024. Essential caveat on the preceding reference. <a class="backref" href="#fnref-20">&#8617;</a></li>
+        <li id="fn-21"><a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md"><code>secret-scanner-benchmark</code>, run #6</a>, 29 August 2026. Six tools against 41 synthetic secrets, 18 decoys and 4 indicators. Precision figures from a synthetic corpus are not comparable to precision on a real codebase; see <a href="part-2.html">Part 2</a>, section four, for the limitations. <a class="backref" href="#fnref-21">&#8617;</a></li>
+      </ol>
+    </div>
+  </section>
+
+  <footer class="colophon">
+    <span>Secrets in the Software Supply Chain &middot; Part 4 of 4</span>
+    <span>Research current to August 2026</span>
+    <span>Clause identifiers verified as stated in the sourcing note</span>
+  </footer>
+
+</div>
+</body>
+</html>

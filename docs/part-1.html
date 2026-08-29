@@ -24,14 +24,15 @@
 <div class="page">
 <div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
 <span aria-current="page">Part 1 &middot; Threat</span>
-<a href="part-2.html">Part 2 &middot; Engineering</a>
-<a href="part-3.html">Part 3 &middot; Governance</a></div>
+<a href="part-2.html">Part 2 &middot; Detection</a>
+<a href="part-3.html">Part 3 &middot; Implementation</a>
+<a href="part-4.html">Part 4 &middot; Governance</a></div>
   <header class="masthead">
     <p class="kicker">Application Security &middot; Secrets &amp; Machine Identity</p>
     <h1>The Sixty&#8209;Second Credential</h1>
     <p class="dek">A leaked secret is now exploited faster than any human process can revoke it. That single fact decides what secret scanning can and cannot do for you.</p>
     <div class="byline">
-      <span>Part 1 of 3 &middot; Threat and business case</span>
+      <span>Part 1 of 4 &middot; Threat and business case</span>
       <span>Research current to August 2026</span>
       <span>~5,200 words &middot; 26 min</span>
     </div>
@@ -429,7 +430,7 @@
       <div class="rung" data-tier="4">
         <div class="rung-head"><span class="rung-tier">Tier 4 &middot; Necessary, insufficient</span></div>
         <h4>Detect broadly, and past the repository</h4>
-        <p>Scanning earns its place as the sensor that tells the tiers above where to act &mdash; and at the pre-receive boundary, as a preventive control in its own right. Deploy it at both. Do not fund the detective part as if it were the preventive one. <a href="part-2.html">Part 2</a> covers how to choose and test a scanner; <a href="part-3.html">Part 3</a> covers where to install it and what each placement lets you claim.</p>
+        <p>Scanning earns its place as the sensor that tells the tiers above where to act &mdash; and at the pre-receive boundary, as a preventive control in its own right. Deploy it at both. Do not fund the detective part as if it were the preventive one. <a href="part-2.html">Part 2</a> covers how to choose and test a scanner, <a href="part-3.html">Part 3</a> how to build and verify the pipeline, and <a href="part-4.html">Part 4</a> what each placement lets you claim.</p>
         <ul>
           <li><strong>Server-side push protection first.</strong> This is the enforcement boundary: it applies to every push from every clone regardless of what any individual developer has installed, and it produces a server-side log of both blocks and bypasses. Enable it with bypass requiring a justification that generates a reviewed record.</li>
           <li><strong>Local pre-commit and pre-push hooks second, as defence in depth</strong> &mdash; not as the primary control. They give the fastest feedback and keep noise out of the pipeline, but they are user-installed and user-removable: <code>--no-verify</code> disables them, and a fresh clone has none until someone runs the setup. Treat them as a developer convenience that reduces load on the boundary above, and never as the thing you evidence to an assessor.</li>
@@ -521,7 +522,7 @@
   </section>
 
   <footer class="colophon">
-    <span>Secrets in the Software Supply Chain &middot; Part 1 of 3</span>
+    <span>Secrets in the Software Supply Chain &middot; Part 1 of 4</span>
     <span>Research current to August 2026</span>
   </footer>
 

@@ -24,14 +24,15 @@
 <div class="page">
 <div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
 <a href="part-1.html">Part 1 &middot; Threat</a>
-<span aria-current="page">Part 2 &middot; Engineering</span>
-<a href="part-3.html">Part 3 &middot; Governance</a></div>
+<span aria-current="page">Part 2 &middot; Detection</span>
+<a href="part-3.html">Part 3 &middot; Implementation</a>
+<a href="part-4.html">Part 4 &middot; Governance</a></div>
   <header class="masthead">
     <p class="kicker">Application Security &middot; Tooling &amp; Measurement</p>
     <h1>Nothing Catches Everything</h1>
     <p class="dek">Scanner vendors lead with detector counts. Miss rates are far harder to find. So I measured one: six tools, one synthetic corpus, one secret caught by nothing.</p>
     <div class="byline">
-      <span>Part 2 of 3 &middot; Engineering</span>
+      <span>Part 2 of 4 &middot; Engineering</span>
       <span>Research current to August 2026</span>
       <span>~7,700 words &middot; 39 min</span>
     </div>
@@ -48,7 +49,7 @@
         <li>Detection is not the failure. Revocation is. GitGuardian found 64 percent of secrets confirmed valid in 2022 were still valid in January 2026.<sup class="fn"><a id="fnref-2b" href="#fn-2">2</a></sup> Scanning, validity checking, revocation and credential architecture are four different control types; <a href="part-1.html">Part 1</a> separates them. Your scanner's job is to feed a remediation pipeline, not to be one.</li>
         <li>All three of the exposures examined in part one &mdash; selected for structural variety, not for size &mdash; turned on credentials that no repository scanner would have flagged &mdash; one was an issued OAuth token, one was a publishing token sitting in a CI runner's environment, and one campaign used a secret scanner as its harvesting tool.<sup class="fn"><a id="fnref-3" href="#fn-3">3</a></sup></li>
         <li>Even within its own remit, no scanner is complete. Against a purpose-built corpus of 41 synthetic secrets, the best single tool reached 95 percent recall, all six together reached 40 of 41, no tool caught anything the others missed, and one secret was caught by nothing.<sup class="fn"><a id="fnref-28b" href="#fn-28">28</a></sup> Section four has the run.</li>
-        <li>Regulation now names this explicitly. PCI DSS v4.0.1 requirement 8.6.2 prohibits hardcoded passwords in scripts, configuration files and source code, and became mandatory on 31 March 2025.<sup class="fn"><a id="fnref-4" href="#fn-4">4</a></sup> <a href="part-3.html">Part 3</a> covers the full mapping.</li>
+        <li>Regulation now names this explicitly. PCI DSS v4.0.1 requirement 8.6.2 prohibits hardcoded passwords in scripts, configuration files and source code, and became mandatory on 31 March 2025.<sup class="fn"><a id="fnref-4" href="#fn-4">4</a></sup> <a href="part-4.html">Part 4</a> covers the full mapping.</li>
       </ol>
     </div>
     <div class="col flow" style="margin-top:2rem">
@@ -222,7 +223,7 @@
           <tr><th scope="row">Baseline and allowlist model</th><td>Can you accept a known finding without disabling the rule globally? Is the baseline reviewable in code review?</td><td>Without this, teams disable rules. With it, exceptions are visible and expire.</td></tr>
           <tr><th scope="row">Output format</th><td>SARIF, JSON, exit codes? Does it integrate with your existing findings pipeline?</td><td>SARIF is what lets findings land in a platform security tab rather than a log nobody reads.</td></tr>
           <tr><th scope="row">Performance</th><td>Time to scan your largest repository's full history, on your CI runner size.</td><td>A scan that takes 40 minutes will be moved to a nightly job and then to nowhere.</td></tr>
-          <tr><th scope="row">Deployment points</th><td>Server-side push protection first, then CI action, scheduled full scan, and local pre-commit hook &mdash; which does it support?</td><td>Covered in depth in <a href="part-3.html">Part 3</a>. Server-side enforcement is the only preventive placement that is not user-removable; local hooks are defence in depth.</td></tr>
+          <tr><th scope="row">Deployment points</th><td>Server-side push protection first, then CI action, scheduled full scan, and local pre-commit hook &mdash; which does it support?</td><td>Covered in depth in <a href="part-4.html">Part 4</a>. Server-side enforcement is the only preventive placement that is not user-removable; local hooks are defence in depth.</td></tr>
           <tr><th scope="row">Licence</th><td>Exact licence of the CLI <em>and</em> of any CI action wrapper. They can differ.</td><td>See the Gitleaks note below &mdash; this trips people up in practice.</td></tr>
           <tr><th scope="row">Maintenance signal</th><td>Recent commits, rule update cadence, responsiveness to new provider formats.</td><td>New token formats appear constantly; a frozen ruleset degrades silently.</td></tr>
         </tbody>
@@ -689,19 +690,19 @@
       <p>What follows from that is a different posture rather than a different purchase.</p>
       <ul>
         <li><strong>Run a second tool only if you can name what it adds.</strong> This recommendation comes out of the new data much weaker than it went in, and the honest thing is to say so. The 2023 study's 600-unique-true-positives result did not reproduce at all: once AWS identifiers are excluded, <em>no</em> tool in the 2026 field had a unique catch, and the whole six-tool union reached 40/41 against a best single tool of 39/41. One secret. On this corpus, adding five scanners to Betterleaks bought one additional finding and five triage queues. Two readings are available and I cannot separate them: the field may genuinely have converged, several of these tools now sharing a rule lineage; or 41 planted secrets may be too small a sample to surface disagreement that a corpus of 15,084 makes visible. Either way the practical instruction is the same &mdash; do not add a second scanner on principle. Measure what your first one misses on your own corpus, and add a second only when you can name the category it covers.</li>
-        <li><strong>Check for detector-level dominance before adding, and be willing to remove &mdash; but do not confuse that with a migration case.</strong> In this run Betterleaks caught every secret that Gitleaks, Kingfisher and TruffleHog caught, plus more. What that supports is narrow: <em>no recall loss relative to Gitleaks, on this corpus, at these versions.</em> It is not a recommendation to switch. A production migration also spends configuration compatibility, mature CI integration, redaction behaviour, SARIF and reporting expectations that downstream systems depend on, team familiarity, maintenance and stability confidence, and an established exception and governance workflow &mdash; none of which a 45-secret synthetic corpus can measure, and all of which are the substance of <a href="part-3.html">Part 3</a>. Detector recall is one input to that decision and rarely the decisive one. Run the comparison on your own corpus; a tool that adds no unique catches is adding triage load, and that is a reason to examine it, not to rip it out.</li>
+        <li><strong>Check for detector-level dominance before adding, and be willing to remove &mdash; but do not confuse that with a migration case.</strong> In this run Betterleaks caught every secret that Gitleaks, Kingfisher and TruffleHog caught, plus more. What that supports is narrow: <em>no recall loss relative to Gitleaks, on this corpus, at these versions.</em> It is not a recommendation to switch. A production migration also spends configuration compatibility, mature CI integration, redaction behaviour, SARIF and reporting expectations that downstream systems depend on, team familiarity, maintenance and stability confidence, and an established exception and governance workflow &mdash; none of which a 41-secret synthetic corpus can measure. Part three is where the configured pipeline gets built and regression-tested; part four is where it gets governed. Detector recall is one input to that decision and rarely the decisive one. Run the comparison on your own corpus; a tool that adds no unique catches is adding triage load, and that is a reason to examine it, not to rip it out.</li>
         <li><strong>Treat scanner output as a sensor reading, not a control outcome.</strong> The scanner's job is to point the revocation pipeline. Measure it on time-to-revocation, not on findings volume.</li>
         <li><strong>Assume a non-zero miss rate and design for it.</strong> Since some secrets will always reach production undetected, the controls that matter are the ones that reduce what an undetected secret is worth &mdash; short lifetimes, tight scoping, workload binding, and monitoring of credential use, in combination. Note the phrasing: a short lifetime removes persistence and shrinks the replay window, not initial impact. Fifteen minutes is ample to exfiltrate data or mint a second credential. And keep two things separate &mdash; workload identity federation removes the standing credential from the runner, but the token it issues is usually still a bearer token; only a sender-constrained credential (mTLS, DPoP) makes the stolen string itself unusable. This is the ladder in <a href="part-1.html">Part 1</a>, and it is why scanning sits at tier four rather than tier one.</li>
         <li><strong>Benchmark against your own estate, and re-run it.</strong> Vendor detector counts describe the vendor's coverage of the world. Only your own corpus describes their coverage of you &mdash; and a result from a year ago is stale in both directions, which is why the benchmark above runs monthly and prints its own staleness warning. <a href="https://github.com/llody9977/secret-scanner-benchmark">Fork it</a>, add the credential formats your estate actually uses, and read the per-type table rather than the headline F1.</li>
       </ul>
-      <p>Where the scanner should be installed, what it lets you claim to an auditor, and what it costs the developers who live with it are the subject of <a href="part-3.html">Part 3</a>.</p>
+      <p>Where the scanner should be installed, and what that pipeline looks like as running configuration rather than a diagram, is the subject of <a href="part-3.html">Part 3</a>. What it lets you claim to an auditor, and what it costs the developers who live with it, is <a href="part-4.html">Part 4</a>.</p>
     </div>
   </section>
 
   <div class="nextup">
     <span class="sec-label">Next in this series</span>
-    <a href="part-3.html">Part 3 &mdash; The Unnamed Control</a>
-    <p>Where scanners belong in the pipeline, what governance can honestly claim from them, the friction they impose on developers, and which standards actually require them &mdash; with the clause numbers.</p>
+    <a href="part-3.html">Part 3 &mdash; The Governed Pipeline</a>
+    <p>The same decisions as running configuration: which control point to roll out first, the five gates and what each one owns, a reference GitHub implementation with pinned versions and redaction handling, a regression suite for the controls you configured, and the hosted push-protection test where scanning demonstrably prevented an exposure.</p>
   </div>
 
   <!-- ============ SOURCING ============ -->
@@ -753,7 +754,7 @@
   </section>
 
   <footer class="colophon">
-    <span>Secrets in the Software Supply Chain &middot; Part 2 of 3</span>
+    <span>Secrets in the Software Supply Chain &middot; Part 2 of 4</span>
     <span>Research current to August 2026</span>
     <span>Benchmark: run #5, 29 August 2026 &mdash; rulesets drift, re-run before citing</span>
   </footer>

@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Secrets in the Software Supply Chain</title>
-<meta name="description" content="A three-part engineering series on hardcoded secrets in the software supply chain: the threat, scanner selection and measurement, and governance.">
+<meta name="description" content="A four-part engineering series on hardcoded secrets in the software supply chain: the threat, detection and a reproducible benchmark, the implemented pipeline, and governance.">
 <meta name="author" content="Secrets in the Software Supply Chain">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#1d4ed8">
 <link rel="canonical" href="https://llody9977.github.io/secret-scanner-benchmark/">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Secrets in the Software Supply Chain">
-<meta property="og:description" content="A three-part engineering series on hardcoded secrets in the software supply chain: the threat, scanner selection and measurement, and governance.">
+<meta property="og:description" content="A four-part engineering series on hardcoded secrets in the software supply chain: the threat, detection and a reproducible benchmark, the implemented pipeline, and governance.">
 <meta property="og:url" content="https://llody9977.github.io/secret-scanner-benchmark/">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='25' r='9' fill='none' stroke='white' stroke-width='5'/%3E%3Cpath d='M32 33v18M32 44h8' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -26,8 +26,8 @@
     <p class="kicker">Application Security &middot; Secrets &amp; Machine Identity</p>
     <h1>Secrets in the Software Supply&nbsp;Chain</h1>
     <p class="dek">A leaked credential is exploited faster than any human process can revoke it.
-    Three parts on what that means: the threat and the business case, how to choose and measure a
-    scanner, and what governance can honestly claim.</p>
+    Four parts on what that means: the threat and the business case, how to choose and measure a
+    scanner, how to build and verify the pipeline, and what governance can honestly claim.</p>
     <p class="idx-note">Research current to August 2026. Companion benchmark:
     <a href="https://github.com/llody9977/secret-scanner-benchmark">secret-scanner-benchmark</a> &middot;
     <a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md">latest results</a>.</p>
@@ -48,9 +48,9 @@
       <a class="idx-link" href="part-2.html">
         <span class="idx-num">02</span>
         <span class="idx-body">
-          <span class="idx-kick">Engineering</span>
+          <span class="idx-kick">Detection</span>
           <span class="idx-title">Nothing Catches Everything</span>
-          <span class="idx-blurb">The five detection techniques and their blind spots, how to choose and test a scanner, and a six-tool benchmark against 45 synthetic secrets — one caught by nothing.</span>
+          <span class="idx-blurb">The five detection techniques and their blind spots, how to choose and test a scanner, and a six-tool benchmark against 41 synthetic secrets — no tool with a unique catch, one secret caught by nothing.</span>
           <span class="idx-go">Read &rarr;</span>
         </span>
       </a>
@@ -59,9 +59,20 @@
       <a class="idx-link" href="part-3.html">
         <span class="idx-num">03</span>
         <span class="idx-body">
+          <span class="idx-kick">Implementation</span>
+          <span class="idx-title">The Governed Pipeline</span>
+          <span class="idx-blurb">Five control points with an owner, a failure behaviour and a bypass authority each; a reference GitHub implementation; a regression suite for the controls you configured; and the hosted push test where scanning actually prevented the exposure.</span>
+          <span class="idx-go">Read &rarr;</span>
+        </span>
+      </a>
+    </li>
+    <li class="idx-item">
+      <a class="idx-link" href="part-4.html">
+        <span class="idx-num">04</span>
+        <span class="idx-body">
           <span class="idx-kick">Governance</span>
           <span class="idx-title">The Unnamed Control</span>
-          <span class="idx-blurb">Where scanning belongs in the pipeline, what it can honestly be claimed to do, the developer friction it creates, and the standards that require it, with clause numbers.</span>
+          <span class="idx-blurb">What each placement lets you claim to an assessor, which standards require secret scanning and which only imply it — with clause numbers — the developer friction it creates, and the metrics that map to risk.</span>
           <span class="idx-go">Read &rarr;</span>
         </span>
       </a>

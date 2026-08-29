@@ -15,11 +15,37 @@ runnable.
 **Companion series:** *[Secrets in the Software Supply Chain](https://llody9977.github.io/secret-scanner-benchmark/)*
 — [part 1](https://llody9977.github.io/secret-scanner-benchmark/part-1.html) (threat),
 [part 2](https://llody9977.github.io/secret-scanner-benchmark/part-2.html) (this benchmark),
-[part 3](https://llody9977.github.io/secret-scanner-benchmark/part-3.html) (governance).
+[part 3](https://llody9977.github.io/secret-scanner-benchmark/part-3.html) (the implemented
+pipeline — `controls/` and `regression/` in this repository),
+[part 4](https://llody9977.github.io/secret-scanner-benchmark/part-4.html) (governance).
 
 **Every credential here is synthetic and non-functional.** See
 [SECURITY.md](SECURITY.md) for how each format is fabricated and why it cannot
 be used.
+
+## Two test populations, deliberately separate
+
+This repository holds two corpora that answer different questions. Confusing
+them is the easiest mistake to make here, because both are collections of fake
+secrets.
+
+| | Comparative benchmark | Configured-control regression suite |
+|---|---|---|
+| Lives in | `corpus/`, generated to `bench/` | `regression/` |
+| Question | Which tool detects what? | Does *our* gate still work? |
+| Configuration | Stock, per tool | This repo's `controls/gitleaks.toml` |
+| Population | 41 planted secrets, 18 decoys, 4 indicators | 16 must-block, 5 must-pass |
+| Output | Precision, recall, F1, coverage | Pass or fail, per control decision |
+| A failure means | Interesting; write it up | Something is broken; fix it |
+
+Tuning a tool for the benchmark would measure the tuning. Running the
+regression suite against stock configuration would measure the vendor rather
+than the control. See [`regression/README.md`](regression/README.md) and
+[`controls/README.md`](controls/README.md).
+
+```bash
+python regression/run.py        # 21 scenarios; needs gitleaks 8.30.1
+```
 
 **Latest results:** [docs/RESULTS.md](docs/RESULTS.md) — best single-tool recall
 95% (Betterleaks); no tool has a unique catch; two tools reach 40/41; one
@@ -190,6 +216,13 @@ non-live. Not covered: `git-secrets` (no structured output to parse) and GitHub
 secret scanning (a platform feature, not a CLI — though its push protection
 already fires on this corpus; see SECURITY.md).
 
+`.github/workflows/controls.yml` is the other half: the configured control set
+rather than the benchmark. Three jobs — the blocking full-history gate, the
+configured-control regression suite, and scheduled discovery — each
+distinguishing "scanned, clean" from "did not scan", and each verifying report
+redaction before publishing a summary. See
+[`controls/README.md`](controls/README.md).
+
 Adding a tool: add it to the `scan` matrix with an install + run step that
 writes `scan-output/<tool>.<ext>` and `scan-output/<tool>.version`, then add an
 `add(...)` line to the run-index builder in the `score` job. Write a parser in
@@ -219,7 +252,20 @@ ssbench/
   cli.py            ssbench generate | score | verify
 generator/generate.py   thin entrypoint (article layout)
 scoring/score.py        thin entrypoint (article layout)
-corpus/                  committed: seed + manifest.yaml
+corpus/                 committed: seed + redacted manifest.yaml
+
+controls/               the configured control set — configuration that ENFORCES
+  gitleaks.toml           the blocking ruleset (gate, pre-commit)
+  trufflehog.yml          detector set for scheduled discovery
+  pre-commit-config.yaml  optional local hooks
+regression/             configured-control regression suite — NOT a benchmark
+  manifest.yaml           21 scenarios and their specified control decision
+  templates/              fixtures with {{PLACEHOLDER}} tokens, never values
+  shapes.py               deterministic placeholder values from the seed
+  run.py                  materialise, scan, assert every control decision
+results/                hosted-push-protection.json — the host-control evidence
+docs/                   the published series, RESULTS.md, HOSTED-PUSH-PROTECTION.md,
+                        INCIDENT-RESPONSE.md
 ```
 
 ---
@@ -234,6 +280,15 @@ corpus/                  committed: seed + manifest.yaml
   2023 study was commercial.
 - **A result is a snapshot.** Rulesets change monthly. The schedule re-runs it;
   a result older than a few weeks is stale in both directions.
+- **This measures detection and nothing else.** Not configuration burden, output
+  handling, integration surface, ruleset maintenance, project maturity or
+  governance fit. "No detection loss on this corpus at these versions" is not
+  operational equivalence, and a recall table is an input to a tool decision
+  rather than the decision.
+- **Static scanning cannot reach runtime credentials.** Stolen session cookies,
+  tokens in process memory, dynamically minted credentials, values from a
+  metadata service — none is ever written to a file a scanner walks. Nothing in
+  this repository says anything about that surface.
 
 ## Licence
 
