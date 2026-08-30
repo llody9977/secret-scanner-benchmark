@@ -207,12 +207,14 @@
   <!-- ============ PART 2: THREE EXPOSURES ============ -->
   <section id="cases">
     <div class="sec-head">
-      <span class="sec-label">Section two &middot; Evidence</span>
+      <span class="sec-label">Section two &middot; Boundaries</span>
       <h2>Three exposures, three different roles for a secret</h2>
     </div>
 
     <div class="col flow">
       <p>These three were selected not because they were the largest, but because each shows a secret playing a structurally different role in the attack. Treating them as one category &mdash; "leaked credentials" &mdash; is what causes programmes to buy one control and assume it covers all three.</p>
+      <p><strong>Read them for scope, not for a verdict.</strong> All three sit outside what repository scanning can reach, and that is why they are here: they map the boundary of the control the rest of this series builds. None of them is an argument that the control is not worth building. That argument is in the volume figures above &mdash; and it is made of statistics rather than stories for a reason that is worth stating, because it is the reason this section looks the way it does.</p>
+      <p><strong>Prevented exposures do not generate case studies.</strong> A key that push protection blocks never becomes an incident, never gets disclosed, and never gets written up. The public incident record is therefore systematically biased against every preventive control, this one included: <em>the cases it catches are the cases that do not exist.</em> What is visible is the leak volume &mdash; 28.65 million secrets added to public GitHub in a year, two-thirds of confirmed-valid ones never revoked. What is invisible is how many were stopped at a boundary and left no trace. So the evidence in this article is split by necessity, not by preference: statistics for what scanning is for, narratives for where it stops. Weighting the narratives more heavily because they are more memorable is the mistake this section is trying not to cause.</p>
     </div>
 
     <div class="cases" style="margin-top:2rem">
@@ -302,6 +304,7 @@
       <p><strong>These three cases were selected because repository scanning does not cover them.</strong> They were chosen for structural variety &mdash; an issued OAuth token, a token harvested off a CI runner, a publishing token stolen from a runner environment &mdash; specifically to map the boundary of the control. The 0-of-3 in that row is therefore <em>by construction</em>, not a measurement.</p>
       <p>So the honest reading is narrow, and it is worth being pedantic about because the wider reading is the one that spreads: <strong>this sample demonstrates that repository scanning does not cover every secret-exposure mechanism. It cannot tell you how often repository scanning would be effective across the whole population of secret incidents, and nothing here should be cited as if it could.</strong> A sample chosen for boundary illustration cannot estimate a base rate. If you want the base rate for your own organisation, the answer is in your own incident history, not in three case studies picked for contrast.</p>
       <p>The classic case &mdash; an API key typed into a config file and committed &mdash; is absent from this section on purpose, because it is the case everyone already agrees scanning catches, and it would have taught nothing. It is also, on the leak-volume data at the top of this article, extremely common. Both things are true.</p>
+      <p>There is one case in this series where scanning demonstrably prevented an exposure, and it is in <a href="part-3.html#hosted">Part 3</a>: a credential-shaped value pushed deliberately at an enabled push-protection control, rejected before the object reached a server anyone else could read. It is a test rather than an incident &mdash; which is exactly the point made above. The prevented case had to be <em>manufactured</em>, because the real ones leave nothing behind to cite.</p>
     </div>
 
     <div class="col flow" style="margin-top:2rem">
