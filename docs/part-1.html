@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Sixty-Second Credential — Secrets in the Software Supply Chain</title>
-<meta name="description" content="A publicly exposed, harvestable credential is exploited faster than any human process can revoke it. The threat, three 2025-26 exposures and what they cost, and the control set that actually moves risk. Part 1 of Secrets in the Software Supply Chain.">
+<meta name="description" content="A publicly exposed, harvestable credential can be exploited within a minute &mdash; far faster than human revocation typically runs. The threat, three 2025-26 exposures and what they cost, and the control set that actually moves risk. Part 1 of Secrets in the Software Supply Chain.">
 <meta name="author" content="Secrets in the Software Supply Chain">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#1d4ed8">
 <link rel="canonical" href="https://llody9977.github.io/secret-scanner-benchmark/part-1.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="The Sixty-Second Credential">
-<meta property="og:description" content="A publicly exposed, harvestable credential is exploited faster than any human process can revoke it. The threat, three 2025-26 exposures and what they cost, and the control set that actually moves risk. Part 1 of Secrets in the Software Supply Chain.">
+<meta property="og:description" content="A publicly exposed, harvestable credential can be exploited within a minute &mdash; far faster than human revocation typically runs. The threat, three 2025-26 exposures and what they cost, and the control set that actually moves risk. Part 1 of Secrets in the Software Supply Chain.">
 <meta property="og:url" content="https://llody9977.github.io/secret-scanner-benchmark/part-1.html">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='25' r='9' fill='none' stroke='white' stroke-width='5'/%3E%3Cpath d='M32 33v18M32 44h8' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -30,11 +30,11 @@
   <header class="masthead">
     <p class="kicker">Application Security &middot; Secrets &amp; Machine Identity</p>
     <h1>The Sixty&#8209;Second Credential</h1>
-    <p class="dek">A publicly exposed, harvestable credential is exploited faster than any human process can revoke it. That single fact decides what secret scanning can and cannot do for you.</p>
+    <p class="dek">A publicly exposed, harvestable credential can be exploited within a minute &mdash; far faster than human revocation typically runs. That timing, and not the detection rate, decides what secret scanning can and cannot do for you.</p>
     <div class="byline">
       <span>Part 1 of 4 &middot; Threat and business case</span>
       <span>Research current to August 2026</span>
-      <span>~5,200 words &middot; 26 min</span>
+      <span>~8,800 words &middot; 40 min</span>
     </div>
   </header>
 
@@ -43,7 +43,7 @@
     <div class="exec">
       <h2>Executive summary</h2>
       <ol class="exec-list">
-        <li>Secret exposure is an access path, not a hygiene problem &mdash; a working route into cloud estates, CI/CD pipelines and SaaS data. MFA does not stand in the way of it, and the reason is structural rather than a misconfiguration: <strong>MFA is enforced at an interactive sign-in, and a leaked API key, token or session cookie is presented on API calls that have no sign-in step.</strong> There is no moment in the flow at which a second factor could be demanded. Where a human did sign in, it happened once, when the credential was issued, and the credential outlives it; where the credential belongs to a machine, no human ever signed in at all. Possession is the whole of the authentication.</li>
+        <li>Secret exposure is an access path, not a hygiene problem &mdash; a working route into cloud estates, CI/CD pipelines and SaaS data. MFA usually does not stand in the way of it, and the reason is structural rather than a misconfiguration: <strong>MFA is enforced at an interactive sign-in, and a leaked API key, token or session cookie is typically presented on API calls that have no sign-in step.</strong> On that default path there is no moment at which a second factor could be demanded. The exceptions are real but are things you have to deploy deliberately: step-up authentication on sensitive operations, continuous access evaluation that can kill a session mid-life, and sender-constrained tokens that are useless to anyone but the client they were issued to. Tier one below, and <a href="part-3.html#architecture">Part 3</a>, are largely about buying those exceptions. Where a human did sign in, it happened once, when the credential was issued, and the credential outlives it; where the credential belongs to a machine, no human ever signed in at all. Possession is the whole of the authentication.</li>
         <li>Volume is rising sharply. GitGuardian's <em>State of Secrets Sprawl 2026</em> counted roughly 28.65 million hardcoded secrets added to public GitHub in 2025, up 34 percent year on year &mdash; the largest single-year jump it has recorded. Credentials for AI services rose 81 percent in the same period.<sup class="fn"><a id="fnref-1" href="#fn-1">1</a></sup></li>
         <li>Automation has compressed the attacker's timeline to near zero. Harvesters watch public commit streams continuously; industry reporting puts the median time from a secret hitting a public repository to first attacker use at under sixty seconds,<sup class="fn"><a id="fnref-2" href="#fn-2">2</a></sup> and Comparitech's controlled honeypot measured first abuse at about one minute.<sup class="fn"><a id="fnref-3" href="#fn-3">3</a></sup> How much of that pipeline is AI rather than ordinary scripted automation is less well evidenced than the timing itself &mdash; section one separates the two.</li>
         <li>AI has also increased the supply of secrets, though the headline figure is narrower than it is usually quoted. GitGuardian measured <strong>Claude Code-assisted commits in its own dataset</strong> leaking secrets at 3.2 percent against a 1.5 percent baseline across all public commits.<sup class="fn"><a id="fnref-1b" href="#fn-1">1</a></sup> That is one assistant, on one vendor's telemetry &mdash; not a measurement of AI-generated code in general. Separately &mdash; and about general security defects rather than secret leakage specifically, so it corroborates the direction of travel and not this claim &mdash; the Cloud Security Alliance found AI-generated code introducing security defects in about 45 percent of tasks.<sup class="fn"><a id="fnref-4" href="#fn-4">4</a></sup></li>
@@ -96,7 +96,7 @@
     </div>
 
     <div class="col flow">
-      <p>The convenient story is that AI helps attackers. The accurate story is that AI has simultaneously increased the number of secrets in circulation and removed the time it takes to find them. Both movements are measurable, and they compound.</p>
+      <p>The convenient story is that AI helps attackers. The accurate story is narrower and splits into two movements that are usually run together. <strong>AI has increased the number of secrets in circulation</strong> &mdash; that is measurable, and the figures are below. <strong>The time taken to find them was already close to zero before language models existed</strong>: continuous harvesting of public commit streams and automated validation of what they yield have operated at scale for years, and neither requires a model. What compounds here is more secrets meeting older automation, not AI closing the discovery gap. The demand section separates what is evidenced from what is asserted, because the second half of that story is where most of the overclaiming happens.</p>
     </div>
 
     <h3 class="col">Supply: more secrets, in more places</h3>
@@ -213,8 +213,8 @@
 
     <div class="col flow">
       <p>These three were selected not because they were the largest, but because each shows a secret playing a structurally different role in the attack. Treating them as one category &mdash; "leaked credentials" &mdash; is what causes programmes to buy one control and assume it covers all three.</p>
-      <p><strong>Read them for scope, not for a verdict.</strong> All three sit outside what repository scanning can reach, and that is why they are here: they map the boundary of the control the rest of this series builds. None of them is an argument that the control is not worth building. That argument is in the volume figures above &mdash; and it is made of statistics rather than stories for a reason that is worth stating, because it is the reason this section looks the way it does.</p>
-      <p><strong>Prevented exposures do not generate case studies.</strong> A key that push protection blocks never becomes an incident, never gets disclosed, and never gets written up. The public incident record is therefore systematically biased against every preventive control, this one included: <em>the cases it catches are the cases that do not exist.</em> What is visible is the leak volume &mdash; 28.65 million secrets added to public GitHub in a year, and two-thirds of the confirmed-valid ones from 2022 still valid nearly four years later. What is invisible is how many were stopped at a boundary and left no trace. So the evidence in this article is split by necessity, not by preference: statistics for what scanning is for, narratives for where it stops. Weighting the narratives more heavily because they are more memorable is the mistake this section is trying not to cause.</p>
+      <p><strong>Read them for scope, not for a verdict.</strong> All three sit outside what repository scanning can reach, and that is why they are here: they map the boundary of the control the rest of this series builds. None is an argument against building it &mdash; that argument is in the volume figures above, and it is made of statistics rather than stories for a reason.</p>
+      <p><strong>Prevented exposures do not generate case studies.</strong> A key that push protection blocks never becomes an incident, never gets disclosed, never gets written up. The public incident record is therefore biased against every preventive control, this one included: <em>the cases it catches are the cases that do not exist.</em> What is visible is leak volume; what is invisible is how many were stopped at a boundary. So the evidence here is split by necessity rather than preference &mdash; statistics for what scanning is for, narratives for where it stops.</p>
     </div>
 
     <div class="cases" style="margin-top:2rem">
@@ -301,8 +301,7 @@
 
     <div class="verdict" style="margin-top:2rem" data-tone="critical">
       <span class="sec-label">Selection bias, stated plainly</span>
-      <p><strong>These three cases were selected because repository scanning does not cover them.</strong> They were chosen for structural variety &mdash; an issued OAuth token, a token harvested off a CI runner, a publishing token stolen from a runner environment &mdash; specifically to map the boundary of the control. The 0-of-3 in that row is therefore <em>by construction</em>, not a measurement.</p>
-      <p>So the honest reading is narrow, and it is worth being pedantic about because the wider reading is the one that spreads: <strong>this sample demonstrates that repository scanning does not cover every secret-exposure mechanism. It cannot tell you how often repository scanning would be effective across the whole population of secret incidents, and nothing here should be cited as if it could.</strong> A sample chosen for boundary illustration cannot estimate a base rate. If you want the base rate for your own organisation, the answer is in your own incident history, not in three case studies picked for contrast.</p>
+      <p>The 0-of-3 in that row is <em>by construction</em>, not a measurement. <strong>This sample shows that repository scanning does not cover every secret-exposure mechanism; it cannot say how often the control would be effective across the population of secret incidents.</strong> A sample chosen for boundary illustration cannot estimate a base rate. If you want yours, it is in your own incident history, not in three cases picked for contrast.</p>
       <p>The classic case &mdash; an API key typed into a config file and committed &mdash; is absent from this section on purpose, because it is the case everyone already agrees scanning catches, and it would have taught nothing. It is also, on the leak-volume data at the top of this article, extremely common. Both things are true.</p>
       <p>There is one case in this series where scanning demonstrably prevented an exposure, and it is in <a href="part-3.html#hosted">Part 3</a>: a credential-shaped value pushed deliberately at an enabled push-protection control, rejected before the object reached a server anyone else could read. It is a test rather than an incident &mdash; which is exactly the point made above. The prevented case had to be <em>manufactured</em>, because the real ones leave nothing behind to cite.</p>
     </div>
@@ -549,7 +548,7 @@
 
     <div class="col flow">
       <p>This article argues a position. Stated without decoration: <strong>credential exposure is better addressed by shortening credential life, constraining privilege and automating revocation than by detecting more of it, and detection earns its place mainly as a preventive control at the push boundary and as the sensor that tells the other controls where to aim.</strong> That is a claim, not a neutral summary of a literature, and several choices in how the argument is built push a reader toward it. They are listed below, with what has been done about each and what remains after that.</p>
-      <p>Some of these are correctable and have been corrected. Some are inherent to the genre or to the available evidence, and the only honest treatment is to name them and let the reader discount accordingly.</p>
+      <p>Some can be mitigated; others are inherent to the genre or to the available evidence, and the only honest treatment is to name them and let the reader discount accordingly.</p>
     </div>
 
     <div class="tablewrap">
@@ -566,23 +565,23 @@
           </tr>
           <tr>
             <th scope="row">Urgency</th>
-            <td>The sixty-second figure is scoped throughout the body to credentials that reached a <em>public</em> surface, where automated harvesting applies, and the page description now says so.</td>
+            <td>The page description and the body both scope the figure to credentials that reached a <em>public</em> surface, where automated harvesting applies.</td>
             <td class="no">The title is still <em>The Sixty-Second Credential</em>, and the figure still leads the visual hierarchy. A secret in a private repository or a low-observability system has no such measured timeline, and nothing here establishes one.</td>
           </tr>
           <tr>
             <th scope="row">Case selection</th>
-            <td>All three cases sit outside repository scanning's coverage by design; section two says so before the cases, and explains why prevented exposures leave no public record to cite.</td>
-            <td class="no">Disclosure does not undo the effect of reading three failure narratives and no success narrative. The only success evidence in the series is a test the author ran (<a href="part-3.html#hosted">Part 3</a>), not an organisation's outcome.</td>
+            <td>Disclosed in section two, before the cases rather than after them.</td>
+            <td class="no">Disclosure does not undo the effect of reading three failure narratives and no success narrative. The only success evidence in the series is a test I ran (<a href="part-3.html#hosted">Part 3</a>), not an organisation's outcome.</td>
           </tr>
           <tr>
             <th scope="row">Pro-architecture, anti-alerting</th>
-            <td>Stated as a position rather than smuggled in. The cost of that position is now set out at the end of section four.</td>
+            <td>Stated as a position rather than smuggled in, and its cost is set out at the end of section four.</td>
             <td class="part">It remains a position. An organisation that cannot fund a federation programme this year is not thereby wrong to spend on detection, and this article's ordering should not be read as permission to defer the tractable control.</td>
           </tr>
           <tr>
             <th scope="row">Vendor-sourced quantities</th>
-            <td>Flagged per figure in the sourcing box below, with the vendor named.</td>
-            <td class="no">Unfixable here. Volume, validity persistence and growth rates come from companies selling detection or remediation; their definitions of "secret" and "valid" are their products' definitions, and their visibility is their products' visibility. No independent dataset of comparable scale exists to check them against.</td>
+            <td>Flagged per figure in the sourcing box below.</td>
+            <td class="no">Unfixable here. Their definitions of "secret" and "valid" are their products' definitions, and their visibility is their products' visibility. No independent dataset of comparable scale exists to check against.</td>
           </tr>
           <tr>
             <th scope="row">Implementation cost</th>
