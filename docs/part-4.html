@@ -34,7 +34,7 @@
     <div class="byline">
       <span>Part 4 of 4 &middot; Governance</span>
       <span>Research current to August 2026</span>
-      <span>~4,900 words &middot; 22 min</span>
+      <span>~5,000 words &middot; 23 min</span>
     </div>
   </header>
 
@@ -478,6 +478,28 @@
           <li>State the credential architecture standard alongside the storage rule: maximum lifetime, required scoping, and whether the credential must be workload-bound. A standard that only says "do not hardcode" leaves the long-lived unscoped token as a compliant outcome.</li>
         </ul>
       </div>
+
+      <div class="tablewrap">
+      <table>
+        <caption>Rotation SLA by exposure class &mdash; a standard that can be tested</caption>
+        <thead>
+          <tr>
+            <th scope="col">Exposure class</th>
+            <th scope="col">Assume compromised?</th>
+            <th scope="col">Revoke within</th>
+            <th scope="col">Owner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Public repository, public paste, public registry</th><td>Yes, immediately</td><td class="num">1 hour</td><td>Service owner, auto-triggered</td></tr>
+          <tr><th scope="row">Third-party or vendor breach disclosure</th><td>Yes</td><td class="num">24 hours</td><td>Integration owner</td></tr>
+          <tr><th scope="row">Build agent or CI runner compromise</th><td>Yes, all reachable credentials</td><td class="num">24 hours</td><td>Platform engineering</td></tr>
+          <tr><th scope="row">Internal repository or wiki</th><td>Treat as likely</td><td class="num">7 days</td><td>Service owner</td></tr>
+          <tr><th scope="row">Collaboration tool (Slack, Jira, Confluence)</th><td>Treat as likely</td><td class="num">7 days</td><td>Service owner</td></tr>
+          <tr><th scope="row">Any credential with no expiry, no exposure</th><td>No</td><td class="num">90 days</td><td>Platform engineering</td></tr>
+        </tbody>
+      </table>
+    </div>
 
       <div class="rung" data-tier="3">
         <div class="rung-head"><span class="rung-tier">Element 3 &middot; Evidence</span></div>
