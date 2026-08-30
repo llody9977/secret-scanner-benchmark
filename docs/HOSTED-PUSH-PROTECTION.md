@@ -11,20 +11,13 @@ documented bypass, then the resulting alert. It is the positive case for the
 whole series — the one place where scanning demonstrably prevented an exposure
 rather than reporting one after the fact.
 
-> **Status.** The recorded result below was produced in
-> `llody9977/secret-scan` on 25 August 2026 and is migrated here with its
-> original provenance intact. **It has not yet been re-run in this
-> repository.** The procedure to reproduce it here is in full below; until
-> someone runs it, read the result as evidence about GitHub's behaviour on that
-> repository and configuration, not as a property of this one.
->
-> **Do not delete `llody9977/secret-scan` before re-running this test here.**
-> The alert link below, and the URLs inside
-> [`results/hosted-push-protection.json`](../results/hosted-push-protection.json),
-> resolve into that repository. Deleting it breaks them, and this is the only
-> direct evidence in the series that scanning ever prevented an exposure rather
-> than reporting one. Re-run the procedure below in this repository first, land
-> the new record, then retire the old repository.
+> **Status.** Re-run in this repository on **30 August 2026** and passed at
+> every stage: the push was blocked, the documented `used_in_tests` bypass was
+> used, the retry was accepted, and alert
+> [#1](https://github.com/llody9977/secret-scanner-benchmark/security/secret-scanning/1)
+> was created. The record below is this repository's own result. The original
+> 2026-08-25 run in `llody9977/secret-scan` is retained in the JSON as
+> provenance only, and that repository is now safe to retire.
 
 Machine-readable record: [`results/hosted-push-protection.json`](../results/hosted-push-protection.json).
 
@@ -32,13 +25,13 @@ Machine-readable record: [`results/hosted-push-protection.json`](../results/host
 
 | Stage | Result |
 |---|---|
-| Fixture | `mailchimp-api-key`, a Mailchimp-shaped value that Mailchimp never issued |
-| Initial push | **Rejected.** Classified as `Mailchimp API Key`; a bypass URL was offered |
+| Fixture | `mailchimp-api-key`, materialised from the regression template; a Mailchimp-shaped value Mailchimp never issued |
+| Initial push | **Rejected** — `GH013`, classified as `Mailchimp API Key` at `hosted-test.env:3`; bypass URL offered; **nothing landed on the remote** |
 | Bypass | `used_in_tests`, GitHub's documented reason |
 | Retry | Accepted |
-| Alert | [#1](https://github.com/llody9977/secret-scan/security/secret-scanning/1) — `mailchimp_api_key`, state `resolved`, resolution `used_in_tests`, `push_protection_bypassed: true` |
-| Same fixture, Gitleaks 8.30.1 | Detected (`mailchimp-api-key`) |
-| Same fixture, TruffleHog 3.97.1 | **Not detected** |
+| Alert | [#1](https://github.com/llody9977/secret-scanner-benchmark/security/secret-scanning/1) — `mailchimp_api_key`, state `resolved`, resolution `used_in_tests`, `push_protection_bypassed: true`, `validity: unknown`, `publicly_leaked: true` |
+| Same fixture, Gitleaks 8.30.1 | Detected (`mailchimp-api-key`), report redacted |
+| Same fixture, TruffleHog 3.97.1 | Detected (`Mailchimp`) — **this reverses the 2026-08-25 result; see below** |
 
 Two things are worth reading twice.
 
@@ -70,9 +63,36 @@ neither, and the bypass rate is the metric part four asks you to report.
 - **The fixture was never issued and validity checks were disabled.** The
   result records *pattern classification and push behaviour*, not credential
   validity.
-- **TruffleHog's miss is not a verdict on TruffleHog.** It is one format, run
-  once, with provider checks disabled. The comparative benchmark is where
-  detection claims belong.
+- **The earlier TruffleHog "miss" was a fixture artifact.** See below. One
+  format run once is not a verdict on any tool either way; the comparative
+  benchmark is where detection claims belong.
+
+## The fixture value changed the result
+
+The 2026-08-25 run recorded TruffleHog as *not* detecting this fixture. The
+re-run detects it. Nothing about TruffleHog changed — the version is identical.
+The fixture value did.
+
+The old fixture used a sequential low-entropy placeholder (`0123456789abcdef`
+repeated, with the `-us99` suffix). This repository generates the value from a
+committed seed, so it is random hex of the same shape. Tested side by side with
+TruffleHog 3.97.1:
+
+| Fixture value | TruffleHog findings |
+|---|---:|
+| Sequential placeholder, correct shape | **0** |
+| Random hex, identical shape | **1** |
+
+TruffleHog is filtering the placeholder, not failing to match the pattern. So
+the earlier result measured the tool's placeholder filter rather than its
+detector, and the "miss" should not have been recorded as one.
+
+This is the same class of error as the AWS access-key-ID correction in
+[`RESULTS.md`](RESULTS.md): **a property of the corpus, read as a property of
+the tool.** It is worth stating as a general rule for anyone building fixtures —
+a fixture that looks like a placeholder will be treated as one, and a corpus of
+`0123456789abcdef`-style values systematically understates every tool that
+filters them. Generate from a seed; do not type a pattern by hand.
 
 ## Reproducing it in this repository
 
@@ -93,10 +113,12 @@ exactly why pushing it is a deliberate act rather than an accident.
   field. Persist only sanitised metadata, as `hosted-push-protection.json`
   does.
 
-**Procedure.**
+**Procedure.** This is the sequence that was run on 30 August 2026.
 
 1. Confirm secret scanning and push protection are enabled on the repository,
-   and record the four settings above.
+   and record the four settings above. **Verify push protection is on before
+   pushing anything** — if it is off, the fixture simply lands in a public
+   repository and there is no test, only an exposure.
 2. Materialise the fixture onto a throwaway branch:
    ```bash
    git switch -c hosted-push-protection-test

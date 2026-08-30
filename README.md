@@ -2,13 +2,16 @@
 
 A reproducible benchmark for secret-scanning tools. It plants a synthetic corpus
 of credential-shaped strings with a known ground truth, assembles them into a
-git repository with deterministic history, runs every free/self-hostable scanner
-against it in CI, and scores precision and recall — overall, per secret type,
+git repository with deterministic history, runs six selected free/self-hostable
+scanners against it in CI, and scores precision and recall — overall, per secret type,
 and per placement.
 
-It exists because there is no current, independent, reproducible benchmark of
-these tools. The last peer-reviewed comparison (ESEM 2023) predates Betterleaks,
-Kingfisher, Titus, and every AI-service credential format. This is the design
+It exists because I found no current independent benchmark of these tools with
+comparable reproducibility — one that publishes corpus, seed, ground truth and
+scoring so a reader can regenerate it and check the arithmetic. That is what a
+search surfaced, not a proof that none exists. The last peer-reviewed comparison
+(ESEM 2023) predates Betterleaks, Kingfisher, Titus, and every AI-service
+credential format. This is the design
 from section four of *Nothing Catches Everything* (part 2 of the series), made
 runnable.
 
@@ -209,7 +212,7 @@ contents: read`, and no repository secret is ever referenced. Results land in
 the job summary and a `results` artifact.
 
 Covered: **gitleaks, betterleaks, trufflehog, kingfisher, titus, detect-secrets**
-— the six runnable tools in the article's benchmarkable set. TruffleHog runs
+— six selected free/self-hostable scanners, not an exhaustive field. TruffleHog runs
 twice (`all-results` and `verified-only`); the other verification-capable tools
 (betterleaks, kingfisher, titus) run unfiltered, since every synthetic secret is
 non-live. Not covered: `git-secrets` (no structured output to parse) and GitHub

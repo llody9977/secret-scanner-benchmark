@@ -48,7 +48,7 @@
         <li>The volume is not falling. GitGuardian counted 28.65 million hardcoded secrets reaching public GitHub in 2025, up 34 percent year on year, with AI-service credentials up 81 percent.<sup class="fn"><a id="fnref-2" href="#fn-2">2</a></sup></li>
         <li>Detection is not the failure. Revocation is. GitGuardian found 64 percent of secrets confirmed valid in 2022 were still valid in January 2026.<sup class="fn"><a id="fnref-2b" href="#fn-2">2</a></sup> Scanning, validity checking, revocation and credential architecture are four different control types; <a href="part-1.html">Part 1</a> separates them. Your scanner's job is to feed a remediation pipeline, not to be one.</li>
         <li>All three of the exposures examined in part one &mdash; selected for structural variety, not for size &mdash; turned on credentials that no repository scanner would have flagged &mdash; one was an issued OAuth token, one was a publishing token sitting in a CI runner's environment, and one campaign used a secret scanner as its harvesting tool.<sup class="fn"><a id="fnref-3" href="#fn-3">3</a></sup></li>
-        <li>Even within its own remit, no scanner is complete. Against a purpose-built corpus of 41 synthetic secrets, the best single tool reached 95 percent recall, all six together reached 40 of 41, no tool caught anything the others missed, and one secret was caught by nothing.<sup class="fn"><a id="fnref-28b" href="#fn-28">28</a></sup> Section four has the run.</li>
+        <li>Even within its own remit, no scanner is complete. Against a purpose-built corpus of 41 synthetic secrets, the best of six selected scanners reached 95 percent recall, all six together reached 40 of 41, none caught anything the other five missed, and one secret was caught by nothing.<sup class="fn"><a id="fnref-28b" href="#fn-28">28</a></sup> Section four has the run.</li>
         <li>Regulation now names this explicitly. PCI DSS v4.0.1 requirement 8.6.2 prohibits hardcoded passwords in scripts, configuration files and source code, and became mandatory on 31 March 2025.<sup class="fn"><a id="fnref-4" href="#fn-4">4</a></sup> <a href="part-4.html">Part 4</a> covers the full mapping.</li>
       </ol>
     </div>
@@ -248,7 +248,7 @@
       </ul>
     </div>
 
-    <h3 class="wide">Free and self-hostable &mdash; the benchmarkable set</h3>
+    <h3 class="wide">Free and self-hostable &mdash; six selected scanners</h3>
     <div class="tablewrap">
       <table class="wide-table">
         <caption>Tools that can be run for free in a GitHub Actions workflow</caption>
@@ -363,7 +363,7 @@
     </div>
 
     <div class="col flow">
-      <p>There was no rigorous, independent, current benchmark of these tools. Searching for one returned vendor blogs and listicles with no reproducible methodology. The last peer-reviewed comparison is the 2023 ESEM study,<sup class="fn"><a href="#fn-5">5</a></sup> which predates Betterleaks, Kingfisher, Titus, and every AI-service credential format.</p>
+      <p>I found no current independent benchmark of these tools with comparable reproducibility &mdash; one that publishes its corpus, its seed, its ground truth and its scoring so that a reader can regenerate the whole thing and check the arithmetic. Searching returned vendor blogs and listicles with no reproducible methodology. That is a statement about what a search surfaced, not a proof that nothing exists; if there is one, I would rather cite it than repeat the work. The last peer-reviewed comparison is the 2023 ESEM study,<sup class="fn"><a href="#fn-5">5</a></sup> which predates Betterleaks, Kingfisher, Titus, and every AI-service credential format.</p>
       <p>So this section is now a report rather than a proposal. The design below was built as <a href="https://github.com/llody9977/secret-scanner-benchmark"><code>secret-scanner-benchmark</code></a>: it plants a synthetic corpus with known ground truth, assembles it into a git repository with deterministic history, runs six free and self-hostable scanners against it in CI, and scores precision and recall overall, per secret type and per placement.<sup class="fn"><a id="fnref-28" href="#fn-28">28</a></sup> The results are in this section. <strong>Read the limitations before the numbers</strong> &mdash; one of them substantially qualifies what a benchmark of this shape can measure.</p>
     </div>
 
@@ -471,7 +471,7 @@
     </div>
 
     <div class="col flow" style="margin-top:1.5rem">
-      <p><strong>The correction reversed the headline.</strong> Run #5 reported Titus first on recall and the only tool in the field with unique catches. Both of those unique catches were access-key IDs. With them scored correctly, Betterleaks leads and <em>no tool has a unique catch at all</em> &mdash; every tool's hit-set is contained in the union of the others. The case for layering two scanners narrows accordingly: the union across all six is 40 of 41, against a best single tool of 39. Adding five tools to Betterleaks buys one secret.</p>
+      <p><strong>The correction reversed the headline.</strong> Run #5 reported Titus first on recall and the only tool in the field with unique catches. Both of those unique catches were access-key IDs. With them scored correctly, Betterleaks leads <em>on this corpus, at these versions, in these invocations</em>, and <em>no tool has a unique catch at all</em> &mdash; every tool's hit-set is contained in the union of the others. The case for layering two scanners narrows accordingly: the union across all six is 40 of 41, against a best single tool of 39. Adding five tools to Betterleaks buys one secret.</p>
       <p>That is the correction's cost. It also has a benefit, which is that the AWS result got more interesting rather than less. It moved from the identifier to the credential; see finding two below.</p>
     </div>
 
@@ -702,7 +702,7 @@
   <div class="nextup">
     <span class="sec-label">Next in this series</span>
     <a href="part-3.html">Part 3 &mdash; The Governed Pipeline</a>
-    <p>The same decisions as running configuration: which control point to roll out first, the five gates and what each one owns, a reference GitHub implementation with pinned versions and redaction handling, a regression suite for the controls you configured, and the hosted push-protection test where scanning demonstrably prevented an exposure.</p>
+    <p>The same decisions as running configuration: which control point to roll out first, the five control points and what each one owns, a reference GitHub implementation with pinned versions and redaction handling, a regression suite for the controls you configured, and the hosted push-protection test where scanning demonstrably prevented an exposure.</p>
   </div>
 
   <!-- ============ SOURCING ============ -->

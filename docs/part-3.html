@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Governed Pipeline — Secrets in the Software Supply Chain</title>
-<meta name="description" content="Secret scanning as running configuration: which control point to roll out first, five executable gates and what each one owns, a reference GitHub implementation, a regression suite for the controls you configured, and the hosted push-protection test. Part 3 of Secrets in the Software Supply Chain.">
+<meta name="description" content="Secret scanning as running configuration: which control point to roll out first, five executable control points and what each one owns, a reference GitHub implementation, a regression suite for the controls you configured, and the hosted push-protection test. Part 3 of Secrets in the Software Supply Chain.">
 <meta name="author" content="Secrets in the Software Supply Chain">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#1d4ed8">
 <link rel="canonical" href="https://llody9977.github.io/secret-scanner-benchmark/part-3.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="The Governed Pipeline">
-<meta property="og:description" content="Secret scanning as running configuration: which control point to roll out first, five executable gates and what each one owns, a reference GitHub implementation, a regression suite for the controls you configured, and the hosted push-protection test. Part 3 of Secrets in the Software Supply Chain.">
+<meta property="og:description" content="Secret scanning as running configuration: which control point to roll out first, five executable control points and what each one owns, a reference GitHub implementation, a regression suite for the controls you configured, and the hosted push-protection test. Part 3 of Secrets in the Software Supply Chain.">
 <meta property="og:url" content="https://llody9977.github.io/secret-scanner-benchmark/part-3.html">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='25' r='9' fill='none' stroke='white' stroke-width='5'/%3E%3Cpath d='M32 33v18M32 44h8' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -30,7 +30,7 @@
   <header class="masthead">
     <p class="kicker">Application Security &middot; Implementation</p>
     <h1>The Governed Pipeline</h1>
-    <p class="dek">Part two chose a scanner. This is the part where it becomes a control: five gates, each with an owner, a failure behaviour and a bypass authority — and a test suite that proves the configuration still works.</p>
+    <p class="dek">Part two chose a scanner. This is the part where it becomes a control: five control points, each with an owner, a failure behaviour and a bypass authority — and a test suite that proves the configuration still works.</p>
     <div class="byline">
       <span>Part 3 of 4 &middot; Implementation</span>
       <span>Reference implementation current to August 2026</span>
@@ -324,20 +324,20 @@
 
     <div class="col flow">
       <p>Control point 1 is the only preventive placement in the set, and it is the only one that cannot be tested with a CLI. It is a host feature. The only way to know what it does is to push at it and record what happens.</p>
-      <p>So that is what was done: a deliberate push of a non-issued, Mailchimp-shaped fixture at a repository with GitHub secret scanning and push protection enabled, then a documented bypass, then the resulting alert.<sup class="fn"><a href="#fn-1">1</a></sup></p>
+      <p>So that is what was done, in this repository, on 30 August 2026: a deliberate push of a non-issued, Mailchimp-shaped fixture at a repository with GitHub secret scanning and push protection enabled, then a documented bypass, then the resulting alert.<sup class="fn"><a href="#fn-1">1</a></sup> The fixture is generated from the committed seed by the regression suite, so the value in the test and the value the CLI gate sees are the same value.</p>
     </div>
 
     <div class="tablewrap">
       <table class="wide-table">
-        <caption>Hosted push-protection test &middot; 25 August 2026 &middot; sanitised metadata retained, matched value never copied</caption>
+        <caption>Hosted push-protection test &middot; 30 August 2026 &middot; sanitised metadata retained, matched value never copied</caption>
         <thead><tr><th scope="col">Stage</th><th scope="col">Result</th></tr></thead>
         <tbody>
-          <tr><th scope="row">Initial push</th><td class="yes">Rejected. Classified as <code>Mailchimp API Key</code>; bypass URL offered</td></tr>
+          <tr><th scope="row">Initial push</th><td class="yes">Rejected (<code>GH013</code>). Classified as <code>Mailchimp API Key</code>; bypass URL offered; nothing landed on the remote</td></tr>
           <tr><th scope="row">Bypass</th><td><code>used_in_tests</code> — GitHub's documented reason</td></tr>
           <tr><th scope="row">Retry</th><td>Accepted</td></tr>
           <tr><th scope="row">Alert</th><td><code>mailchimp_api_key</code>, state <code>resolved</code>, resolution <code>used_in_tests</code>, <code>push_protection_bypassed: true</code></td></tr>
           <tr><th scope="row">Same fixture, Gitleaks 8.30.1</th><td class="yes">Detected</td></tr>
-          <tr><th scope="row">Same fixture, TruffleHog 3.97.1</th><td class="no">Not detected</td></tr>
+          <tr><th scope="row">Same fixture, TruffleHog 3.97.1</th><td class="yes">Detected (<code>Mailchimp</code>)</td></tr>
           <tr><th scope="row">Repository custom patterns</th><td class="part">HTTP 404 — "Feature not available in this repository"</td></tr>
         </tbody>
       </table>
@@ -354,7 +354,14 @@
       <p><strong>It is one provider-pattern scenario, not a detection rate.</strong> It says nothing about the other twenty scenarios in the regression corpus, several of which are generic or internal shapes.</p>
       <p><strong>The tested repository was public and personal.</strong> Provider-pattern scanning and push protection were on; non-provider generic patterns, validity checks and repository custom patterns were unavailable or off — the custom-pattern endpoint returned 404. An eligible organisation on a paid secret-protection plan gets generic detection, AI-assisted detection, validity checks and custom patterns, none of which were exercised. Assess those on your own plan; this is neither a ceiling nor a floor for them.</p>
       <p><strong>The fixture was never issued and validity checks were disabled.</strong> The result records pattern classification and push behaviour, not credential validity.</p>
-      <p><strong>TruffleHog's miss is not a verdict on TruffleHog.</strong> One format, one run, provider checks off. Detection claims belong in part two, against a corpus built for them.</p>
+      <p><strong>One format, one run, provider checks off.</strong> Detection claims belong in part two, against a corpus built for them.</p>
+    </div>
+
+    <div class="verdict" style="margin-top:2rem" data-tone="critical">
+      <span class="sec-label">The fixture value changed the result</span>
+      <p>An earlier run of this same experiment, in the predecessor repository on 25 August 2026, recorded TruffleHog as <em>not</em> detecting this fixture. The re-run detects it. TruffleHog did not change &mdash; the version is identical. <strong>The fixture value did.</strong></p>
+      <p>The old fixture used a sequential low-entropy placeholder of the correct shape. This repository generates the value from a committed seed, so it is random hex of the same shape. Side by side, at the same version: <strong>sequential value, 0 findings; random value, 1 finding.</strong> TruffleHog is filtering the placeholder, not failing to match the pattern &mdash; so the earlier result measured the tool's placeholder filter rather than its detector.</p>
+      <p>This is the same class of error as the AWS access-key-id correction in part two: <strong>a property of the corpus, read as a property of the tool.</strong> Stated as a rule for anyone building fixtures &mdash; a fixture that looks like a placeholder will be treated as one, and a corpus of hand-typed <code>0123456789&hellip;</code> values systematically understates every tool that filters them. Generate from a seed; do not type a pattern by hand.</p>
     </div>
 
     <div class="col flow" style="margin-top:2rem">
@@ -467,7 +474,7 @@
     <div class="sourcing">
       <h4>Assumptions, sourcing, and confidence</h4>
       <p><strong>Reproducible.</strong> Every configuration, workflow and test in sections three and four is in the repository and runs in CI. The regression suite's result — 21 scenarios, 16 blocked, 5 passed, 0 deviations — is reproducible with <code>python regression/run.py</code> against Gitleaks 8.30.1. The two gaps it found on first run, and the precision defect in the first version of the connection-string rule, are recorded in the commit history rather than reconstructed.</p>
-      <p><strong>Directly observed.</strong> The hosted push-protection result in section five was produced by an actual push at an actual GitHub repository, with the alert retrieved from the alert API. Its sanitised record is committed. Note its provenance carefully: it was produced in the predecessor repository <code>llody9977/secret-scan</code> on 25 August 2026 and migrated here with its metadata intact. <strong>It has not yet been re-run in this repository</strong>, and the procedure to do so is published alongside it. Read it as evidence about GitHub's behaviour on that repository and configuration.</p>
+      <p><strong>Directly observed.</strong> The hosted push-protection result in section five was produced by an actual push at this repository on 30 August 2026, with the alert retrieved from the alert API and only sanitised metadata retained &mdash; the API returns a <code>secret</code> field, which is deliberately not copied. The block, the bypass, the retry and the alert are all this repository's own result, reproducible by the procedure published alongside it. An earlier run of the same experiment in the predecessor repository is retained as provenance.</p>
       <p><strong>Judgement, not measurement.</strong> The rollout order in section one, the six-column control specification in section two, and the split of tools between gating and discovery are engineering positions. They are defensible from the evidence in parts one and two, but they are not measurements and another team could order them differently with good reasons — particularly an organisation whose host does not offer push protection at all, where control point 2 has to carry weight it is not designed for.</p>
       <p><strong>Out of scope.</strong> Section seven names the runtime-credential surface and the architectural options that shrink the static one. It does not evaluate any of them. Workload identity, sender-constrained tokens and runtime telemetry each deserve their own treatment, and nothing here should be read as an implementation recommendation for a specific product.</p>
       <p><strong>Platform specificity.</strong> The reference implementation is GitHub Actions. The four decisions in section three &mdash; three-outcome exit handling, verified redaction, full history, pinned and checksummed tools &mdash; are host-independent. The syntax is not.</p>

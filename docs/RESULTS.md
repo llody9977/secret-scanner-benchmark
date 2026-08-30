@@ -13,6 +13,7 @@ the six scanners, or read the latest `results` artifact from
 | Corpus | seed `20260829`, HEAD `07e07fadb192ef0610047cc82b404e441d15d44d` |
 | Ground truth | 41 planted secrets · 18 decoys · **4 indicators** · 34 present at HEAD · 7 history-only |
 | Tool versions | Gitleaks 8.30.1 · Betterleaks 1.8.1 · TruffleHog 3.97.1 · Kingfisher 2.0.0 · Titus 1.2.8 · detect-secrets 1.5.0 |
+| Field | Six *selected* free/self-hostable scanners, not an exhaustive field. "No tool has a unique catch" means no tool **among these six**. |
 
 > **What changed since run #5.** Run #5 counted standalone AWS access key IDs
 > (`AKIA…`, `ASIA…`) as planted secrets. That was wrong. An access key ID is a
@@ -74,13 +75,14 @@ count of access key IDs reported, scored on neither axis. TruffleHog
   string-array and `"".join()`-ed, sitting only in git history (added six
   commits back, scrubbed at HEAD). Catching it needs history traversal *and*
   resistance to the split-string obfuscation. No tool has both.
-- **Caught by exactly one tool: 0.** No tool in this field finds anything the
-  rest of the field misses. This is a change from run #5, and it is entirely
-  the AWS correction.
+- **Caught by exactly one tool: 0.** No tool among these six finds anything the
+  other five miss. This is a change from run #5, and it is entirely the AWS
+  correction. It is a statement about the six selected tools, not about every
+  scanner in existence.
 - **Union coverage: 40/41.** Layering gets you almost everything the set can
   find; it does not get you everything.
-- **Zero spurious false positives, field-wide.** Every false positive reported
-  by every tool is one of the 18 planted decoys. Nothing invented noise out of
+- **Zero spurious false positives across all six.** Every false positive
+  reported by every one of these tools is one of the 18 planted decoys. Nothing invented noise out of
   ordinary source code.
 
 ## Cross-tool coverage

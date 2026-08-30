@@ -1,8 +1,9 @@
 name: benchmark
 
-# Builds the synthetic corpus, runs every free/self-hostable scanner from the
-# article's "benchmarkable set" against it in an isolated job, and scores the
-# results against corpus/manifest.yaml.
+# Builds the synthetic corpus, runs six selected free/self-hostable scanners
+# against it in an isolated job each, and scores the results against
+# corpus/manifest.yaml. The six are a selection, not an exhaustive field --
+# adding a seventh is a matrix entry and a parser, see README.md.
 #
 # Covered: gitleaks, betterleaks, trufflehog, kingfisher, titus, detect-secrets.
 # Not covered: git-secrets (no structured output) and GitHub secret scanning
