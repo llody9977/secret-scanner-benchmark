@@ -15,6 +15,14 @@ credential format. This is the design
 from section four of *Nothing Catches Everything* (part 2 of the series), made
 runnable.
 
+**On compliance:** no framework requires you to operate a product called a
+"secret scanner" — they require outcomes, and scanning is one implementation and
+one way to evidence them. Three name hardcoded secrets in normative text, each
+scope-limited (PCI DSS 8.6.2, OWASP ASVS 13.3.1, NIST SP 800-218A); ISO 27001,
+SOC 2, base NIST SSDF, CIS and DORA reach the control by inference. The
+clause-level mapping is in
+[part 4](https://llody9977.github.io/secret-scanner-benchmark/part-4.html#standards).
+
 **Companion series:** *[Secrets in the Software Supply Chain](https://llody9977.github.io/secret-scanner-benchmark/)*
 — [part 1](https://llody9977.github.io/secret-scanner-benchmark/part-1.html) (threat),
 [part 2](https://llody9977.github.io/secret-scanner-benchmark/part-2.html) (this benchmark),

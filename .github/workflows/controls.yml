@@ -7,10 +7,12 @@ name: controls
 # controls/gitleaks.toml. They are different questions with different corpora
 # and they must not be merged; see regression/README.md.
 #
-# Three jobs, matching three control points from part three:
-#   gate       -- control point 3: the pull-request gate, blocking on findings
-#   regression -- the configured-control regression suite (20 scenarios)
-#   discovery  -- control point 4: scheduled full-history breadth scan
+# Three jobs, matching three named control points from part three. Control
+# points are referred to by name, never by number -- each article numbers its
+# own diagram differently:
+#   gate       -- the pull-request CI gate, blocking on findings
+#   regression -- the configured-control regression suite (21 scenarios)
+#   discovery  -- the scheduled history scan, breadth over precision
 #
 # Every job distinguishes "scanned, clean" from "did not scan". A workflow that
 # treats a scanner crash as a pass is the most common way a pipeline reports
@@ -42,7 +44,7 @@ env:
   PYTHON_VERSION: "3.11"
 
 jobs:
-  # --- control point 3: the blocking gate ---------------------------------
+  # --- the pull-request CI gate: blocking -----------------------------------
   gate:
     name: Gitleaks full-history gate
     runs-on: ubuntu-24.04
@@ -113,7 +115,7 @@ jobs:
           fi
 
           {
-            printf '## Gitleaks gate (control point 3)\n\n'
+            printf '## Gitleaks pull-request CI gate\n\n'
             printf '| Field | Result |\n| --- | --- |\n'
             printf '| Outcome | %s |\n' \
               "$( [[ "$findings" -gt 0 ]] && echo "$findings finding(s); gate failed" || echo "No findings" )"
@@ -178,7 +180,7 @@ jobs:
           path: ${{ runner.temp }}/regression.json
           retention-days: 30
 
-  # --- control point 4: scheduled discovery -------------------------------
+  # --- the scheduled history scan: discovery ---------------------------------
   discovery:
     name: Scheduled full-history discovery
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -230,7 +232,7 @@ jobs:
           findings="$(jq -s 'length' "$report")"
 
           {
-            printf '## TruffleHog scheduled discovery (control point 4)\n\n'
+            printf '## TruffleHog scheduled history scan\n\n'
             printf '| Field | Result |\n| --- | --- |\n'
             printf '| Outcome | %s candidate finding(s) |\n' "$findings"
             printf '| Scanner | TruffleHog `%s` |\n' "$TRUFFLEHOG_VERSION"

@@ -1,7 +1,7 @@
 # Configured control: local developer feedback. Optional by design.
 #
 # Copy to .pre-commit-config.yaml and run `pre-commit install --install-hooks`.
-# This is control point 2 in part three: it is opt-in, locally bypassable with
+# This is the local-hooks control point: it is opt-in, locally bypassable with
 # `--no-verify`, and evidences nothing to an auditor. Its value is that it
 # fails in two seconds on the developer's own machine instead of two minutes
 # into a pipeline, which is the difference between a fix and a bypass request.

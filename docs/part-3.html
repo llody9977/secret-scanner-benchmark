@@ -50,6 +50,7 @@
         <li><strong>A configured gate is not self-verifying.</strong> A rule that stops matching fails silently and looks exactly like a clean repository. The <a href="#regression">configured-control regression suite</a> — 21 scenarios, 16 must-block and 5 must-pass — is what makes that failure loud.</li>
         <li><strong>It found two gaps the first time it ran</strong>, on classes this repository claims to care about: a PostgreSQL URL with an inline password, and an HTTP Basic header. Nobody discovers a missing rule by rereading the rules they already have.</li>
         <li><strong>The hosted push-protection test is the series' one positive case.</strong> A non-issued Mailchimp-shaped fixture was rejected at push, bypassed with a logged reason, and produced an alert.<sup class="fn"><a id="fnref-1" href="#fn-1">1</a></sup> That is prevention, demonstrated rather than claimed — and the bypass record is the control, not the hole in it.</li>
+        <li><strong>This whole control set assumes every deployable change reaches production through the enforced repository and pipeline path.</strong> Where production can also change by manual deployment, an admin console, direct registry publication, CI variables or break-glass, the repository control covers one route of several. The testable principle is coverage of every production <em>ingress path</em> — and automating the pipeline does not by itself achieve it, because an automated pipeline still injects values that were never in the repository.</li>
         <li><strong>Static scanning cannot reach runtime credentials at all</strong> — stolen session cookies, tokens in process memory, values from a metadata service. The last section is about making the static surface smaller rather than scanning it harder.</li>
       </ol>
     </div>
@@ -323,7 +324,7 @@
     </div>
 
     <div class="col flow">
-      <p>Control point 1 is the only preventive placement in the set, and it is the only one that cannot be tested with a CLI. It is a host feature. The only way to know what it does is to push at it and record what happens.</p>
+      <p>The <strong>server-side push gate</strong> is the only preventive control point in the set, and the only one that cannot be tested with a CLI. It is a host feature. The only way to know what it does is to push at it and record what happens.</p>
       <p>So that is what was done, in this repository, on 30 August 2026: a deliberate push of a non-issued, Mailchimp-shaped fixture at a repository with GitHub secret scanning and push protection enabled, then a documented bypass, then the resulting alert.<sup class="fn"><a href="#fn-1">1</a></sup> The fixture is generated from the committed seed by the regression suite, so the value in the test and the value the CLI gate sees are the same value.</p>
     </div>
 
@@ -365,7 +366,7 @@
     </div>
 
     <div class="col flow" style="margin-top:2rem">
-      <p>The general lesson is about the boundary between host-managed and repository-managed rules. <strong>The formats only you have are the formats the host is least likely to cover</strong>, and they are usually the ones with no provider revocation behind them either. Host patterns cover the vendor formats well and are maintained for free; your internal token shape is yours to detect, at control point 2, in a ruleset you version and regression-test.</p>
+      <p>The general lesson is about the boundary between host-managed and repository-managed rules. <strong>The formats only you have are the formats the host is least likely to cover</strong>, and they are usually the ones with no provider revocation behind them either. Host patterns cover the vendor formats well and are maintained for free; your internal token shape is yours to detect, at the pull-request CI gate, in a ruleset you version and regression-test.</p>
       <p>For every format the host does not block, choose one explicitly and write down which: accept the gap as a recorded risk with an owner; cover it at the CI gate and accept that the control is now detective for that format rather than preventive; or remove the need for the format to exist, which is the next section.</p>
     </div>
   </section>
@@ -435,7 +436,37 @@
     </div>
 
     <div class="col flow" style="margin-top:2rem">
-      <p>That is not an argument for scanning less. It is an argument about what the pipeline in this article is <em>for</em>, and about where the remaining budget goes once it is built. Two directions, and they compose.</p>
+      <p>That is not an argument for scanning less. It is an argument about what the pipeline in this article is <em>for</em>, and about where the remaining budget goes once it is built. Three things follow, and they compose.</p>
+    </div>
+
+    <h3 class="wide">Repository scanning is only as strong as your production ingress</h3>
+    <div class="col flow">
+      <p>Everything in sections one to five assumes something that is rarely written down and often false: <strong>that all deployable code and configuration reaches production through the enforced repository and pipeline path.</strong> The push gate, the CI gate and the scheduled scan sit on that path. They are preventive with respect to that path and blind to every other one.</p>
+      <p>So the question that decides whether this control set is strong or decorative is not "is our scanner good". It is: <strong>how many ways can production change, and how many of them cross a gate?</strong> Most organisations, asked to enumerate honestly, find several that do not:</p>
+      <ul>
+        <li><strong>Manual deployment</strong> &mdash; a human running a deploy command, or copying a file onto a host.</li>
+        <li><strong>Administrative consoles</strong> &mdash; a cloud console, a SaaS admin panel, a feature-flag service, a CDN configuration UI.</li>
+        <li><strong>Direct registry publication</strong> &mdash; a package or image pushed from a laptop rather than built by the pipeline. This is the path in two of part one's three cases.</li>
+        <li><strong>Manually installed MCP and agent configuration</strong> &mdash; files that live on a workstation or in an agent deployment and were never in a repository.</li>
+        <li><strong>CI variables and environment configuration</strong> &mdash; set in a platform UI, versioned nowhere.</li>
+        <li><strong>Out-of-band configuration upload</strong> &mdash; a config blob posted to an API, a secret pasted into a runtime store.</li>
+        <li><strong>Break-glass procedures</strong> &mdash; which exist precisely to bypass the normal path, and are the least likely to be instrumented.</li>
+      </ul>
+      <p>Each of those is a route by which a credential can arrive in production without ever passing a scanner. A control narrative that says "all code is scanned before deployment" is making a claim about <em>ingress topology</em>, not about the scanner, and it is the ingress claim an assessor should be testing.</p>
+    </div>
+
+    <div class="verdict" style="margin-top:2rem">
+      <span class="sec-label">The qualification that catches people out</span>
+      <p><strong>Automating the pipeline does not, by itself, make repository scanning complete.</strong> This is the failure mode of the organisation that has done the work: everything deploys through CI, nothing is hand-copied, and the conclusion drawn is that the repository gate now covers production. It does not, because an automated pipeline still injects values that were never in the repository:</p>
+      <ul>
+        <li>secrets read from CI variables;</li>
+        <li>values fetched from a secret store at deploy time;</li>
+        <li>credentials minted at runtime by a workload identity broker;</li>
+        <li>parameters supplied by whoever triggered the deployment;</li>
+        <li>external configuration that is not represented in source control at all.</li>
+      </ul>
+      <p>None of those is visible to a scanner reading the repository, and every one of them is a place a credential can be wrong, over-scoped or exposed. Automation moves the injection point; it does not remove it.</p>
+      <p>The stronger principle, and the one worth writing into a control narrative because it is testable: <strong>coverage of every production ingress path</strong>. Enumerate the paths, name an owner for each, state which control acts on each, and accept explicitly that some have none. That list is a governance and architecture artifact, not a scanning one &mdash; and it is the thing that determines whether the pipeline in this article is a control or a checkbox.</p>
     </div>
 
     <h3 class="wide">Make the static surface smaller</h3>
@@ -475,7 +506,7 @@
       <h4>Assumptions, sourcing, and confidence</h4>
       <p><strong>Reproducible.</strong> Every configuration, workflow and test in sections three and four is in the repository and runs in CI. The regression suite's result — 21 scenarios, 16 blocked, 5 passed, 0 deviations — is reproducible with <code>python regression/run.py</code> against Gitleaks 8.30.1. The two gaps it found on first run, and the precision defect in the first version of the connection-string rule, are recorded in the commit history rather than reconstructed.</p>
       <p><strong>Directly observed.</strong> The hosted push-protection result in section five was produced by an actual push at this repository on 30 August 2026, with the alert retrieved from the alert API and only sanitised metadata retained &mdash; the API returns a <code>secret</code> field, which is deliberately not copied. The block, the bypass, the retry and the alert are all this repository's own result, reproducible by the procedure published alongside it. An earlier run of the same experiment in the predecessor repository is retained as provenance.</p>
-      <p><strong>Judgement, not measurement.</strong> The rollout order in section one, the six-column control specification in section two, and the split of tools between gating and discovery are engineering positions. They are defensible from the evidence in parts one and two, but they are not measurements and another team could order them differently with good reasons — particularly an organisation whose host does not offer push protection at all, where control point 2 has to carry weight it is not designed for.</p>
+      <p><strong>Judgement, not measurement.</strong> The rollout order in section one, the six-column control specification in section two, and the split of tools between gating and discovery are engineering positions. They are defensible from the evidence in parts one and two, but they are not measurements and another team could order them differently with good reasons — particularly an organisation whose host offers no push gate at all, where the CI gate has to carry weight it is not designed for.</p>
       <p><strong>Out of scope.</strong> Section seven names the runtime-credential surface and the architectural options that shrink the static one. It does not evaluate any of them. Workload identity, sender-constrained tokens and runtime telemetry each deserve their own treatment, and nothing here should be read as an implementation recommendation for a specific product.</p>
       <p><strong>Platform specificity.</strong> The reference implementation is GitHub Actions. The four decisions in section three &mdash; three-outcome exit handling, verified redaction, full history, pinned and checksummed tools &mdash; are host-independent. The syntax is not.</p>
     </div>

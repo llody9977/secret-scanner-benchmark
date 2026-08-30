@@ -9,35 +9,42 @@ tuning; a benchmark run against a tuned ruleset measures nobody's product.
 
 ## Control points, and what each one is for
 
-| # | Control point | Type | Owner | On failure | Bypass | Evidence |
-|---|---|---|---|---|---|---|
-| 1 | Local pre-commit / pre-push | Preventive, advisory | Developer | Blocks the local commit or push | `--no-verify`, unlogged | None |
-| 2 | Server-side push protection | **Preventive, enforcing** | Org / repo admin | Rejects the push | Documented reason, logged | Block + bypass record, alert |
-| 3 | Pull-request CI gate | Detective, enforcing at merge | Platform team | Fails the required check | Branch-protection override, logged | Check run, job summary |
-| 4 | Scheduled full-history scan | Detective | Security engineering | Opens a finding | n/a — nothing is waiting | Workflow run, job summary |
-| 5 | Non-repository discovery | Detective | Security engineering | Opens a finding | n/a | Workflow run |
+Control points are referred to **by name, not by number**, throughout this
+repository and the series. Each article numbers the points in whatever order
+suits its own diagram, and those numberings do not agree with each other; the
+names do.
 
-Points 1 and 3 are configured in this directory. Point 2 is a host feature, not
-a file — its behaviour on this corpus is recorded in
-[`docs/HOSTED-PUSH-PROTECTION.md`](../docs/HOSTED-PUSH-PROTECTION.md). Point 5
-has no implementation here and is named so that its absence is visible rather
-than assumed.
+| Control point | Type | Owner | On failure | Bypass | Evidence |
+|---|---|---|---|---|---|
+| Local hooks | Preventive, advisory | Developer | Blocks the local commit or push | `--no-verify`, unlogged | None |
+| Server-side push gate | **Preventive, enforcing** | Org / repo admin | Rejects the push | Documented reason, logged | Block + bypass record, alert |
+| Pull-request CI gate | Detective, enforcing at merge | Platform team | Fails the required check | Branch-protection override, logged | Check run, job summary |
+| Scheduled history scan | Detective | Security engineering | Opens a finding | n/a — nothing is waiting | Workflow run, job summary |
+| Non-repository discovery | Detective | Security engineering | Opens a finding | n/a | Workflow run |
+| Incident-response trigger | Corrective | Security engineering | Revocation clock starts | None | Incident record, revocation timestamp |
 
-**Only point 2 is preventive in the sense a control narrative means.** Point 1
-is opt-in and removable by the person it constrains. Points 3 to 5 all run
-after the secret has reached a server that other people can read, which makes
-them detection, however fast they are. Describing a pull-request gate as
-"preventing secret exposure" in an audit response is the most common honest-
-seeming overclaim in this control family.
+**Local hooks** and the **pull-request CI gate** are configured in this
+directory. The **server-side push gate** is a host feature, not a file — its
+behaviour is recorded in
+[`docs/HOSTED-PUSH-PROTECTION.md`](../docs/HOSTED-PUSH-PROTECTION.md).
+**Non-repository discovery** has no implementation here and is named so that
+its absence is visible rather than assumed.
+
+**Only the server-side push gate is preventive in the sense a control narrative
+means.** Local hooks are opt-in and removable by the person they constrain.
+Everything from the CI gate onwards runs after the secret has reached a server
+that other people can read, which makes it detection, however fast it is.
+Describing a pull-request gate as "preventing secret exposure" in an audit
+response is the most common honest-seeming overclaim in this control family.
 
 ## Files
 
 | File | Control point | Notes |
 |---|---|---|
-| [`gitleaks.toml`](gitleaks.toml) | 1, 3 | The blocking ruleset. Extends the provider defaults; adds one internal format and two generic classes. |
-| [`pre-commit-config.yaml`](pre-commit-config.yaml) | 1 | Copy to `.pre-commit-config.yaml`. Optional by design. |
-| [`trufflehog.yml`](trufflehog.yml) | 4 | Detector set for scheduled discovery. |
-| [`trufflehog-exclude-paths.txt`](trufflehog-exclude-paths.txt) | 4 | Keeps both test corpora out of discovery findings. |
+| [`gitleaks.toml`](gitleaks.toml) | Local hooks, CI gate | The blocking ruleset. Extends the provider defaults; adds one internal format and two generic classes. |
+| [`pre-commit-config.yaml`](pre-commit-config.yaml) | Local hooks | Copy to `.pre-commit-config.yaml`. Optional by design. |
+| [`trufflehog.yml`](trufflehog.yml) | Scheduled history scan | Detector set for scheduled discovery. |
+| [`trufflehog-exclude-paths.txt`](trufflehog-exclude-paths.txt) | Scheduled history scan | Keeps both test corpora out of discovery findings. |
 
 ## Why two different tools for two different jobs
 

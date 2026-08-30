@@ -1,7 +1,7 @@
 # The hosted push-protection test
 
-Control point 2 — server-side push protection — is the only placement in the
-control set that is genuinely preventive, and it is the only one that cannot be
+The **server-side push gate** is the only control point in the set that is
+genuinely preventive, and it is the only one that cannot be
 tested with a CLI. It is a host feature. The only way to know what it does is to
 push at it and record what happens.
 
@@ -177,7 +177,7 @@ optional provider checks all change what a host can report.
 For every format the host does not block, choose one explicitly:
 
 - accept the gap and record it as an accepted risk with an owner;
-- cover it at control point 3, the CI gate, and accept that the control is now
+- cover it at the **pull-request CI gate**, and accept that the control is now
   detective for that format rather than preventive; or
 - remove the need — workload identity, OIDC, or a dynamic credential, so there
   is no static value to leak. Part three's last section is about this option,

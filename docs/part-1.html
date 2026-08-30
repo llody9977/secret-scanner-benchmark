@@ -51,6 +51,8 @@
         <li>The decisive failure is remediation, not detection. GitGuardian found 64 percent of secrets confirmed valid in 2022 were still valid in January 2026.<sup class="fn"><a id="fnref-1c" href="#fn-1">1</a></sup> Detection without revocation produces a finding, not a risk reduction.</li>
         <li>A large and rising share of exposure originates outside your own pipeline. Verizon's 2026 <em>Data Breach Investigations Report</em> found third-party involvement in 48 percent of breaches, up from 30 percent.<sup class="fn"><a id="fnref-5" href="#fn-5">5</a></sup> That establishes that third-party involvement is common and growing &mdash; not that your worst incident will originate with a third party.</li>
         <li>The controls that actually move risk make the secret worthless: short-lived and workload-bound credentials, automated revocation on detection, and a rotation service level agreement with a named owner. Scanning tells you where to point them.</li>
+        <li><strong>The three cases in section two were chosen to sit outside repository scanning's coverage, so the fact that it would have prevented none of them is a property of the selection, not a base rate.</strong> They map the boundary of the control; they cannot say how often it works across the whole population of secret incidents. The taxonomy in that section separates the ten places a secret can live and names the one a repository scanner reaches directly.</li>
+        <li><strong>There is an obligation case, and it is narrower than it is usually sold.</strong> No framework requires an organisation to buy or operate a product called a secret scanner &mdash; they require outcomes, and scanning is one implementation and one evidence mechanism. Three name hardcoded secrets in normative text, each scope-limited: <strong>PCI DSS 8.6.2</strong> (accounts capable of interactive login), <strong>OWASP ASVS 13.3.1</strong> (if you have adopted ASVS), and <strong>NIST SP 800-218A</strong> (AI and dual-use environments). ISO 27001, SOC 2, base NIST SSDF, CIS and DORA reach it by inference. <a href="part-4.html">Part 4</a> has the clause-level mapping and what each one lets you claim.</li>
       </ol>
     </div>
   </section>
@@ -292,7 +294,52 @@
     </div>
 
     <div class="col flow" style="margin-top:2rem">
-      <p>Read the fourth row again. In three of the most consequential secret-driven incidents of the last eighteen months, repository secret scanning would not have prevented any of them. That is not an argument against scanning. It is an argument about where scanning sits in the control set &mdash; which is what <a href="part-2.html">Part 2</a> takes apart in detail.</p>
+      <p>Read the fourth row again: repository secret scanning would not have prevented any of the three. Before drawing anything from that, read the next box, because the number is a property of how these cases were chosen.</p>
+    </div>
+
+    <div class="verdict" style="margin-top:2rem" data-tone="critical">
+      <span class="sec-label">Selection bias, stated plainly</span>
+      <p><strong>These three cases were selected because repository scanning does not cover them.</strong> They were chosen for structural variety &mdash; an issued OAuth token, a token harvested off a CI runner, a publishing token stolen from a runner environment &mdash; specifically to map the boundary of the control. The 0-of-3 in that row is therefore <em>by construction</em>, not a measurement.</p>
+      <p>So the honest reading is narrow, and it is worth being pedantic about because the wider reading is the one that spreads: <strong>this sample demonstrates that repository scanning does not cover every secret-exposure mechanism. It cannot tell you how often repository scanning would be effective across the whole population of secret incidents, and nothing here should be cited as if it could.</strong> A sample chosen for boundary illustration cannot estimate a base rate. If you want the base rate for your own organisation, the answer is in your own incident history, not in three case studies picked for contrast.</p>
+      <p>The classic case &mdash; an API key typed into a config file and committed &mdash; is absent from this section on purpose, because it is the case everyone already agrees scanning catches, and it would have taught nothing. It is also, on the leak-volume data at the top of this article, extremely common. Both things are true.</p>
+    </div>
+
+    <div class="col flow" style="margin-top:2rem">
+      <p>What the three cases <em>do</em> establish is that "the secret was stored somewhere" is far too coarse a category to reason about coverage. Five dimensions decide whether any scanning control can act, and a control has to clear all five:</p>
+      <ol>
+        <li><strong>Where the secret is stored</strong> &mdash; which system holds the value.</li>
+        <li><strong>Whether the scanner can reach that surface</strong> at all.</li>
+        <li><strong>Whether the scan runs before or after exposure</strong> &mdash; prevention versus detection.</li>
+        <li><strong>Whether the result blocks the action</strong> or merely records it.</li>
+        <li><strong>Whether the credential format is detectable</strong> &mdash; part two's subject.</li>
+      </ol>
+      <p>Sort the storage surfaces by the second dimension and the shape of the problem becomes visible:</p>
+    </div>
+
+    <div class="tablewrap">
+      <table class="wide-table">
+        <caption>Where secrets live, and which of them a repository scanner can reach</caption>
+        <thead>
+          <tr><th scope="col">Storage surface</th><th scope="col">Repository scanner</th><th scope="col">Reachable by something else?</th><th scope="col">Seen in these cases</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Repository source and history</th><td class="yes">Direct</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><th scope="row">Artifact or container layer</th><td class="no">No</td><td>Artifact and image scanning</td><td>&mdash;</td></tr>
+          <tr><th scope="row">IaC state files</th><td class="part">Only if committed</td><td>State-store scanning</td><td>&mdash;</td></tr>
+          <tr><th scope="row">CI secret store</th><td class="no">No</td><td>Platform configuration review</td><td>Shai-Hulud, LiteLLM</td></tr>
+          <tr><th scope="row">Runner environment at build time</th><td class="no">No</td><td>Runtime and egress telemetry</td><td>Shai-Hulud, LiteLLM</td></tr>
+          <tr><th scope="row">SaaS integration database</th><td class="no">No</td><td>Vendor-side controls only</td><td>Salesloft Drift</td></tr>
+          <tr><th scope="row">MCP and agent configuration</th><td class="part">Only if committed</td><td>Workstation discovery</td><td>&mdash;</td></tr>
+          <tr><th scope="row">Ticket, wiki, chat or CRM record</th><td class="no">No</td><td>Non-repository discovery</td><td>&mdash;</td></tr>
+          <tr><th scope="row">Workstation configuration</th><td class="no">No</td><td>Endpoint telemetry</td><td>&mdash;</td></tr>
+          <tr><th scope="row">Process memory / live session</th><td class="no">No</td><td class="no">No static scan reaches this</td><td>Salesloft Drift</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col flow" style="margin-top:1.5rem">
+      <p>One row is green. That is the honest scope of the control this series is about, and it is neither small nor sufficient: the leak-volume figures earlier in this article say that one row is where an enormous number of real credentials end up. But a programme that reports repository-scanning coverage as its credential-risk posture is reporting on one row of ten.</p>
+      <p>None of this is an argument against scanning. It is an argument about where scanning sits in the control set &mdash; which is what <a href="part-2.html">Part 2</a> takes apart in detail, and what <a href="part-3.html">Part 3</a> turns into a pipeline with the other rows named.</p>
     </div>
   </section>
 

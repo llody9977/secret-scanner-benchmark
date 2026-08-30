@@ -397,10 +397,10 @@
       <table>
         <caption>Run under analysis</caption>
         <tbody>
-          <tr><th scope="row">Run</th><td class="num">#5, commit <code>2c88f4a</code>, 29 August 2026</td></tr>
+          <tr><th scope="row">Run</th><td class="num">#6, commit <code>52c3004</code>, 29 August 2026</td></tr>
           <tr><th scope="row">Corpus</th><td class="num">seed <code>20260829</code>, HEAD <code>07e07fa</code></td></tr>
-          <tr><th scope="row">Planted</th><td class="num">45 secrets &middot; 18 decoys &middot; 37 at HEAD &middot; 8 history-only</td></tr>
-          <tr><th scope="row">Categories</th><td class="num">27 structured &middot; 13 generic &middot; 5 private key</td></tr>
+          <tr><th scope="row">Ground truth</th><td class="num">41 secrets &middot; 18 decoys &middot; 4 indicators &middot; 34 at HEAD &middot; 7 history-only</td></tr>
+          <tr><th scope="row">Categories</th><td class="num">23 structured &middot; 13 generic &middot; 5 private key</td></tr>
           <tr><th scope="row">Placements</th><td class="num">12, from working tree to a never-merged branch</td></tr>
           <tr><th scope="row">Tools</th><td class="num">6, each pinned to an exact version</td></tr>
         </tbody>
@@ -748,7 +748,7 @@
         <li id="fn-26">Canarytokens, <a href="https://docs.canarytokens.org/guide/aws-keys-token.html">"AWS keys token"</a>. <a class="backref" href="#fnref-26">&#8617;</a></li>
         <li id="fn-27">GitHub, <a href="https://github.blog/security/making-secret-scanning-more-trustworthy-reducing-false-positives-at-scale/">"Making secret scanning more trustworthy: Reducing false positives at scale"</a>, June 2026. Relative reduction against GitHub's own baseline; no absolute rate published. <a class="backref" href="#fnref-27">&#8617;</a></li>
         <li id="fn-29">Amazon Web Services, <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html">"Manage access keys for IAM users"</a>: "Access keys consist of two parts: an access key ID… and a secret access key… You must use both the access key ID and secret access key together to authenticate your requests." <a class="backref" href="#fnref-29">&#8617;</a></li>
-        <li id="fn-28"><a href="https://github.com/llody9977/secret-scanner-benchmark"><code>llody9977/secret-scanner-benchmark</code></a> &mdash; the benchmark built from this section's design. Results in <a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md"><code>docs/RESULTS.md</code></a>; run #6, corpus seed <code>20260829</code>, corpus HEAD <code>07e07fa</code>, 29 August 2026 &mdash; a rescore of the run #5 scanner reports against corrected ground truth, on a byte-identical corpus. Corpus and scoring are reproducible from the committed seed; see the limitations note above before citing any figure from it. <a class="backref" href="#fnref-28">&#8617;</a></li>
+        <li id="fn-28"><a href="https://github.com/llody9977/secret-scanner-benchmark"><code>llody9977/secret-scanner-benchmark</code></a> &mdash; the benchmark built from this section's design. Results in <a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md"><code>docs/RESULTS.md</code></a>; run #6, commit <code>52c3004</code>, corpus seed <code>20260829</code>, corpus HEAD <code>07e07fa</code>, 29 August 2026 &mdash; a GitHub Actions run against corrected ground truth, on a corpus byte-identical to run #5's. Corpus and scoring are reproducible from the committed seed; see the limitations note above before citing any figure from it. <a class="backref" href="#fnref-28">&#8617;</a></li>
       </ol>
     </div>
   </section>
@@ -756,7 +756,7 @@
   <footer class="colophon">
     <span>Secrets in the Software Supply Chain &middot; Part 2 of 4</span>
     <span>Research current to August 2026</span>
-    <span>Benchmark: run #5, 29 August 2026 &mdash; rulesets drift, re-run before citing</span>
+    <span>Benchmark: run #6, 29 August 2026 &mdash; rulesets drift, re-run before citing</span>
   </footer>
 
 </div>

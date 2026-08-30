@@ -25,12 +25,12 @@
 <div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
 <a href="part-1.html">Part 1 &middot; Threat</a>
 <a href="part-2.html">Part 2 &middot; Detection</a>
-<a href="part-4.html">Part 3 &middot; Implementation</a>
+<a href="part-3.html">Part 3 &middot; Implementation</a>
 <span aria-current="page">Part 4 &middot; Governance</span></div>
   <header class="masthead">
     <p class="kicker">Application Security &middot; Governance &amp; Assurance</p>
     <h1>The Unnamed Control</h1>
-    <p class="dek">Almost every framework auditors test against requires secret scanning by implication. Only two name it. That gap explains most of what goes wrong in governing this control.</p>
+    <p class="dek">No framework requires you to operate a thing called a secret scanner. Three name hardcoded secrets in normative text, each with a scope limit that matters; the rest reach the control by inference. That gap explains most of what goes wrong in governing it.</p>
     <div class="byline">
       <span>Part 4 of 4 &middot; Governance</span>
       <span>Research current to August 2026</span>
@@ -43,7 +43,8 @@
     <div class="exec">
       <h2>Executive summary</h2>
       <ol class="exec-list">
-        <li>Two frameworks name hardcoded secrets explicitly and carry real force: <strong>PCI DSS v4.0.1 requirement 8.6.2</strong>, mandatory since 31 March 2025, and <strong>OWASP ASVS 5.0.0 requirement 13.3.1</strong>. Everything else &mdash; ISO 27001, SOC 2, NIST SSDF, CIS &mdash; reaches the control by inference.<sup class="fn"><a id="fnref-1" href="#fn-1">1</a></sup><sup class="fn"><a id="fnref-2" href="#fn-2">2</a></sup></li>
+        <li><strong>No framework in this set requires an organisation to buy or operate a product called a "secret scanner."</strong> They require outcomes &mdash; secrets not hardcoded, secrets managed securely, source and deployment artifacts reviewed, plaintext secrets monitored, credentials rotated and protected, controls evidenced. Automated scanning is one implementation of those outcomes and one way to evidence them. Reading a scanner requirement into a framework that requires an outcome is the most common error in this space, and it cuts both ways: it oversells the tool and it lets an organisation think a purchase discharged an obligation.</li>
+        <li>Three frameworks name hardcoded secrets in <em>normative</em> text, and each carries a scope limit that is usually dropped in the retelling: <strong>PCI DSS v4.0.1 requirement 8.6.2</strong> (mandatory since 31 March 2025, but bounded to application and system accounts capable of interactive login &mdash; not every API key or machine credential); <strong>OWASP ASVS 5.0.0 requirement 13.3.1</strong> (explicit and unambiguous, but ASVS binds you only if you adopt it &mdash; it is not itself a regulatory obligation); and <strong>NIST SP 800-218A</strong> ("continuously monitor each environment for plaintext secrets" &mdash; the most explicit line in the family, but scoped to generative-AI and dual-use environments). Everything else &mdash; ISO 27001, SOC 2, base NIST SSDF, CIS, DORA &mdash; reaches the control by inference.<sup class="fn"><a id="fnref-1" href="#fn-1">1</a></sup><sup class="fn"><a id="fnref-2" href="#fn-2">2</a></sup></li>
         <li>That inference gap is not academic. It is why secret scanning is funded inconsistently, owned ambiguously, and evidenced badly. An auditor will map it to SOC 2 CC6.1, a criterion that never mentions secrets.<sup class="fn"><a id="fnref-3" href="#fn-3">3</a></sup></li>
         <li>Where you install the scanner determines what you can claim. <strong>Server-side pre-receive push protection is the control to lead with</strong> &mdash; it is the only preventive placement that applies to every push regardless of local setup and cannot be removed by the developer it constrains. Local hooks are defence in depth; everything downstream of the push is detective, and should be described that way in a control narrative.</li>
         <li>Governance routinely measures the wrong thing. Detection volume rises with headcount. GitGuardian and CyberArk's practitioner survey found average time to remediate a leaked secret was <strong>27 days</strong> &mdash; that is the number that maps to risk.<sup class="fn"><a id="fnref-4" href="#fn-4">4</a></sup></li>
@@ -148,9 +149,9 @@
           <text x="652" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">ALL + HISTORY</text>
           <text x="797" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">28% OF INCIDENTS</text>
 
-          <text x="14" y="312" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Points 1 and 2 are opt-in and locally bypassable — they reduce noise downstream but evidence nothing.</text>
-          <text x="14" y="328" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Point 3 is the only placement enforceable across every in-scope push — enforceable, not complete: patterns, push size, timeouts and bypass all bound it.</text>
-          <text x="14" y="344" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">Points 5 and 6 impose no synchronous developer friction — nobody is waiting — but they still carry triage and operational cost.</text>
+          <text x="14" y="312" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">IDE and pre-commit points are opt-in and locally bypassable — they reduce noise downstream but evidence nothing.</text>
+          <text x="14" y="328" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">The push gate is the only placement enforceable across every in-scope push — enforceable, not complete: patterns, push size, timeouts and bypass all bound it.</text>
+          <text x="14" y="344" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">The scheduled scan and non-repository discovery impose no synchronous developer friction — nobody is waiting — but they still carry triage and operational cost.</text>
         </svg>
       </div>
       <figcaption>The two bands are the governance trade-off in one picture. Synchronous friction is concentrated where prevention is possible; coverage is broadest where prevention is not. Neither band is free: the late points move the cost off the developer's critical path and onto a triage queue, which is a better place for it but not a costless one. A programme that installs only the low-friction points has bought observation, and should not describe it as prevention in a control narrative.</figcaption>
@@ -198,8 +199,8 @@
     </div>
 
     <div class="col flow" style="margin-top:2rem">
-      <p>The diagram numbers the placements in pipeline order. <strong>Deployment priority runs differently, and the difference matters.</strong> Start at point 3, server-side push protection: it is the only preventive placement that binds every push from every clone, cannot be removed by the developer it constrains, and writes its own audit trail. Then points 4 and 5 for coverage and history. Only then points 1 and 2, which are genuinely useful &mdash; the earliest feedback is the cheapest to act on &mdash; but which are opt-in, locally bypassable with <code>--no-verify</code>, and absent from every fresh clone until someone installs them. A programme that rolls out pre-commit hooks and calls the control implemented has enforced nothing.</p>
-      <p>The governance conclusion from that table is correspondingly narrow. <strong>Points 3, 4 and 5 are the ones you can evidence to an auditor.</strong> Points 1 and 2 reduce the volume reaching the others, but a control narrative resting on them is resting on developer goodwill and a local config file. Point 6 is the one almost nobody deploys and the one that covers the incident class repository scanning structurally cannot see.</p>
+      <p>The diagram numbers the placements in pipeline order, and those numbers are local to the diagram &mdash; across this series control points are cited by <em>name</em>, because each article orders them differently. <strong>Deployment priority runs differently again, and the difference matters.</strong> Start at the <strong>server-side push gate</strong>: it is the only preventive placement that binds every push from every clone, cannot be removed by the developer it constrains, and writes its own audit trail. Then the <strong>pull-request CI gate</strong> and the <strong>scheduled history scan</strong> for coverage and history. Only then the <strong>IDE and pre-commit</strong> points, which are genuinely useful &mdash; the earliest feedback is the cheapest to act on &mdash; but which are opt-in, locally bypassable with <code>--no-verify</code>, and absent from every fresh clone until someone installs them. A programme that rolls out pre-commit hooks and calls the control implemented has enforced nothing.</p>
+      <p>The governance conclusion from that table is correspondingly narrow. <strong>The push gate, the pull-request CI gate and the scheduled history scan are the ones you can evidence to an auditor.</strong> The IDE and pre-commit points reduce the volume reaching the others, but a control narrative resting on them is resting on developer goodwill and a local config file. Non-repository discovery is the one almost nobody deploys and the one that covers the incident class repository scanning structurally cannot see.</p>
     </div>
   </section>
 
@@ -336,7 +337,7 @@
     </div>
 
     <div class="col flow">
-      <p>Here is the finding that gives this article its title. Across eight frameworks that an enterprise is plausibly assessed against, <strong>only two name hardcoded secrets in normative text</strong>. The rest reach the control by inference &mdash; which is entirely valid for an auditor, and entirely useless for a security leader trying to get it funded on a compliance argument.</p>
+      <p>Here is the finding that gives this article its title. Across eight frameworks that an enterprise is plausibly assessed against, <strong>three name hardcoded secrets in normative text &mdash; and not one of them names a scanner</strong>. Every framework here requires an <em>outcome</em>: secrets not hardcoded, secrets managed for their lifecycle, source and deployment artifacts reviewed, plaintext secrets monitored, credentials rotated. Automated scanning is an implementation choice and an evidence mechanism, not the obligation. The three explicit ones are also each scope-limited &mdash; PCI to interactively-loggable accounts, ASVS to organisations that have adopted ASVS, SP 800-218A to AI and dual-use environments &mdash; so "explicit" is not the same as "applies to you". The rest reach the control by inference &mdash; which is entirely valid for an auditor, and entirely useless for a security leader trying to get it funded on a compliance argument.</p>
       <p>The mapping below separates the general enterprise set from the regulated-industry set. Clause identifiers were verified against the sources listed; where a source was paywalled or gated, that is flagged in the sourcing box rather than papered over.</p>
     </div>
 
