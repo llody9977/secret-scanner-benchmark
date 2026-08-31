@@ -376,7 +376,7 @@ footer.colophon a { color: var(--blue); }
 ::selection { background: var(--blue-pale); }
 
 /* ---------- series index page ---------- */
-.idx { max-width: 60rem; }
+.idx { max-width: 84rem; }
 .idx-head { padding: 4rem 0 2.75rem; border-bottom: 2px solid var(--ink); margin-bottom: 0; }
 .idx-head h1 { max-width: 28ch; }
 .idx-note {
