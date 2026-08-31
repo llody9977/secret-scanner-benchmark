@@ -67,7 +67,15 @@
 
 * { box-sizing: border-box; }
 
-html { background: var(--paper); -webkit-text-size-adjust: 100%; }
+/* Fluid root. Every length in this sheet is in rem, so scaling the root scales
+   the whole layout with the viewport instead of leaving it in a fixed ribbon on
+   a large display. Media-query rem units resolve against the initial 16px, so
+   the breakpoint at the bottom of this file is unaffected by this. */
+html {
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
+  font-size: clamp(16px, 0.28vw + 12.4px, 21px);
+}
 
 body {
   margin: 0;
@@ -81,12 +89,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-.page { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem 7rem; }
+.page { max-width: 78rem; margin: 0 auto; padding: 0 clamp(1rem, 3vw, 2.5rem) 7rem; }
 
 p { margin: 0; }
 .flow > * + * { margin-top: 1.1em; }
 .col { max-width: var(--measure); }
-.wide { max-width: 60rem; }
+.wide { max-width: 66rem; }
 
 a { color: var(--blue); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.15em; }
 a:hover { text-decoration-thickness: 2px; }
@@ -222,7 +230,7 @@ h3.col, h3.wide { margin-left: calc(var(--rail) + var(--gutter)); }
 /* ---------- figures ---------- */
 figure { margin: 3rem 0 0; padding: 0; }
 .figframe { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 1.75rem 0; overflow-x: auto; }
-figure svg { display: block; width: 100%; max-width: 100%; height: auto; min-width: 30rem; color: var(--ink); }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; min-width: min(30rem, 100%); color: var(--ink); }
 figcaption { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); margin-top: 0.9rem; max-width: 68ch; }
 
 .figframe svg .crit-line { stroke: var(--neg); }
@@ -257,8 +265,8 @@ figcaption { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); marg
 
 /* ---------- tables ---------- */
 .tablewrap { margin: 2.25rem 0 0; overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: var(--t-sm); }
-table.wide-table { min-width: 52rem; }
+table { border-collapse: collapse; width: 100%; min-width: min(34rem, 100%); font-size: var(--t-sm); }
+table.wide-table { min-width: min(52rem, 100%); }
 caption {
   text-align: left; font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.11em;
   text-transform: uppercase; color: var(--ink-3); padding: 0 0 0.8rem;
