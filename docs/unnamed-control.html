@@ -79,9 +79,9 @@
           </defs>
 
           <!-- preventive / detective bands -->
-          <text x="14" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="1.2" class="ok-text">PREVENTIVE — the secret never lands</text>
+          <text x="14" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="1.2" class="ok-text">PREVENTIVE · the secret never lands</text>
           <line x1="14" y1="40" x2="424" y2="40" class="ok-line" stroke-width="1.5"></line>
-          <text x="444" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="1.2" class="crit-text">DETECTIVE — the secret already exists</text>
+          <text x="444" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" letter-spacing="1.2" class="crit-text">DETECTIVE · the secret already exists</text>
           <line x1="444" y1="40" x2="866" y2="40" class="crit-line" stroke-width="1.5"></line>
 
           <!-- boxes -->
@@ -150,9 +150,9 @@
           <text x="652" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">ALL + HISTORY</text>
           <text x="797" y="271" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" class="acc-inv">28% OF INCIDENTS</text>
 
-          <text x="14" y="312" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">IDE and pre-commit points are opt-in and locally bypassable — they reduce noise downstream but evidence nothing.</text>
-          <text x="14" y="328" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">The push gate is the only placement enforceable across every in-scope push — enforceable, not complete: patterns, push size, timeouts and bypass all bound it.</text>
-          <text x="14" y="344" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">The scheduled scan and non-repository discovery impose no synchronous developer friction — nobody is waiting — but they still carry triage and operational cost.</text>
+          <text x="14" y="312" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">IDE and pre-commit points are opt-in and locally bypassable · they reduce noise downstream but evidence nothing.</text>
+          <text x="14" y="328" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">The push gate is the only placement enforceable across every in-scope push · enforceable, not complete: patterns, push size, timeouts and bypass all bound it.</text>
+          <text x="14" y="344" font-family="JetBrains Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.85">The scheduled scan and non-repository discovery impose no synchronous developer friction · nobody is waiting · but they still carry triage and operational cost.</text>
         </svg>
       </div>
       <figcaption>The two bands are the governance trade-off in one picture. Synchronous friction is concentrated where prevention is possible; coverage is broadest where prevention is not. Neither band is free: the late points move the cost off the developer's critical path and onto a triage queue, which is a better place for it but not a costless one. A programme that installs only the low-friction points has bought observation, and should not describe it as prevention in a control narrative.</figcaption>

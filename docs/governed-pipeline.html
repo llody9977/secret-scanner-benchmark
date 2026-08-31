@@ -346,7 +346,6 @@
     </div>
 
     <div class="col flow" style="margin-top:1.5rem">
-      <p>Two things are worth reading twice.</p>
       <p><strong>The push was stopped before the object reached a server anyone else could read.</strong> Not detected, not alerted on. Stopped. Nothing downstream of a push can do that, however fast it runs. This is the distinction the series keeps insisting on, and this is the one place in four articles where it is demonstrated rather than asserted.</p>
       <p><strong>The bypass is the control, not the hole in it.</strong> The push succeeded on retry, because a developer with a legitimate reason could give one. What matters is that the bypass produced a durable record naming the actor, the reason and the commit. Judge this control by whether its bypasses are attributable and counted, not by whether they exist.</p>
     </div>
@@ -437,7 +436,7 @@
     </div>
 
     <div class="col flow" style="margin-top:2rem">
-      <p>That is not an argument for scanning less. It is an argument about what the pipeline in this article is <em>for</em>, and about where the remaining budget goes once it is built. Three things follow, and they compose.</p>
+      <p>That is not an argument for scanning less. It is an argument about what the pipeline is <em>for</em>, and where the remaining budget goes once it is built. Three things follow, and they compose.</p>
     </div>
 
     <h3 class="wide">Repository scanning is only as strong as your production ingress</h3>
@@ -467,7 +466,7 @@
         <li>external configuration that is not represented in source control at all.</li>
       </ul>
       <p>None of those is visible to a scanner reading the repository, and every one of them is a place a credential can be wrong, over-scoped or exposed. Automation moves the injection point; it does not remove it.</p>
-      <p>The stronger principle, and the one worth writing into a control narrative because it is testable: <strong>coverage of every production ingress path</strong>. Enumerate the paths, name an owner for each, state which control acts on each, and accept explicitly that some have none. That list is a governance and architecture artifact, not a scanning one. And it is the thing that determines whether the pipeline in this article is a control or a checkbox.</p>
+      <p>The stronger principle, and the one worth writing into a control narrative because it is testable: <strong>coverage of every production ingress path</strong>. Enumerate the paths, name an owner for each, state which control acts on each, and accept explicitly that some have none. That list is a governance and architecture artifact, not a scanning one. It determines whether the pipeline is a control or a checkbox.</p>
     </div>
 
     <h3 class="wide">Make the static surface smaller</h3>
@@ -477,7 +476,7 @@
         <li><strong>Workload identity and OIDC federation.</strong> A CI job exchanges its own identity for a short-lived cloud token instead of holding a long-lived key. <sup class="fn"><a href="sources.html#p3-fn-5">5</a></sup> This removes the standing credential from the runner, which is precisely the failure mode in part one's third case study.</li>
         <li><strong>Trusted publishing for packages.</strong> The same exchange for a registry: no publishing token in the runner environment at all. Given that a stolen publishing token is how two of part one's three cases proceeded, this is the highest-leverage single change available to most projects.</li>
         <li><strong>Dynamic, short-lived credentials.</strong> Minted per job, expiring in minutes. Keep the claim honest, though: a short lifetime removes persistence and shrinks the replay window; it does not remove initial impact. Fifteen minutes is ample to exfiltrate data or mint a second credential.</li>
-        <li><strong>Sender-constrained tokens.</strong> The one that changes the shape of the problem. Workload identity still usually issues a <em>bearer</em> token. Whoever holds the string can use it.mTLS-bound or DPoP-bound tokens<sup class="fn"><a href="sources.html#p3-fn-6">6</a></sup> are cryptographically tied to the client, so a copied string is not usable by the copier. This is the only item on the list that makes the leak itself inert.</li>
+        <li><strong>Sender-constrained tokens.</strong> The only item here that makes a stolen credential useless to the thief. Workload identity still usually issues a <em>bearer</em> token. Whoever holds the string can use it.mTLS-bound or DPoP-bound tokens<sup class="fn"><a href="sources.html#p3-fn-6">6</a></sup> are cryptographically tied to the client, so a copied string is not usable by the copier. This is the only item on the list that makes the leak itself inert.</li>
       </ul>
       <p>Each of these reduces the number of things the pipeline has to catch. A format that no longer exists as a static value cannot be missed by a scanner, cannot be scored in a benchmark, and does not need a regression scenario.</p>
     </div>
