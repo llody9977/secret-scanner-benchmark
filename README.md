@@ -286,9 +286,11 @@ docs/                   the published series, RESULTS.md, HOSTED-PUSH-PROTECTION
 - **Synthetic, not harvested.** Real repositories carry obfuscations and edge
   cases no synthetic plan anticipates. This measures the failure modes we can
   name; run it *and* scan one large real repository.
-- **Commercial tools are excluded** because they need a paid account. That is a
-  limit of the method, not a verdict — the highest-precision tool in the ESEM
-  2023 study was commercial.
+- **Commercial tools are excluded** because they need a paid account, and
+  GitHub's own scanner because it is a platform feature rather than a CLI. That
+  is a limit of the method, not a verdict: in the ESEM 2023 study the
+  highest-precision tool measured was GitHub's scanner (75% precision, 6%
+  recall) — the anonymised commercial entrant scored 25%.
 - **A result is a snapshot.** Rulesets change monthly. The schedule re-runs it;
   a result older than a few weeks is stale in both directions.
 - **This measures detection and nothing else.** Not configuration burden, output

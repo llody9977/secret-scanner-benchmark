@@ -39,6 +39,15 @@ the six scanners, or read the latest `results` artifact from
 | Decoy | 18 | correct behaviour | a false positive |
 | Indicator | 4 | correct behaviour | neither — tallied separately |
 
+**A known limitation in that taxonomy.** Two of the 41 planted secrets are
+GitHub tokens with a deliberately broken CRC32. They cannot authenticate
+anywhere, so a tool that validates the checksum and declines to report one is
+behaving correctly — and would be scored here as a false negative. In this run
+all six tools reported both, so nothing is penalised. If a checksum-validating
+tool enters the field, those two fixtures need their own class rather than
+counting against recall. It is the same error the AWS indicator correction
+fixed, caught before it changed a result rather than after.
+
 An **indicator** is a value that is part of a credential and a genuine
 investigative signal, but is not itself confidential. AWS access key IDs are
 the only case in this corpus. A scanner that flags one has surfaced something
@@ -132,11 +141,18 @@ Correcting the ground truth did not remove an AWS finding — it relocated it.
 | Kingfisher | **0/4** | 0/4 |
 
 TruffleHog and Kingfisher miss every AWS secret access key in the corpus — the
-confidential half, the one that grants access. That is a real detection gap and
-a more serious one than the ID result it replaces: a 40-character base64 string
-with no prefix and no checksum is exactly the shape a pattern-detector engine
-has no rule for, and neither tool runs a general entropy channel to catch it by
-other means.
+confidential half, the one that grants access. A 40-character base64 string with
+no prefix, no delimiter and no checksum is exactly the shape a pattern-detector
+engine has no rule for.
+
+Be careful with the causal story, though: "no entropy channel" is too broad, and
+the per-type data contradicts it. Both tools detect the `postgres` and `mongodb`
+URIs where the password is the secret (3 of 3 between them), and Kingfisher
+detects the JWT. What they miss is credential material with **no recognisable
+shape** — the generic hex and base64 strings, the AWS secret keys, the headerless
+PEM body. A URI has a scheme and a `user:pass@host` structure to key on; a bare
+base64 string has nothing. The tool that misses the URIs is Gitleaks (0 of 3),
+which is neither detector-only nor short of an entropy channel.
 
 Titus is the only tool that reports access key IDs at all (3 of 4 — it misses
 the one split across a string concatenation). That is worth knowing for

@@ -172,12 +172,12 @@
           <path d="M 203 222 L 203 168" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#p2arrow)"></path>
           <text x="203" y="242" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.85">docs samples, fixtures</text>
           <text x="499" y="242" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.85">UUIDs, SHAs, hashes</text>
-          <text x="805" y="200" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" class="crit-text">6% – 75%</text>
+          <text x="805" y="200" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" class="crit-text">1% – 75%</text>
           <text x="805" y="216" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.85">measured precision</text>
           <text x="805" y="230" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.85">range across 9 tools</text>
         </svg>
       </div>
-      <figcaption>Stages 1 and 2 are high precision and low coverage. Stages 3 and 4 are the reverse. No tool escapes the trade: every technique that widens coverage widens the false positive channel at the same time. Measured precision across nine tools ranged from 6 percent to 75 percent on the same corpus.<sup class="fn"><a href="#fn-5">5</a></sup></figcaption>
+      <figcaption>Stages 1 and 2 are high precision and low coverage. Stages 3 and 4 are the reverse. No tool escapes the trade: every technique that widens coverage widens the false positive channel at the same time. Measured precision across nine tools ranged from 1 percent to 75 percent on the same corpus.<sup class="fn"><a href="#fn-5">5</a></sup></figcaption>
     </figure>
 
     <h3 class="wide">Scan surface is a separate axis from technique</h3>
@@ -187,7 +187,7 @@
         <li><strong>Working tree only.</strong> Scans what is checked out now. Fast, suitable for pre-commit. detect-secrets works this way by design, explicitly avoiding "the overhead of digging through all git history."<sup class="fn"><a id="fnref-6b" href="#fn-6">6</a></sup> If your benchmark plants secrets in old commits, a working-tree scanner scores zero by design, not by failure.</li>
         <li><strong>Full git history.</strong> Walks every commit on every branch. This is the only way to find the secret that was committed and then "removed" in the next commit &mdash; which is still in the pack file and still readable. Gitleaks, TruffleHog, Kingfisher and Titus all do this.</li>
         <li><strong>Push time.</strong> Evaluated between <code>git push</code> and the object landing on the server. This is the only genuinely preventive placement, and it belongs to the platform, not to a CLI.</li>
-        <li><strong>Everything that is not a repository.</strong> Ticket systems, wikis, chat, container image layers, CI logs, IaC state files, MCP configuration. GitGuardian put 28 percent of incidents entirely outside repositories.<sup class="fn"><a id="fnref-2d" href="#fn-2">2</a></sup> No CLI git scanner addresses any of it.</li>
+        <li><strong>Everything that is not a repository.</strong> Ticket systems, wikis, chat, container image layers, CI logs, IaC state files, MCP configuration. GitGuardian put 28 percent of incidents in <em>collaboration tools specifically</em> &mdash; Slack, Jira and Confluence.<sup class="fn"><a href="#fn-2">2</a></sup> The other surfaces in that list are real and unmeasured here; do not read the 28 percent as covering them.<sup class="fn"><a id="fnref-2d" href="#fn-2">2</a></sup> No CLI git scanner addresses any of it.</li>
       </ul>
       <p>There is a fifth surface, and it is not a surface these tools have a bad score on &mdash; it is one they cannot address in principle. <strong>Repository and artifact scanners do not detect credentials that exist only at runtime.</strong> A stolen session cookie, a token scraped out of process memory, a credential minted dynamically by a workload identity broker, a value read from an instance metadata service: none of these is ever written to a file that a scanner walks, so no amount of ruleset coverage, history traversal or entropy tuning will surface them. Detecting that class requires identity, endpoint and workload telemetry &mdash; anomalous token use, impossible-travel and unusual-ASN signals on API calls, process-level access to credential stores, egress from a workload to an endpoint it has never called. Expanding static scan coverage does not close a runtime-credential gap, and a programme that reports scanner coverage as its credential-risk metric is measuring the surface it can see rather than the one that is being attacked. Part four returns to this as a governance question; the point here is a scoping one, and it bounds every number in this article.</p>
     </div>
@@ -248,10 +248,10 @@
       </ul>
     </div>
 
-    <h3 class="wide">Free and self-hostable &mdash; six selected scanners</h3>
+    <h3 class="wide">Free and self-hostable &mdash; the candidates</h3>
     <div class="tablewrap">
       <table class="wide-table">
-        <caption>Tools that can be run for free in a GitHub Actions workflow</caption>
+        <caption>Tools that can be run for free in a GitHub Actions workflow &mdash; the six benchmarked, plus the two excluded and why</caption>
         <thead>
           <tr>
             <th scope="col">Tool</th>
@@ -534,7 +534,9 @@
       <div class="gap">
         <span class="gap-name">4<br>Confirmed</span>
         <div>
-          <p><strong>Detector-only engines miss the generic and the obfuscated, and are the most precise.</strong> TruffleHog (53.7 percent recall) and Kingfisher (58.5 percent) have little or no entropy channel. They miss every generic high-entropy string, every AWS secret access key, the JWTs, the <code>mongodb</code> and <code>postgres</code> URIs where the password is the secret, split-string obfuscation, and the base64-wrapped blob &mdash; and they post the highest precision in the field at 100 and 96 percent. That is the precision/recall trade from section one, visible in a single run.</p>
+          <p><strong>Detector-only engines miss the <em>unstructured</em>, and are the most precise.</strong> TruffleHog (53.7 percent recall) and Kingfisher (58.5 percent) miss every generic high-entropy string, every AWS secret access key, the headerless PEM body, and the base64-wrapped blob &mdash; and they post the highest precision in the field at 100 and 96 percent.</p>
+          <p>The pattern is sharper than "no entropy channel", which is what an earlier version of this section claimed and the per-type data does not support. Both tools handle <code>postgres</code> and <code>mongodb</code> URIs correctly &mdash; 3 of 3 between them &mdash; and Kingfisher catches the JWT. What they miss is credential material with <em>no recognisable shape</em>: a bare 40-character base64 string, a hex blob, a PEM body stripped of its armour. A connection URI has a scheme and a <code>user:pass@host</code> structure to key on; an AWS secret access key has nothing. That is a coherent design position for a precision-first engine, and it is the precision/recall trade from section one visible in a single run.</p>
+          <p>Worth noting against the other direction: the tool that misses the <code>postgres</code> and <code>mongodb</code> URIs on its stock ruleset is <strong>Gitleaks</strong> (0 of 3), which is neither detector-only nor short of an entropy channel. Part three's regression suite found the same gap in a configured gate and closed it with a custom rule.</p>
         </div>
       </div>
       <div class="gap">
@@ -595,6 +597,7 @@
     <h3 class="wide">The checksum experiment: partially answered</h3>
     <div class="col flow">
       <p>The corpus plants five checksum-bearing GitHub tokens: three with a correct CRC32, two deliberately broken. A checksum-aware tool should reject the broken pair; a regex-only tool should flag both.</p>
+      <p><strong>A ground-truth ambiguity worth naming, because it is the same class of error as the AWS one.</strong> The two broken tokens are planted as secrets, but a token with an invalid CRC32 cannot authenticate anywhere &mdash; it is a detector-challenge fixture, not a credential. A tool that validates the checksum and correctly declines to report it would be scored here as a <em>false negative</em>, which would be wrong. In this run the question is moot: all six tools reported both broken tokens, so nothing is being penalised. It stops being moot the moment a checksum-validating tool enters the field, and at that point the two fixtures should move to their own ground-truth class rather than counting against recall.</p>
       <p>The published run does not break the pairs out, because the scorer aggregates by secret <em>type</em> and both members of a pair share one. What can be inferred is narrow but real: neither broken-checksum token appears in the caught-by-nothing or caught-by-one-tool lists, so at least two tools reported each. Checksum validation is therefore not suppressing them across the board &mdash; but which tools validate and which do not needs a per-secret query against the run's <code>results.json</code>, not the summary. It is the most obvious next thing to publish, and until it is, the checksum question stays open.</p>
     </div>
   </section>
