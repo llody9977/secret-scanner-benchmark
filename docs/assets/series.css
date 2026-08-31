@@ -133,7 +133,7 @@ h1 {
 .dek {
   font-size: clamp(var(--t-1), 2.3vw, var(--t-2));
   line-height: 1.4; font-weight: 400; color: var(--ink-2);
-  max-width: 40ch; margin: 1.6rem 0 0; text-wrap: pretty;
+  max-width: 54ch; margin: 1.6rem 0 0; text-wrap: pretty;
 }
 .byline {
   margin-top: 2.25rem; padding-top: 1.1rem; border-top: 1px solid var(--line);
@@ -141,6 +141,9 @@ h1 {
   font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--ink-3);
 }
+
+/* Display type (h1, h2, case h3) keeps a short measure on purpose: a headline
+   set to 90ch is unreadable. Body copy uses --measure and the ch caps below. */
 
 /* ---------- section: left rail label + content column ---------- */
 section { margin-top: 4.75rem; }
@@ -287,7 +290,7 @@ td.part { color: var(--mid); font-weight: 600; }
 /* ---------- verdict — the one filled panel ---------- */
 .verdict { background: var(--blue-pale); padding: 2rem 1.75rem; margin: 3rem 0 0; }
 .verdict .sec-label { color: var(--blue); }
-.verdict p { font-family: var(--tight); font-weight: 600; font-size: var(--t-1); line-height: 1.36; color: var(--ink); max-width: 52ch; letter-spacing: -0.01em; }
+.verdict p { font-family: var(--tight); font-weight: 600; font-size: var(--t-1); line-height: 1.36; color: var(--ink); max-width: 68ch; letter-spacing: -0.01em; }
 .verdict p + p { margin-top: 0.9rem; font-family: var(--sans); font-weight: 400; font-size: var(--t-0); color: var(--ink-2); letter-spacing: 0; }
 
 /* ---------- gap / technique list ---------- */
@@ -401,7 +404,7 @@ footer.colophon a { color: var(--blue); }
   font-size: clamp(1.6rem, 4vw, var(--t-3)); line-height: 1.05; letter-spacing: -0.022em;
 }
 .idx-link:hover .idx-title { color: var(--blue); }
-.idx-blurb { display: block; margin-top: 0.7rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); max-width: 60ch; }
+.idx-blurb { display: block; margin-top: 0.7rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); max-width: 76ch; }
 .idx-go {
   display: inline-block; margin-top: 0.9rem; font-family: var(--mono); font-size: var(--t-xs);
   font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue);
