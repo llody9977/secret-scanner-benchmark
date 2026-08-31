@@ -89,7 +89,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-.page { max-width: min(120rem, 95vw); margin: 0 auto; padding: 0 clamp(1rem, 3vw, 2.5rem) 7rem; }
+.page { max-width: min(150rem, 95vw); margin: 0 auto; padding: 0 clamp(1rem, 3vw, 2.5rem) 7rem; }
 
 p { margin: 0; }
 .flow > * + * { margin-top: 1.1em; }
