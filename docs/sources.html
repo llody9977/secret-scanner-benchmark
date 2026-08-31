@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sources · Secrets in the Software Supply Chain</title>
+<meta name="description" content="Assumptions, sourcing, confidence and references for all four parts of Secrets in the Software Supply Chain.">
+<meta name="author" content="Secrets in the Software Supply Chain">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#1d4ed8">
+<link rel="canonical" href="https://llody9977.github.io/secret-scanner-benchmark/sources.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Sources">
+<meta property="og:description" content="Assumptions, sourcing, confidence and references for all four parts of Secrets in the Software Supply Chain.">
+<meta property="og:url" content="https://llody9977.github.io/secret-scanner-benchmark/sources.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='25' r='9' fill='none' stroke='white' stroke-width='5'/%3E%3Cpath d='M32 33v18M32 44h8' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/series.css?v=55175ef299">
+</head>
+<body>
+<div class="page">
+<div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
+<a href="sixty-second-credential.html">Part 1 &middot; Threat</a>
+<a href="nothing-catches-everything.html">Part 2 &middot; Detection</a>
+<a href="governed-pipeline.html">Part 3 &middot; Implementation</a>
+<a href="unnamed-control.html">Part 4 &middot; Governance</a>
+<span aria-current="page">Sources</span></div>
+  <header class="masthead">
+    <p class="kicker">Secrets in the Software Supply Chain</p>
+    <h1>Sources</h1>
+    <p class="dek">Where every figure in the series comes from, how far each one can be pushed, and what is inference rather than measurement.</p>
+    <div class="byline">
+      <span>Appendix</span>
+      <span>Research current to August 2026</span>
+    </div>
+  </header>
+
+  <div class="sec-head" style="margin-top:4rem">
+    <span class="sec-label">Part 1</span>
+    <h2><a href="sixty-second-credential.html">The Sixty-Second Credential</a></h2>
+  </div>
+<!-- ============ SOURCING ============ -->
+  
+
+  <section id="p1-sourcing">
+    <div class="sourcing">
+      <h4>Assumptions, sourcing, and confidence</h4>
+      <p><strong>Established.</strong> Incident facts for Salesloft Drift and Shai-Hulud 2.0 are corroborated across vendor research, vendor incident guidance and mainstream security press. The CISA advisory cited covers the earlier September 2025 npm campaign and is background rather than corroboration for the November events. Breach economics and initial-access shares come from the 2026 IBM Cost of a Data Breach Report and the 2026 Verizon DBIR.</p>
+      <p><strong>Single-source or vendor-sourced.</strong> Secret volume, validity persistence, AI-service leak growth and MCP configuration figures derive predominantly from GitGuardian's annual research; GitGuardian sells secret detection. The 27-day remediation figure is from a GitGuardian/CyberArk survey, self-reported by IT decision-makers rather than measured. LiteLLM scale figures (2,500+ companies, 434,000 pipelines) remain single-source from CloudSEK and uncorroborated. The sub-sixty-second median exploitation figure is industry reporting, corroborated in order of magnitude by independent honeypot research.</p>
+      <p><strong>Contested and superseded.</strong> The LiteLLM exposure window is genuinely disputed: 40 minutes per the maintainers, roughly three hours per Snyk's reconstruction. Widely circulated accounts stating that LiteLLM's build system produced the malicious releases are superseded by the maintainers' own record, which shows GitHub releases stopping at v1.82.6.dev1 and the packages uploaded directly with a stolen token.</p>
+      <p><strong>Asserted rather than demonstrated.</strong> The claim that attackers use language models to classify harvested credentials by validity, privilege and value is widely repeated but I found no primary source documenting it as an observed capability. It is labelled as a characterisation in section two. What <em>is</em> documented is automated harvesting and validation at scale, and LLM agents operating at machine speed post-exploitation.</p>
+      <p><strong>Inference, flagged.</strong> The per-commit leak-rate calculation (approximately 1.6 percent to 1.5 percent) is derived here from published aggregates for secret count, commit count and developer growth. It is not a reported statistic and carries the compounding uncertainty of three separate figures.</p>
+      <p><strong>Assumption.</strong> Guidance assumes an enterprise with cloud infrastructure, an active CI/CD estate, and third-party SaaS integrations. Organisations with predominantly on-premises, low-change environments should weight tier 3 containment above tier 1 elimination.</p>
+    </div>
+
+    <div class="refs">
+      <h3>References</h3>
+      <ol>
+        <li id="p1-fn-1">GitGuardian, <a href="https://blog.gitguardian.com/the-state-of-secrets-sprawl-2026/"><em>The State of Secrets Sprawl 2026</em></a>, March 2026. Source for leak volumes, AI-service growth, validity persistence, MCP configuration findings, non-repository incident share, and the Shai-Hulud compromised-machine dataset.</li>
+        <li id="p1-fn-2">Security Boulevard, <a href="https://securityboulevard.com/2026/08/when-ai-hackers-meet-machine-identity-the-ignored-attack-surface/">"When AI Hackers Meet Machine Identity: The Ignored Attack Surface"</a>, August 2026. Source for the sub-sixty-second median, the AI triage layer, and machine-identity ratios.</li>
+        <li id="p1-fn-3">Comparitech, <a href="https://www.comparitech.com/blog/information-security/github-honeypot/">"It takes hackers 1 minute to find and abuse credentials exposed on GitHub"</a>. Honeypot methodology, one-minute first abuse, 547 source addresses, RunInstances volume.</li>
+        <li id="p1-fn-4">Cloud Security Alliance, <a href="https://labs.cloudsecurityalliance.org/research/csa-research-note-ai-generated-code-security-vibe-coding-202/"><em>Vibe Coding Security Crisis: Credential Sprawl and SDLC Debt</em></a>, March 2026. AI-assisted commit leak rates and AI code defect rates.</li>
+        <li id="p1-fn-5">Verizon, <a href="https://www.verizon.com/business/resources/Td15/reports/2026-dbir-data-breach-investigations-report.pdf"><em>2026 Data Breach Investigations Report</em></a>; see also GitGuardian's <a href="https://blog.gitguardian.com/initial-access-changed-the-attack-path-did-not-findinds-from-the-verizon-2026-dbir/">analysis of it</a>. Initial access vectors, credential abuse share, third-party involvement at 48 percent.</li>
+        <li id="p1-fn-6">IBM, <em>Cost of a Data Breach Report 2026</em>, as summarised by <a href="https://www.helpnetsecurity.com/2026/07/30/ibm-cost-of-a-data-breach-2026/">Help Net Security</a>, July 2026. Global average of $4.99M, 247-day mean time to identify and contain, shadow AI incidence.</li>
+        <li id="p1-fn-7">TechTarget, <a href="https://www.techtarget.com/searchsecurity/news/366630934/News-brief-Salesloft-Drift-breach-update-and-timeline">"News brief: Salesloft Drift breach update and timeline"</a>. Mandiant root-cause findings, 700+ affected organisations, Google Threat Intelligence Group on the AWS key and Snowflake token search.</li>
+        <li id="p1-fn-8">UpGuard, <a href="https://www.upguard.com/blog/salesloft-drift-breach">"Salesloft Drift Breach: What Happened and How Does It Affect Me?"</a>. Attack chain detail and named victims.</li>
+        <li id="p1-fn-9">CX Today, <a href="https://www.cxtoday.com/customer-analytics-intelligence/the-salesloft-drift-chatbot-is-set-to-go-offline-after-customers-suffer-big-breaches/">"The SalesLoft Drift Chatbot Is Set to Go Offline After Customers Suffer Big Breaches"</a>, September 2025. Product shutdown, 5,000+ brands served.</li>
+        <li id="p1-fn-10">Sysdig, <a href="https://www.sysdig.com/blog/return-of-the-shai-hulud-worm-affects-over-25-000-github-repositories">"Return of the Shai-Hulud worm affects over 25,000 GitHub repositories"</a>. Execution mechanics, TruffleHog use, exfiltration structure, propagation logic.</li>
+        <li id="p1-fn-11">CISA, <a href="https://www.cisa.gov/news-events/alerts/2025/09/23/widespread-supply-chain-compromise-impacting-npm-ecosystem">"Widespread Supply Chain Compromise Impacting npm Ecosystem"</a>, 23 September 2025. <strong>Covers the September 2025 npm campaign (the predecessor</strong>, not the 24 November 2025 Shai-Hulud 2.0 events described above). Cited as background on the campaign family, not as corroboration for this case.</li>
+        <li id="p1-fn-12">Microsoft Security, <a href="https://www.microsoft.com/en-us/security/blog/2025/12/09/shai-hulud-2-0-guidance-for-detecting-investigating-and-defending-against-the-supply-chain-attack/">"Shai-Hulud 2.0: Guidance for detecting, investigating, and defending"</a>, December 2025. Remediation scope.</li>
+        <li id="p1-fn-13">CloudSEK, <a href="https://www.cloudsek.com/blog/ai-supply-chain-breach-2500-companies-434000-cicd-pipelines">"LiteLLM Supply Chain Attack: 2,500+ Companies Exposed"</a>, 2026. Cited only for the 2,500-companies / 434,000-pipelines scale figures, which remain single-source and uncorroborated. Its account of the attack mechanics is superseded by the first-party and Snyk sources at notes 18 and 19.</li>
+        <li id="p1-fn-14">S. K. Basak, J. Cox, B. Reaves and L. Williams (North Carolina State University), <a href="https://arxiv.org/abs/2307.00714">"A Comparative Study of Software Secrets Reporting by Secret Detection Tools"</a>, ESEM 2023. Precision and recall across nine tools on the SecretBench corpus.</li>
+        <li id="p1-fn-15">GitHub, <a href="https://github.blog/security/application-security/next-evolution-github-advanced-security/">"GitHub found 39M secret leaks in 2024. Here's what we're doing to help"</a>, April 2025.</li>
+        <li id="p1-fn-16">GitGuardian, <a href="https://blog.gitguardian.com/github-push-protection-enhancing-open-source-security-with-limitations-to-consider/">"GitHub Push Protection: Benefits and Key Limitations Explained"</a>. Detector coverage, generic secret share, history and visibility-change gaps. Vendor-authored comparison; read with that in mind.</li>
+        <li id="p1-fn-17">GitGuardian and CyberArk, <a href="https://blog.gitguardian.com/voice-of-practitioners-2024/"><em>Voice of Practitioners 2024</em></a>, October 2024. Survey of 1,000 IT decision-makers across the US, UK, Germany and France; source of the 27-day average remediation time. Vendor-sponsored, and self-reported by decision-makers rather than measured (see the caveat on comparing the three numbers).</li>
+        <li id="p1-fn-18">LiteLLM (BerriAI), <a href="https://docs.litellm.ai/blog/security-update-march-2026">"Security Update: Suspected Supply Chain Incident"</a>, March 2026, and the maintainers' <a href="https://github.com/BerriAI/litellm/issues/24518">incident thread, issue #24518</a>. First-party source for the direct-upload finding ("GitHub releases only go up to v1.82.6.dev1"), the payload behaviour, and the ~40-minute window.</li>
+        <li id="p1-fn-19">Snyk, <a href="https://snyk.io/blog/poisoned-security-scanner-backdooring-litellm/">"How a Poisoned Security Scanner Became the Key to Backdooring LiteLLM"</a>, 2026. Reconstruction of the trivy-action tag rewrite of 19 March, the unpinned-action path, the <code>PYPI_PUBLISH</code> token exfiltration, and a quarantine time of ~13:38 UTC that conflicts with the first-party 40-minute figure.</li>
+        <li id="p1-fn-20">Cloud Security Alliance, <a href="https://labs.cloudsecurityalliance.org/research/csa-research-note-llmjacking-offensive-ai-tooling-20260618-c/">"LLMjacking Evolves: Stolen AI Compute as Attack Infrastructure"</a>, June 2026. Source for the ~35,000 catalogued attack sessions at 972/day with automated credential validation, and for the May 2026 LLM-agent incident (12 API calls in 22 seconds; database dump under two minutes). Note what it does <em>not</em> contain: any documented instance of a model triaging harvested keys by privilege or value.</li>
+      </ol>
+    </div>
+  </section>
+
+  
+  <div class="sec-head" style="margin-top:4rem">
+    <span class="sec-label">Part 2</span>
+    <h2><a href="nothing-catches-everything.html">Nothing Catches Everything</a></h2>
+  </div>
+<!-- ============ SOURCING ============ -->
+  <section id="p2-sourcing">
+    <div class="sourcing">
+      <h4>Assumptions, sourcing, and confidence</h4>
+      <p><strong>Established.</strong> Precision and recall figures are from a peer-reviewed ESEM 2023 study with a manually labelled corpus. Licences, pricing and tier boundaries were verified against each project's own repository, licence file or vendor documentation as of August 2026.</p>
+      <p><strong>Explicitly unverified (check before relying on it.</strong> Whether GitGuardian's free Starter plan permits ggshield in CI (two primary sources conflict)). Snyk free-tier limits and whether Snyk Secrets is included. Whether Bitbucket Cloud has native, non-Pipelines secret scanning and on which plan. The exact published rule counts for Gitleaks, Betterleaks and Kingfisher, none of which publish a figure. The maintenance status of git-secrets, which is not archived but appears dormant.</p>
+      <p><strong>Dated.</strong> The ESEM 2023 numbers predate Betterleaks, Kingfisher, Titus and every AI-service credential format. Treat them as evidence of the shape of the problem, not as a current league table.</p>
+      <p><strong>Limitations of the benchmark in section four.</strong> One run, one seed, 41 planted secrets, 18 decoys and 4 indicators. That is enough to measure recall attributably and far too little to measure precision meaningfully. A real repository's noise floor is orders of magnitude larger, which is why five of six tools score above 90 percent precision here and between 1 and 75 percent on 818 real repositories. The checksum experiment is planted but not broken out in the published scoring. Rulesets drift monthly, so any snapshot ages quickly. Treat the run as a reproducible measurement of one corpus, not as a league table.</p>
+      <p><strong>Known defect in the corpus, unfixed at the time of writing.</strong> Four planted "secrets" are AWS access-key IDs, which cannot authenticate on their own and should not be scored as credentials. Section four gives the recomputed figures; the ranking flips, no tool retains a unique catch, and the case for layering weakens to a single secret. The adjusted numbers are my arithmetic on the published per-tool totals, not a re-run. Detect-secrets could not be recomputed at all, because the published summary does not say which side of the identifier split it fell on. Until the corpus reclassifies identifiers as locator signals and the run is repeated, treat every recall figure in this section as provisional.</p>
+      <p><strong>Disclosure.</strong> Betterleaks development is funded by Aikido, which sells a competing commercial product. GitGuardian research is cited throughout and GitGuardian sells secret detection.</p>
+    </div>
+
+    <div class="refs">
+      <h3>References</h3>
+      <ol>
+        <li id="p2-fn-1">Security Boulevard, <a href="https://securityboulevard.com/2026/08/when-ai-hackers-meet-machine-identity-the-ignored-attack-surface/">"When AI Hackers Meet Machine Identity: The Ignored Attack Surface"</a>, August 2026.</li>
+        <li id="p2-fn-2">GitGuardian, <a href="https://blog.gitguardian.com/the-state-of-secrets-sprawl-2026/"><em>The State of Secrets Sprawl 2026</em></a>, March 2026. Vendor research; treat figures as directional.</li>
+        <li id="p2-fn-3">See <a href="sixty-second-credential.html">Part 1 of this series</a> for the Salesloft Drift, Shai-Hulud 2.0 and LiteLLM case studies and their sourcing. Note on LiteLLM: the malicious packages were uploaded directly to PyPI with a token stolen from a CI runner, not built by the project's release pipeline.</li>
+        <li id="p2-fn-4">PCI Security Standards Council, PCI DSS v4.0.1, requirement 8.6.2; effective dates per the <a href="https://listings.pcisecuritystandards.org/documents/PCI-DSS-v3-2-1-to-v4-0-Summary-of-Changes-r1.pdf">Summary of Changes from v3.2.1 to v4.0</a>.</li>
+        <li id="p2-fn-5">S. K. Basak, J. Cox, B. Reaves and L. Williams (North Carolina State University), <a href="https://arxiv.org/abs/2307.00714">"A Comparative Study of Software Secrets Reporting by Secret Detection Tools"</a>, ESEM 2023. Nine tools, 818 repositories, 97,479 labelled candidates.</li>
+        <li id="p2-fn-6">Yelp, <a href="https://github.com/Yelp/detect-secrets">detect-secrets</a>. Plugin architecture, keyword detector, baseline model, and the documented decision not to scan git history.</li>
+        <li id="p2-fn-7">GitHub, <a href="https://github.blog/engineering/platform-security/behind-githubs-new-authentication-token-formats/">"Behind GitHub's new authentication token formats"</a>. Prefixes, base62 body, CRC32 checksum, and the stated false positive impact.</li>
+        <li id="p2-fn-8">A. Steele, <a href="https://awsteele.com/blog/2020/09/26/aws-access-key-format.html">"AWS Access Key ID formats"</a>. Bitwise analysis showing no checksum and the embedded account ID.</li>
+        <li id="p2-fn-9">Truffle Security, <a href="https://github.com/trufflesecurity/trufflehog">TruffleHog</a>. AGPL-3.0 since v3.0; verification engine and verified/unverified/unknown classification.</li>
+        <li id="p2-fn-10">Gitleaks, <a href="https://github.com/gitleaks/gitleaks">project repository</a> and <a href="https://raw.githubusercontent.com/gitleaks/gitleaks/master/LICENSE">MIT licence</a>.</li>
+        <li id="p2-fn-11">Betterleaks, <a href="https://github.com/betterleaks/betterleaks">project repository</a>. MIT; successor project by the original Gitleaks author; development funded by Aikido.</li>
+        <li id="p2-fn-12">Gitleaks, <a href="https://raw.githubusercontent.com/gitleaks/gitleaks-action/master/README.md">gitleaks-action README</a>. Proprietary since v2.0.0; free licence key required for organisation-owned repositories.</li>
+        <li id="p2-fn-13">Praetorian, <a href="https://github.com/praetorian-inc/titus">Titus</a>, successor to <a href="https://github.com/praetorian-inc/noseyparker">Nosey Parker</a>, archived 24 April 2026.</li>
+        <li id="p2-fn-14">GitHub, <a href="https://github.blog/changelog/2025-03-04-introducing-github-secret-protection-and-github-code-security/">"Introducing GitHub Secret Protection and GitHub Code Security"</a>, March 2025. $19 per active committer per month; GA 1 April 2025.</li>
+        <li id="p2-fn-15">GitHub, <a href="https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning">"About secret scanning"</a>. Free on public repositories including full history; partner revocation programme.</li>
+        <li id="p2-fn-16">GitLab, <a href="https://docs.gitlab.com/user/application_security/secret_detection/pipeline/">"Pipeline secret detection"</a>. Tier availability.</li>
+        <li id="p2-fn-17">GitLab, <a href="https://docs.gitlab.com/user/application_security/secret_detection/secret_push_protection/">"Secret push protection"</a>. Ultimate only.</li>
+        <li id="p2-fn-18">Atlassian, <a href="https://confluence.atlassian.com/bitbucketserver/secret-scanning-1157471613.html">"Secret scanning"</a>, Bitbucket Data Center documentation.</li>
+        <li id="p2-fn-19">GitGuardian, <a href="https://www.gitguardian.com/pricing">pricing</a> and <a href="https://docs.gitguardian.com/ggshield-docs/getting-started">ggshield documentation</a>. The apparent conflict on CI/CD scanning in the free tier is noted in the sourcing box above.</li>
+        <li id="p2-fn-20">Aikido Security, <a href="https://www.aikido.dev/pricing">pricing</a>. Free Developer plan, 2 users, 10 repositories.</li>
+        <li id="p2-fn-21">Semgrep, <a href="https://semgrep.dev/pricing/">pricing</a> and <a href="https://raw.githubusercontent.com/semgrep/semgrep/develop/LICENSE">Semgrep CE licence (LGPL-2.1)</a>.</li>
+        <li id="p2-fn-22">S. K. Basak et al., <a href="https://arxiv.org/abs/2303.06729">"SecretBench: A Dataset of Software Secrets"</a>, MSR 2023.</li>
+        <li id="p2-fn-23"><a href="https://arxiv.org/html/2601.22946v1">"From Data Leak to Secret Misses: The Impact of Data Leakage on Secret Detection Models"</a>, 2026. Evaluates ML classifiers, not CLI tools. Do not transfer its numbers to Gitleaks or TruffleHog.</li>
+        <li id="p2-fn-24"><a href="https://github.com/setu1421/FPSecretBench">FPSecretBench</a>. Companion false-positive dataset for the same nine tools over the same 818 repositories.</li>
+        <li id="p2-fn-25">Stripe, <a href="https://docs.stripe.com/keys">"API keys"</a>. Test versus live key prefixes; publishable keys documented as safe to expose.</li>
+        <li id="p2-fn-26">Canarytokens, <a href="https://docs.canarytokens.org/guide/aws-keys-token.html">"AWS keys token"</a>.</li>
+        <li id="p2-fn-27">GitHub, <a href="https://github.blog/security/making-secret-scanning-more-trustworthy-reducing-false-positives-at-scale/">"Making secret scanning more trustworthy: Reducing false positives at scale"</a>, June 2026. Relative reduction against GitHub's own baseline; no absolute rate published.</li>
+        <li id="p2-fn-29">Amazon Web Services, <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html">"Manage access keys for IAM users"</a>: "Access keys consist of two parts: an access key ID… and a secret access key… You must use both the access key ID and secret access key together to authenticate your requests."</li>
+        <li id="p2-fn-28"><a href="https://github.com/llody9977/secret-scanner-benchmark"><code>llody9977/secret-scanner-benchmark</code></a> (the benchmark built from this section's design). Results in <a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md"><code>docs/RESULTS.md</code></a>; run #6, commit <code>52c3004</code>, corpus seed <code>20260829</code>, corpus HEAD <code>07e07fa</code>, 29 August 2026. A GitHub Actions run against corrected ground truth, on a corpus byte-identical to run #5's. Corpus and scoring are reproducible from the committed seed; see the limitations note above before citing any figure from it.</li>
+      </ol>
+    </div>
+  </section>
+
+  
+  <div class="sec-head" style="margin-top:4rem">
+    <span class="sec-label">Part 3</span>
+    <h2><a href="governed-pipeline.html">The Governed Pipeline</a></h2>
+  </div>
+<!-- ============ SOURCING ============ -->
+  <section id="p3-sourcing">
+    <div class="sourcing">
+      <h4>Assumptions, sourcing, and confidence</h4>
+      <p><strong>Reproducible.</strong> Every configuration, workflow and test in sections three and four is in the repository and runs in CI. The regression suite's result (21 scenarios, 16 blocked, 5 passed, 0 deviations) is reproducible with <code>python regression/run.py</code> against Gitleaks 8.30.1. The two gaps it found on first run, and the precision defect in the first version of the connection-string rule, are recorded in the commit history rather than reconstructed.</p>
+      <p><strong>Directly observed.</strong> The hosted push-protection result in section five was produced by an actual push at this repository on 30 August 2026, with the alert retrieved from the alert API and only sanitised metadata retained. The API returns a <code>secret</code> field, which is deliberately not copied. The block, the bypass, the retry and the alert are all this repository's own result, reproducible by the procedure published alongside it. An earlier run of the same experiment in the predecessor repository is retained as provenance.</p>
+      <p><strong>Judgement, not measurement.</strong> The rollout order in section one, the six-column control specification in section two, and the split of tools between gating and discovery are engineering positions. They are defensible from the evidence in parts one and two, but they are not measurements and another team could order them differently with good reasons. Particularly an organisation whose host offers no push gate at all, where the CI gate has to carry weight it is not designed for.</p>
+      <p><strong>Out of scope.</strong> Section seven names the runtime-credential surface and the architectural options that shrink the static one. It does not evaluate any of them. Workload identity, sender-constrained tokens and runtime telemetry each deserve their own treatment, and nothing here should be read as an implementation recommendation for a specific product.</p>
+      <p><strong>Platform specificity.</strong> The reference implementation is GitHub Actions. The four decisions in section three (three-outcome exit handling, verified redaction, full history, pinned and checksummed tools) are host-independent. The syntax is not.</p>
+    </div>
+  </section>
+
+  <!-- ============ REFERENCES ============ -->
+  <section id="p3-refs">
+    <div class="sec-head">
+      <span class="sec-label">References</span>
+      <h2>Sources</h2>
+    </div>
+    <div class="refs">
+      <ol>
+        <li id="p3-fn-1"><a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/HOSTED-PUSH-PROTECTION.md"><code>docs/HOSTED-PUSH-PROTECTION.md</code></a> and the sanitised record in <a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/results/hosted-push-protection.json"><code>results/hosted-push-protection.json</code></a>. Observed <strong>30 August 2026 in this repository</strong>: push blocked, <code>used_in_tests</code> bypass, retry accepted, alert #1 created. The earlier 25 August 2026 run in <code>llody9977/secret-scan</code> is retained in the JSON as provenance only. Raw alert responses are not retained, because GitHub's alert API includes a <code>secret</code> field.</li>
+        <li id="p3-fn-2"><a href="https://github.com/llody9977/secret-scanner-benchmark"><code>llody9977/secret-scanner-benchmark</code></a> (<a href="https://github.com/llody9977/secret-scanner-benchmark/tree/main/controls"><code>controls/</code></a> for the configured control set, <a href="https://github.com/llody9977/secret-scanner-benchmark/tree/main/regression"><code>regression/</code></a> for the regression suite, <a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/.github/workflows/controls.yml"><code>.github/workflows/controls.yml</code></a> for the workflows, and <a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md"><code>docs/RESULTS.md</code></a> for the comparative benchmark).</li>
+        <li id="p3-fn-3">Amazon Web Services, <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html">"Manage access keys for IAM users"</a>: "Access keys consist of two parts: an access key ID&hellip; and a secret access key&hellip; You must use both the access key ID and secret access key together to authenticate your requests."</li>
+        <li id="p3-fn-4">GitHub, <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository">"Removing sensitive data from a repository"</a>. Places revocation or rotation before repository rewriting.</li>
+        <li id="p3-fn-5">GitHub, <a href="https://docs.github.com/en/actions/concepts/security/openid-connect">"OpenID Connect"</a> for GitHub Actions. Exchange of a workflow identity for a short-lived cloud token.</li>
+        <li id="p3-fn-6">IETF, <a href="https://www.rfc-editor.org/rfc/rfc8705.html">RFC 8705, <em>OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens</em></a>, and <a href="https://www.rfc-editor.org/rfc/rfc9449.html">RFC 9449, <em>OAuth 2.0 Demonstrating Proof of Possession (DPoP)</em></a>. Sender-constrained tokens; a copied token is not usable by the copier.</li>
+      </ol>
+    </div>
+  </section>
+
+  
+  <div class="sec-head" style="margin-top:4rem">
+    <span class="sec-label">Part 4</span>
+    <h2><a href="unnamed-control.html">The Unnamed Control</a></h2>
+  </div>
+<!-- ============ SOURCING ============ -->
+  <section id="p4-sourcing">
+    <div class="sourcing">
+      <h4>Assumptions, sourcing, and confidence</h4>
+      <p><strong>Verified against primary sources.</strong> NIST SP 800-218 v1.1 and SP 800-218A practice text (NIST PDFs); OWASP ASVS 5.0.0 requirement text (project repository); CIS Controls v8.1 Control 16 safeguards (CIS Assessment Specification); PCI DSS future-dated requirement effective dates (PCI SSC Summary of Changes); DORA RTS 2024/1774 article text (EUR-Lex); FTC and SEC complaint paragraphs (ftc.gov, sec.gov).</p>
+      <p><strong>Verified against secondary sources only. Check before quoting verbatim.</strong> ISO/IEC 27001:2022 control body text (the standard is paywalled; control numbers and titles are corroborated across multiple sources, normative text is not). SOC 2 criteria other than CC6.1 and CC8.1 (the AICPA TSC document is gated). PCI DSS full requirement text (the PCI SSC standard is gated; text taken from a QSA-published matrix reproducing v4.0.1). The effective dates are from the public PCI SSC Summary of Changes. MAS TRM paragraph numbering (mas.gov.sg blocks automated retrieval; chapter structure matches the published contents). DORA Article 9(4) paragraph lettering.</p>
+      <p><strong>Not found.</strong> No published push protection bypass rate exists from any vendor or academic source. No ICO, NYDFS or HHS OCR enforcement action naming hardcoded credentials as a cited cause was located. Both absences are stated in the article rather than filled.</p>
+      <p><strong>Vendor-sourced.</strong> The 27-day remediation figure, the 79 percent leak incidence and the 75/44 percent confidence gap come from a survey sponsored by GitGuardian and CyberArk, both of whom sell in this market, and the respondents were IT decision-makers rather than developers. Treated as directional and labelled as such in the text.</p>
+      <p><strong>Assumption.</strong> This assumes an organisation with a git-based SDLC, CI/CD, and an external audit or regulatory obligation. Organisations without an assessment obligation should read section four as a design reference rather than a requirements list.</p>
+    </div>
+
+    <div class="refs">
+      <h3>References</h3>
+      <ol>
+        <li id="p4-fn-1">PCI Security Standards Council, PCI DSS v4.0.1, requirements 8.6.1&ndash;8.6.3, 6.2.1&ndash;6.2.4, 6.3.1&ndash;6.3.2, 7.2.5. Future-dated requirement effective dates (31 March 2025) verified against the PCI SSC's public <a href="https://listings.pcisecuritystandards.org/documents/PCI-DSS-v3-2-1-to-v4-0-Summary-of-Changes-r1.pdf">Summary of Changes from PCI DSS v3.2.1 to v4.0</a>.</li>
+        <li id="p4-fn-2">OWASP, <a href="https://raw.githubusercontent.com/OWASP/ASVS/master/5.0/en/0x22-V13-Configuration.md">Application Security Verification Standard 5.0.0, V13 Configuration</a> (released 30 May 2025). Requirements 13.3.1&ndash;13.3.4, 13.2.1, 13.2.3, 13.1.4. Note the chapter renumbering from ASVS 4.0, where the equivalent was 6.4.1 (mapped to CWE-798, Use of Hard-coded Credentials).</li>
+        <li id="p4-fn-3">AICPA Trust Services Criteria (2017, revised points of focus 2022), CC6.1 and CC8.1. Criterion text verified against <a href="https://documentation.wazuh.com/current/compliance/tsc/common-criteria/cc6.1.html">two</a> <a href="https://www.compliancebase.org/controls/soc-2/cc6-1">independent secondary sources</a> that agree verbatim; the AICPA document itself is gated.</li>
+        <li id="p4-fn-4">GitGuardian and CyberArk, <a href="https://blog.gitguardian.com/voice-of-practitioners-2024/"><em>Voice of Practitioners 2024</em></a>, October 2024. Survey of 1,000 IT decision-makers across the US, UK, Germany and France. Vendor-sponsored; respondents are decision-makers, not developers.</li>
+        <li id="p4-fn-5">S. K. Basak, J. Cox, B. Reaves and L. Williams (North Carolina State University), <a href="https://arxiv.org/abs/2307.00714">"A Comparative Study of Software Secrets Reporting by Secret Detection Tools"</a>, ESEM 2023.</li>
+        <li id="p4-fn-6">M. Krause, J. H. Klemmer, N. Huaman, D. Wermke, Y. Acar and S. Fahl, <a href="https://www.usenix.org/conference/usenixsecurity23/presentation/krause">"Pushed by Accident: A Mixed-Methods Study on Strategies of Handling Secret Information in Source Code Repositories"</a>, USENIX Security 2023.</li>
+        <li id="p4-fn-7">Federal Trade Commission, <a href="https://www.ftc.gov/system/files/documents/cases/152_3054_c-4662_uber_technologies_revised_complaint.pdf"><em>In the Matter of Uber Technologies, Inc.</em>, Docket C-4662, revised complaint</a>, 25 October 2018, paragraphs 21 and 24.</li>
+        <li id="p4-fn-8">GitGuardian, <a href="https://blog.gitguardian.com/the-state-of-secrets-sprawl-2026/"><em>The State of Secrets Sprawl 2026</em></a>, March 2026. Validity persistence, non-repository incident share, internal-versus-public repository ratio. Vendor research; directional.</li>
+        <li id="p4-fn-9">GitHub, <a href="https://github.blog/security/making-secret-scanning-more-trustworthy-reducing-false-positives-at-scale/">"Making secret scanning more trustworthy: Reducing false positives at scale"</a>, June 2026. Relative reduction against GitHub's own baseline; no absolute rate published.</li>
+        <li id="p4-fn-10">B. Johnson, Y. Song, E. Murphy-Hill and R. Bowdidge, <a href="https://dl.acm.org/doi/10.5555/2486788.2486877">"Why Don't Software Developers Use Static Analysis Tools to Find Bugs?"</a>, ICSE 2013. Qualitative study of 20 developers; no percentage breakdowns should be attributed to it.</li>
+        <li id="p4-fn-11">GitHub, <a href="https://docs.github.com/en/enterprise-cloud@latest/code-security/concepts/secret-security/push-protection-metrics">"Push protection metrics"</a>; organisation-level metrics available since July 2023 and bypass-request metrics since August 2024. No aggregate figure has been published.</li>
+        <li id="p4-fn-12">NIST, <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-218A.pdf">SP 800-218A, <em>Secure Software Development Practices for Generative AI and Dual-Use Foundation Models: An SSDF Community Profile</em></a>, July 2024. PO.5.1: "Continuously monitor each environment for plaintext secrets."</li>
+        <li id="p4-fn-13">ISO/IEC 27001:2022, Annex A. Control numbers and titles corroborated across multiple secondary sources including <a href="https://www.isms.online/iso-27001/annex-a-2022/5-17-authentication-information-2022/">ISMS.online on A.5.17</a>; the standard itself is paywalled and normative text was not verified against ISO.</li>
+        <li id="p4-fn-14">NIST, <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-218.pdf">SP 800-218 v1.1, <em>Secure Software Development Framework</em></a>, February 2022. Verified: no practice or task in this document names secrets, hardcoded credentials, passwords or cryptographic keys.</li>
+        <li id="p4-fn-15">CIS, <a href="https://cas.docs.cisecurity.org/en/latest/source/Controls16/">Controls Assessment Specification, Control 16</a> (v8.1).</li>
+        <li id="p4-fn-16">European Commission, <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202401774">Commission Delegated Regulation (EU) 2024/1774</a> (DORA RTS on ICT risk management), Articles 6, 7, 16 and 20&ndash;21; and Regulation (EU) 2022/2554 (DORA) Article 9(4).</li>
+        <li id="p4-fn-17">Monetary Authority of Singapore, <a href="https://www.mas.gov.sg/-/media/MAS/Regulations-and-Financial-Stability/Regulatory-and-Supervisory-Framework/Risk-Management/TRM-Guidelines-18-January-2021.pdf"><em>Technology Risk Management Guidelines</em></a>, 18 January 2021. Sections 6.1, 6.2.2, 9.1, 9.2 and 10.2.</li>
+        <li id="p4-fn-18">Schellman, <a href="https://www.schellman.com/blog/pci-compliance/pci-dss-service-account-requirements">"PCI DSS service account requirements"</a>. QSA commentary on the interactive-login scoping of 8.6.1 and 8.6.2 versus the universal scope of 8.6.3.</li>
+        <li id="p4-fn-19">US Securities and Exchange Commission, <a href="https://www.sec.gov/files/litigation/complaints/2023/comp-pr2023-227.pdf"><em>SEC v. SolarWinds Corp. and Timothy G. Brown</em>, complaint</a>, 30 October 2023, paragraph 83.</li>
+        <li id="p4-fn-20">Harvard Law School Forum on Corporate Governance, <a href="https://corpgov.law.harvard.edu/2024/08/03/court-dismisses-most-of-secs-claims-against-solarwinds/">"Court Dismisses Most of SEC's Claims Against SolarWinds"</a>, August 2024. Essential caveat on the preceding reference.</li>
+        <li id="p4-fn-21"><a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md"><code>secret-scanner-benchmark</code>, run #6</a>, 29 August 2026. Six tools against 41 synthetic secrets, 18 decoys and 4 indicators. Precision figures from a synthetic corpus are not comparable to precision on a real codebase; see <a href="nothing-catches-everything.html">Part 2</a>, section four, for the limitations.</li>
+      </ol>
+    </div>
+  </section>
+
+  
+  <footer class="colophon">
+    <span>Secrets in the Software Supply Chain &middot; Sources</span>
+    <span>Research current to August 2026</span>
+  </footer>
+
+</div>
+</body>
+</html>

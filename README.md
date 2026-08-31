@@ -21,14 +21,14 @@ one way to evidence them. Three name hardcoded secrets in normative text, each
 scope-limited (PCI DSS 8.6.2, OWASP ASVS 13.3.1, NIST SP 800-218A); ISO 27001,
 SOC 2, base NIST SSDF, CIS and DORA reach the control by inference. The
 clause-level mapping is in
-[part 4](https://llody9977.github.io/secret-scanner-benchmark/part-4.html#standards).
+[part 4](https://llody9977.github.io/secret-scanner-benchmark/unnamed-control.html#standards).
 
 **Companion series:** *[Secrets in the Software Supply Chain](https://llody9977.github.io/secret-scanner-benchmark/)*
-— [part 1](https://llody9977.github.io/secret-scanner-benchmark/part-1.html) (threat),
-[part 2](https://llody9977.github.io/secret-scanner-benchmark/part-2.html) (this benchmark),
-[part 3](https://llody9977.github.io/secret-scanner-benchmark/part-3.html) (the implemented
+— [part 1](https://llody9977.github.io/secret-scanner-benchmark/sixty-second-credential.html) (threat),
+[part 2](https://llody9977.github.io/secret-scanner-benchmark/nothing-catches-everything.html) (this benchmark),
+[part 3](https://llody9977.github.io/secret-scanner-benchmark/governed-pipeline.html) (the implemented
 pipeline — `controls/` and `regression/` in this repository),
-[part 4](https://llody9977.github.io/secret-scanner-benchmark/part-4.html) (governance).
+[part 4](https://llody9977.github.io/secret-scanner-benchmark/unnamed-control.html) (governance).
 
 **Every credential here is synthetic and non-functional.** See
 [SECURITY.md](SECURITY.md) for how each format is fabricated and why it cannot
