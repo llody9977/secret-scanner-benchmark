@@ -18,7 +18,7 @@
   --neg:        #b42318;
   --mid:        #a16207;
 
-  --measure: 48rem;
+  --measure: 58rem;
   --rail: 7rem;
   --gutter: 2.25rem;
 
@@ -128,12 +128,12 @@ h1 {
   font-family: var(--tight);
   font-size: clamp(2.6rem, 7.2vw, var(--t-5));
   line-height: 0.98; letter-spacing: -0.032em;
-  margin: 0; max-width: 18ch; text-wrap: balance; hyphens: none;
+  margin: 0; max-width: 32ch; text-wrap: balance; hyphens: none;
 }
 .dek {
   font-size: clamp(var(--t-1), 2.3vw, var(--t-2));
   line-height: 1.4; font-weight: 400; color: var(--ink-2);
-  max-width: 54ch; margin: 1.6rem 0 0; text-wrap: pretty;
+  max-width: 78ch; margin: 1.6rem 0 0; text-wrap: pretty;
 }
 .byline {
   margin-top: 2.25rem; padding-top: 1.1rem; border-top: 1px solid var(--line);
@@ -160,11 +160,11 @@ section { margin-top: 4.75rem; }
 h2 {
   font-size: clamp(var(--t-3), 4vw, var(--t-4));
   line-height: 1.08; letter-spacing: -0.02em; margin: 0;
-  max-width: 24ch; text-wrap: balance;
+  max-width: 42ch; text-wrap: balance;
 }
 h3 {
   font-size: var(--t-2); line-height: 1.18; letter-spacing: -0.012em;
-  margin: 3rem 0 0; text-wrap: balance; max-width: 30ch;
+  margin: 3rem 0 0; text-wrap: balance; max-width: 46ch;
 }
 h4 {
   font-family: var(--sans); font-weight: 600; font-size: var(--t-0);
@@ -195,11 +195,11 @@ h3.col, h3.wide { margin-left: calc(var(--rail) + var(--gutter)); }
   border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
   padding: 1.75rem 0 2rem;
 }
-.exec > h2 { font-size: var(--t-2); margin: 0 0 1.4rem; max-width: 32ch; }
+.exec > h2 { font-size: var(--t-2); margin: 0 0 1.4rem; max-width: 46ch; }
 .exec-list { list-style: none; counter-reset: exec; margin: 0; padding: 0; display: grid; gap: 1.15rem; }
 .exec-list li {
   counter-increment: exec; position: relative;
-  padding-left: 3rem; max-width: 84ch;
+  padding-left: 3rem; max-width: 102ch;
 }
 .exec-list li::before {
   content: counter(exec, decimal-leading-zero);
@@ -234,7 +234,7 @@ h3.col, h3.wide { margin-left: calc(var(--rail) + var(--gutter)); }
 figure { margin: 3rem 0 0; padding: 0; }
 .figframe { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 1.75rem 0; overflow-x: auto; }
 figure svg { display: block; width: 100%; max-width: 100%; height: auto; min-width: 30rem; color: var(--ink); }  /* scrolls inside .figframe */
-figcaption { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); margin-top: 0.9rem; max-width: 82ch; }
+figcaption { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); margin-top: 0.9rem; max-width: 100ch; }
 
 .figframe svg .crit-line { stroke: var(--neg); }
 .figframe svg .crit-fill { fill: var(--neg); }
@@ -255,7 +255,7 @@ figcaption { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); marg
   letter-spacing: 0.13em; text-transform: uppercase; color: var(--blue);
   border-bottom: 2px solid var(--blue); padding-bottom: 2px; display: inline-block;
 }
-.case h3 { margin: 1rem 0 0; max-width: 34ch; }
+.case h3 { margin: 1rem 0 0; max-width: 52ch; }
 .case-meta {
   list-style: none; margin: 1.35rem 0 1.5rem; padding: 0.9rem 0;
   border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
@@ -264,7 +264,7 @@ figcaption { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); marg
 .case-meta div { display: flex; flex-direction: column; gap: 0.2rem; }
 .case-meta dt { font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
 .case-meta dd { margin: 0; font-size: var(--t-sm); line-height: 1.4; color: var(--ink); font-weight: 600; }
-.case .flow p { max-width: 82ch; }
+.case .flow p { max-width: 100ch; }
 
 /* ---------- tables ---------- */
 .tablewrap { margin: 2.25rem 0 0; overflow-x: auto; }
@@ -290,7 +290,7 @@ td.part { color: var(--mid); font-weight: 600; }
 /* ---------- verdict — the one filled panel ---------- */
 .verdict { background: var(--blue-pale); padding: 2rem 1.75rem; margin: 3rem 0 0; }
 .verdict .sec-label { color: var(--blue); }
-.verdict p { font-family: var(--tight); font-weight: 600; font-size: var(--t-1); line-height: 1.36; color: var(--ink); max-width: 68ch; letter-spacing: -0.01em; }
+.verdict p { font-family: var(--tight); font-weight: 600; font-size: var(--t-1); line-height: 1.36; color: var(--ink); max-width: 88ch; letter-spacing: -0.01em; }
 .verdict p + p { margin-top: 0.9rem; font-family: var(--sans); font-weight: 400; font-size: var(--t-0); color: var(--ink-2); letter-spacing: 0; }
 
 /* ---------- gap / technique list ---------- */
@@ -301,7 +301,7 @@ td.part { color: var(--mid); font-weight: 600; }
   text-transform: uppercase; color: var(--neg); padding-top: 0.15rem; line-height: 1.4;
 }
 .gap[data-tone="accent"] .gap-name { color: var(--blue); }
-.gap p { max-width: 82ch; font-size: var(--t-sm); line-height: 1.55; }
+.gap p { max-width: 100ch; font-size: var(--t-sm); line-height: 1.55; }
 .gap p + p { margin-top: 0.6rem; color: var(--ink-3); }
 
 /* ---------- ladder ---------- */
@@ -314,15 +314,15 @@ td.part { color: var(--mid); font-weight: 600; }
 .rung-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
 .rung-tier { font-family: var(--mono); font-size: var(--t-xs); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
 .rung h4 { margin: 0.5rem 0 0; font-family: var(--tight); font-weight: 700; font-size: var(--t-1); }
-.rung > p { max-width: 82ch; margin-top: 0.6rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); }
-.rung ul { max-width: 84ch; margin: 0.75rem 0 0; padding-left: 1.1rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); }
+.rung > p { max-width: 100ch; margin-top: 0.6rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); }
+.rung ul { max-width: 102ch; margin: 0.75rem 0 0; padding-left: 1.1rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); }
 .rung li + li { margin-top: 0.4rem; }
 
 /* ---------- prose lists ---------- */
 .col ul, .col ol, .wide ul, .wide ol, .flow ul, .flow ol { margin: 0; padding-left: 1.2rem; }
 .col li + li, .wide li + li, .flow li + li { margin-top: 0.5rem; }
-.wide > ul, .wide > ol { max-width: 84ch; }
-.flow ul li, .flow ol li { max-width: 82ch; }
+.wide > ul, .wide > ol { max-width: 102ch; }
+.flow ul li, .flow ol li { max-width: 100ch; }
 
 code { font-family: var(--mono); font-size: 0.86em; background: #f3f4f6; padding: 0.12em 0.36em; }
 pre {
@@ -336,7 +336,7 @@ pre code { background: none; padding: 0; font-size: inherit; }
 .ph { border: 1px solid var(--mid); border-left: 3px solid var(--mid); padding: 1.3rem 1.4rem; margin: 1.75rem 0 0; }
 .ph-tag { font-family: var(--mono); font-size: var(--t-xs); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); display: block; margin-bottom: 0.6rem; }
 .ph h4 { margin: 0; font-family: var(--tight); font-size: var(--t-1); }
-.ph p, .ph ul { margin-top: 0.6rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); max-width: 84ch; }
+.ph p, .ph ul { margin-top: 0.6rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); max-width: 102ch; }
 
 /* ---------- footnotes & references ---------- */
 sup.fn { font-size: 0.7em; line-height: 0; vertical-align: super; font-family: var(--mono); font-weight: 500; }
@@ -356,7 +356,7 @@ sup.fn a:hover { text-decoration: underline; }
 
 .sourcing { margin: 2.25rem 0 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 1.4rem 0; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); }
 .sourcing h4 { margin: 0 0 0.6rem; font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.11em; text-transform: uppercase; color: var(--ink); font-weight: 500; }
-.sourcing p { max-width: 86ch; }
+.sourcing p { max-width: 104ch; }
 .sourcing p + p { margin-top: 0.6rem; }
 
 /* ---------- next / series footer ---------- */
@@ -364,7 +364,7 @@ sup.fn a:hover { text-decoration: underline; }
 .nextup .sec-label { color: var(--blue); display: block; margin-bottom: 0.6rem; }
 .nextup a { font-family: var(--tight); font-weight: 700; font-size: var(--t-2); letter-spacing: -0.015em; text-decoration: none; }
 .nextup a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
-.nextup p { margin-top: 0.6rem; font-size: var(--t-sm); color: var(--ink-3); max-width: 82ch; }
+.nextup p { margin-top: 0.6rem; font-size: var(--t-sm); color: var(--ink-3); max-width: 100ch; }
 
 footer.colophon {
   margin: 5rem 0 0; padding-top: 1.4rem; border-top: 2px solid var(--ink);
@@ -378,7 +378,7 @@ footer.colophon a { color: var(--blue); }
 /* ---------- series index page ---------- */
 .idx { max-width: 60rem; }
 .idx-head { padding: 4rem 0 2.75rem; border-bottom: 2px solid var(--ink); margin-bottom: 0; }
-.idx-head h1 { max-width: 16ch; }
+.idx-head h1 { max-width: 28ch; }
 .idx-note {
   margin-top: 2rem; font-family: var(--mono); font-size: var(--t-xs);
   letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3);
@@ -404,7 +404,7 @@ footer.colophon a { color: var(--blue); }
   font-size: clamp(1.6rem, 4vw, var(--t-3)); line-height: 1.05; letter-spacing: -0.022em;
 }
 .idx-link:hover .idx-title { color: var(--blue); }
-.idx-blurb { display: block; margin-top: 0.7rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); max-width: 76ch; }
+.idx-blurb { display: block; margin-top: 0.7rem; font-size: var(--t-sm); line-height: 1.55; color: var(--ink-2); max-width: 96ch; }
 .idx-go {
   display: inline-block; margin-top: 0.9rem; font-family: var(--mono); font-size: var(--t-xs);
   font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue);
