@@ -230,7 +230,7 @@ h3.col, h3.wide { margin-left: calc(var(--rail) + var(--gutter)); }
 /* ---------- figures ---------- */
 figure { margin: 3rem 0 0; padding: 0; }
 .figframe { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 1.75rem 0; overflow-x: auto; }
-figure svg { display: block; width: 100%; max-width: 100%; height: auto; min-width: min(30rem, 100%); color: var(--ink); }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; min-width: 30rem; color: var(--ink); }  /* scrolls inside .figframe */
 figcaption { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); margin-top: 0.9rem; max-width: 68ch; }
 
 .figframe svg .crit-line { stroke: var(--neg); }
@@ -266,7 +266,7 @@ figcaption { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); marg
 /* ---------- tables ---------- */
 .tablewrap { margin: 2.25rem 0 0; overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; min-width: min(34rem, 100%); font-size: var(--t-sm); }
-table.wide-table { min-width: min(52rem, 100%); }
+table.wide-table { min-width: 52rem; }  /* scrolls inside .tablewrap rather than compressing to illegibility */
 caption {
   text-align: left; font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.11em;
   text-transform: uppercase; color: var(--ink-3); padding: 0 0 0.8rem;
