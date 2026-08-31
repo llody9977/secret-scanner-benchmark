@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nothing Catches Everything · Secrets in the Software Supply Chain</title>
-<meta name="description" content="Five detection techniques and what each cannot see, how to choose a scanner, and a reproducible six-tool benchmark where one synthetic secret was caught by nothing. Part 2 of Secrets in the Software Supply Chain.">
+<meta name="description" content="Five detection techniques and what each cannot see, how to choose a scanner, and a reproducible six-tool benchmark where one synthetic secret was caught by nothing. Chapter 2 of Secrets in the Software Supply Chain.">
 <meta name="author" content="Secrets in the Software Supply Chain">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#1d4ed8">
 <link rel="canonical" href="https://llody9977.github.io/secret-scanner-benchmark/nothing-catches-everything.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Nothing Catches Everything">
-<meta property="og:description" content="Five detection techniques and what each cannot see, how to choose a scanner, and a reproducible six-tool benchmark where one synthetic secret was caught by nothing. Part 2 of Secrets in the Software Supply Chain.">
+<meta property="og:description" content="Five detection techniques and what each cannot see, how to choose a scanner, and a reproducible six-tool benchmark where one synthetic secret was caught by nothing. Chapter 2 of Secrets in the Software Supply Chain.">
 <meta property="og:url" content="https://llody9977.github.io/secret-scanner-benchmark/nothing-catches-everything.html">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='25' r='9' fill='none' stroke='white' stroke-width='5'/%3E%3Cpath d='M32 33v18M32 44h8' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -23,17 +23,17 @@
 <body>
 <div class="page">
 <div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
-<a href="sixty-second-credential.html">Part 1 &middot; Threat</a>
-<span aria-current="page">Part 2 &middot; Detection</span>
-<a href="governed-pipeline.html">Part 3 &middot; Implementation</a>
-<a href="unnamed-control.html">Part 4 &middot; Governance</a>
-<a href="sources.html">Sources</a></div>
+<a href="sixty-second-credential.html">Chapter 1 &middot; Threat</a>
+<span aria-current="page">Chapter 2 &middot; Detection</span>
+<a href="governed-pipeline.html">Chapter 3 &middot; Implementation</a>
+<a href="unnamed-control.html">Chapter 4 &middot; Governance</a>
+<a href="sources.html">Chapter 5 &middot; Sources</a></div>
   <header class="masthead">
     <p class="kicker">Application Security &middot; Tooling &amp; Measurement</p>
     <h1>Nothing Catches Everything</h1>
     <p class="dek">Scanner vendors lead with detector counts. Miss rates are far harder to find. So I measured one: six tools, one synthetic corpus, one secret caught by nothing.</p>
     <div class="byline">
-      <span>Part 2 of 4 &middot; Engineering</span>
+      <span>Chapter 2 of 5 &middot; Detection</span>
       <span>Research current to August 2026</span>
       <span>~8,400 words &middot; 38 min</span>
     </div>
@@ -190,7 +190,7 @@
         <li><strong>Push time.</strong> Evaluated between <code>git push</code> and the object landing on the server. This is the only genuinely preventive placement, and it belongs to the platform, not to a CLI.</li>
         <li><strong>Everything that is not a repository.</strong> Ticket systems, wikis, chat, container image layers, CI logs, IaC state files, MCP configuration. GitGuardian put 28 percent of incidents in <em>collaboration tools specifically</em> (Slack, Jira and Confluence). <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> The other surfaces in that list are real and unmeasured here; do not read the 28 percent as covering them. <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> No CLI git scanner addresses any of it.</li>
       </ul>
-      <p>There is a fifth surface, and it is not a surface these tools have a bad score on. It is one they cannot address in principle. <strong>Repository and artifact scanners do not detect credentials that exist only at runtime.</strong> A stolen session cookie, a token scraped out of process memory, a credential minted dynamically by a workload identity broker, a value read from an instance metadata service: none of these is ever written to a file that a scanner walks, so no amount of ruleset coverage, history traversal or entropy tuning will surface them. Detecting that class requires identity, endpoint and workload telemetry (anomalous token use, impossible-travel and unusual-ASN signals on API calls, process-level access to credential stores, egress from a workload to an endpoint it has never called). Expanding static scan coverage does not close a runtime-credential gap, and a programme that reports scanner coverage as its credential-risk metric is measuring the surface it can see rather than the one that is being attacked. Part four returns to this as a governance question; the point here is a scoping one, and it bounds every number in this article.</p>
+      <p>There is a fifth surface, and it is not a surface these tools have a bad score on. It is one they cannot address in principle. <strong>Repository and artifact scanners do not detect credentials that exist only at runtime.</strong> A stolen session cookie, a token scraped out of process memory, a credential minted dynamically by a workload identity broker, a value read from an instance metadata service: none of these is ever written to a file that a scanner walks, so no amount of ruleset coverage, history traversal or entropy tuning will surface them. Detecting that class requires identity, endpoint and workload telemetry (anomalous token use, impossible-travel and unusual-ASN signals on API calls, process-level access to credential stores, egress from a workload to an endpoint it has never called). Expanding static scan coverage does not close a runtime-credential gap, and a programme that reports scanner coverage as its credential-risk metric is measuring the surface it can see rather than the one that is being attacked. The governance question is a separate one; the point here is scoping, and it bounds every number in this article.</p>
     </div>
   </section>
 
@@ -537,7 +537,7 @@
         <div>
           <p><strong>Detector-only engines miss the <em>unstructured</em>, and are the most precise.</strong> TruffleHog (53.7 percent recall) and Kingfisher (58.5 percent) miss every generic high-entropy string, every AWS secret access key, the headerless PEM body, and the base64-wrapped blob (and they post the highest precision in the field at 100 and 96 percent).</p>
           <p>The pattern is sharper than "no entropy channel", which is what an earlier version of this section claimed and the per-type data does not support. Both tools handle <code>postgres</code> and <code>mongodb</code> URIs correctly (3 of 3 between them) and Kingfisher catches the JWT. What they miss is credential material with <em>no recognisable shape</em>: a bare 40-character base64 string, a hex blob, a PEM body stripped of its armour. A connection URI has a scheme and a <code>user:pass@host</code> structure to key on; an AWS secret access key has nothing. That is a coherent design position for a precision-first engine, and it is the precision/recall trade from section one visible in a single run.</p>
-          <p>Worth noting against the other direction: the tool that misses the <code>postgres</code> and <code>mongodb</code> URIs on its stock ruleset is <strong>Gitleaks</strong> (0 of 3), which is neither detector-only nor short of an entropy channel. Part three's regression suite found the same gap in a configured gate and closed it with a custom rule.</p>
+          <p>Worth noting against the other direction: the tool that misses the <code>postgres</code> and <code>mongodb</code> URIs on its stock ruleset is <strong>Gitleaks</strong> (0 of 3), which is neither detector-only nor short of an entropy channel. The same gap turns up in a configured gate, where it closes with a custom rule.</p>
         </div>
       </div>
       <div class="gap">
@@ -643,7 +643,7 @@
       </ul>
       <p style="margin-top:1.15em"><strong>Where the two datasets agree, and where they do not.</strong> Both find that no tool is complete, and both name the same failure modes (generic regexes, weak entropy handling, missed file types). The 2026 run reproduces the precision/recall trade cleanly: the two most precise tools are the two with the worst recall.</p>
       <p>They diverge on two things, and in both cases the newer run is the weaker evidence. On <strong>precision</strong>, the synthetic corpus is far too clean to be comparable, as the caveat above says. On <strong>complementarity</strong>, the 2023 finding of 600+ unique true positives in each direction did not reproduce: in the 2026 run <em>no</em> tool had a unique catch. That may be genuine convergence in the field (several of these tools now share a rule lineage) or it may be that 41 planted secrets is simply too small a sample to surface disagreement that a corpus of 15,084 makes visible. The case for layering is <em>narrower</em> than the 2023 study implies, not absent.</p>
-      <p>One more bound on all of this, because it is the easiest conclusion to over-read. Betterleaks catching everything Gitleaks catches, on this corpus at these versions, establishes <em>no detection loss on this corpus at these versions</em>. It does not establish that a Gitleaks pipeline can be swapped for a Betterleaks one without cost. This benchmark measures detection and nothing else: not configuration compatibility, not baseline and allowlist migration, not output format handling in whatever consumes the report, not exit-code semantics, not action and integration availability, not ruleset maintenance cadence, not project maturity, not the governance and audit-evidence questions part four is about. A recall table is an input to a tool decision, not the decision. The place to test the rest is a pilot on your own repositories, and (for the parts that are about your own configuration rather than the tool's) the configured-control regression suite described in part three.</p>
+      <p>One more bound on all of this, because it is the easiest conclusion to over-read. Betterleaks catching everything Gitleaks catches, on this corpus at these versions, establishes <em>no detection loss on this corpus at these versions</em>. It does not establish that a Gitleaks pipeline can be swapped for a Betterleaks one without cost. This benchmark measures detection and nothing else: not configuration compatibility, not baseline and allowlist migration, not output format handling in whatever consumes the report, not exit-code semantics, not action and integration availability, not ruleset maintenance cadence, not project maturity, not the governance and audit-evidence questions. A recall table is an input to a tool decision, not the decision. The place to test the rest is a pilot on your own repositories, and (for the parts that are about your own configuration rather than the tool's) a configured-control regression suite.</p>
       <p>Vendors are aware of the precision problem and are working on it: GitHub reported a 75.76 percent reduction in false positives in June 2026, framed explicitly around trust ("when alerts feel noisy, developers spend more time triaging and less time fixing real issues."<sup class="fn"><a href="sources.html#p2-fn-27">27</a></sup> Note that this is a relative reduction against their own prior baseline; no absolute false positive rate is published).</p>
     </div>
   </section>
@@ -694,7 +694,7 @@
       <p>What follows from that is a different posture rather than a different purchase.</p>
       <ul>
         <li><strong>Run a second tool only if you can name what it adds.</strong> This recommendation comes out of the new data much weaker than it went in, and the honest thing is to say so. The 2023 study's 600-unique-true-positives result did not reproduce at all: once AWS identifiers are excluded, <em>no</em> tool in the 2026 field had a unique catch, and the whole six-tool union reached 40/41 against a best single tool of 39/41. One secret. On this corpus, adding five scanners to Betterleaks bought one additional finding and five triage queues. Two readings are available and I cannot separate them: the field may genuinely have converged, several of these tools now sharing a rule lineage; or 41 planted secrets may be too small a sample to surface disagreement that a corpus of 15,084 makes visible. Either way the practical instruction is the same. Do not add a second scanner on principle. Measure what your first one misses on your own corpus, and add a second only when you can name the category it covers.</li>
-        <li><strong>Check for detector-level dominance before adding, and be willing to remove. But do not confuse that with a migration case.</strong> In this run Betterleaks caught every secret that Gitleaks, Kingfisher and TruffleHog caught, plus more. What that supports is narrow: <em>no recall loss relative to Gitleaks, on this corpus, at these versions.</em> It is not a recommendation to switch. A production migration also spends configuration compatibility, mature CI integration, redaction behaviour, SARIF and reporting expectations that downstream systems depend on, team familiarity, maintenance and stability confidence, and an established exception and governance workflow. None of which a 41-secret synthetic corpus can measure. Part three is where the configured pipeline gets built and regression-tested; part four is where it gets governed. Detector recall is one input to that decision and rarely the decisive one. Run the comparison on your own corpus; a tool that adds no unique catches is adding triage load, and that is a reason to examine it, not to rip it out.</li>
+        <li><strong>Check for detector-level dominance before adding, and be willing to remove. But do not confuse that with a migration case.</strong> In this run Betterleaks caught every secret that Gitleaks, Kingfisher and TruffleHog caught, plus more. What that supports is narrow: <em>no recall loss relative to Gitleaks, on this corpus, at these versions.</em> It is not a recommendation to switch. A production migration also spends configuration compatibility, mature CI integration, redaction behaviour, SARIF and reporting expectations that downstream systems depend on, team familiarity, maintenance and stability confidence, and an established exception and governance workflow. None of which a 41-secret synthetic corpus can measure.  Detector recall is one input to that decision and rarely the decisive one. Run the comparison on your own corpus; a tool that adds no unique catches is adding triage load, and that is a reason to examine it, not to rip it out.</li>
         <li><strong>Treat scanner output as a sensor reading, not a control outcome.</strong> The scanner's job is to point the revocation pipeline. Measure it on time-to-revocation, not on findings volume.</li>
         <li><strong>Assume a non-zero miss rate and design for it.</strong> Since some secrets will always reach production undetected, the controls that matter are the ones that reduce what an undetected secret is worth (short lifetimes, tight scoping, workload binding, and monitoring of credential use, in combination). Note the phrasing: a short lifetime removes persistence and shrinks the replay window, not initial impact. Fifteen minutes is ample to exfiltrate data or mint a second credential. And keep two things separate. Workload identity federation removes the standing credential from the runner, but the token it issues is usually still a bearer token; only a sender-constrained credential (mTLS, DPoP) makes the stolen string itself unusable. It is why detection is the last of these controls to fund, not the first.</li>
         <li><strong>Benchmark against your own estate, and re-run it.</strong> Vendor detector counts describe the vendor's coverage of the world. Only your own corpus describes their coverage of you. And a result from a year ago is stale in both directions, which is why the benchmark above runs monthly and prints its own staleness warning. <a href="https://github.com/llody9977/secret-scanner-benchmark">Fork it</a>, add the credential formats your estate actually uses, and read the per-type table rather than the headline F1.</li>
@@ -705,12 +705,12 @@
 
   <div class="nextup">
     <span class="sec-label">Next in this series</span>
-    <a href="governed-pipeline.html">Part 3 &middot; The Governed Pipeline</a>
+    <a href="governed-pipeline.html">Chapter 3 &middot; The Governed Pipeline</a>
     <p>The same decisions as running configuration: which control point to roll out first, the five control points and what each one owns, a reference GitHub implementation with pinned versions and redaction handling, a regression suite for the controls you configured, and the hosted push-protection test where scanning demonstrably prevented an exposure.</p>
   </div>
 
   <footer class="colophon">
-    <span>Secrets in the Software Supply Chain &middot; Part 2 of 4</span>
+    <span>Secrets in the Software Supply Chain &middot; Chapter 2 of 5</span>
     <span>Research current to August 2026</span>
     <span>Benchmark: run #6, 29 August 2026. Rulesets drift; re-run before citing</span>
   </footer>

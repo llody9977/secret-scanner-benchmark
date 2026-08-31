@@ -12,7 +12,7 @@ scoring so a reader can regenerate it and check the arithmetic. That is what a
 search surfaced, not a proof that none exists. The last peer-reviewed comparison
 (ESEM 2023) predates Betterleaks, Kingfisher, Titus, and every AI-service
 credential format. This is the design
-from section four of *Nothing Catches Everything* (part 2 of the series), made
+from section four of *Nothing Catches Everything* (chapter 2 of the series), made
 runnable.
 
 **On compliance:** no framework requires you to operate a product called a
@@ -21,14 +21,15 @@ one way to evidence them. Three name hardcoded secrets in normative text, each
 scope-limited (PCI DSS 8.6.2, OWASP ASVS 13.3.1, NIST SP 800-218A); ISO 27001,
 SOC 2, base NIST SSDF, CIS and DORA reach the control by inference. The
 clause-level mapping is in
-[part 4](https://llody9977.github.io/secret-scanner-benchmark/unnamed-control.html#standards).
+[chapter 4](https://llody9977.github.io/secret-scanner-benchmark/unnamed-control.html#standards).
 
 **Companion series:** *[Secrets in the Software Supply Chain](https://llody9977.github.io/secret-scanner-benchmark/)*
-— [part 1](https://llody9977.github.io/secret-scanner-benchmark/sixty-second-credential.html) (threat),
-[part 2](https://llody9977.github.io/secret-scanner-benchmark/nothing-catches-everything.html) (this benchmark),
-[part 3](https://llody9977.github.io/secret-scanner-benchmark/governed-pipeline.html) (the implemented
+— [chapter 1](https://llody9977.github.io/secret-scanner-benchmark/sixty-second-credential.html) (threat),
+[chapter 2](https://llody9977.github.io/secret-scanner-benchmark/nothing-catches-everything.html) (this benchmark),
+[chapter 3](https://llody9977.github.io/secret-scanner-benchmark/governed-pipeline.html) (the implemented
 pipeline — `controls/` and `regression/` in this repository),
-[part 4](https://llody9977.github.io/secret-scanner-benchmark/unnamed-control.html) (governance).
+[chapter 4](https://llody9977.github.io/secret-scanner-benchmark/unnamed-control.html) (governance),
+[chapter 5](https://llody9977.github.io/secret-scanner-benchmark/sources.html) (sources and references).
 
 **Every credential here is synthetic and non-functional.** See
 [SECURITY.md](SECURITY.md) for how each format is fabricated and why it cannot

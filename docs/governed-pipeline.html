@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Governed Pipeline · Secrets in the Software Supply Chain</title>
-<meta name="description" content="Secret scanning as running configuration: which control point to roll out first, five executable control points and what each one owns, a reference GitHub implementation, a regression suite for the controls you configured, and the hosted push-protection test. Part 3 of Secrets in the Software Supply Chain.">
+<meta name="description" content="Secret scanning as running configuration: which control point to roll out first, five executable control points and what each one owns, a reference GitHub implementation, a regression suite for the controls you configured, and the hosted push-protection test. Chapter 3 of Secrets in the Software Supply Chain.">
 <meta name="author" content="Secrets in the Software Supply Chain">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#1d4ed8">
 <link rel="canonical" href="https://llody9977.github.io/secret-scanner-benchmark/governed-pipeline.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="The Governed Pipeline">
-<meta property="og:description" content="Secret scanning as running configuration: which control point to roll out first, five executable control points and what each one owns, a reference GitHub implementation, a regression suite for the controls you configured, and the hosted push-protection test. Part 3 of Secrets in the Software Supply Chain.">
+<meta property="og:description" content="Secret scanning as running configuration: which control point to roll out first, five executable control points and what each one owns, a reference GitHub implementation, a regression suite for the controls you configured, and the hosted push-protection test. Chapter 3 of Secrets in the Software Supply Chain.">
 <meta property="og:url" content="https://llody9977.github.io/secret-scanner-benchmark/governed-pipeline.html">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='25' r='9' fill='none' stroke='white' stroke-width='5'/%3E%3Cpath d='M32 33v18M32 44h8' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -23,17 +23,17 @@
 <body>
 <div class="page">
 <div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
-<a href="sixty-second-credential.html">Part 1 &middot; Threat</a>
-<a href="nothing-catches-everything.html">Part 2 &middot; Detection</a>
-<span aria-current="page">Part 3 &middot; Implementation</span>
-<a href="unnamed-control.html">Part 4 &middot; Governance</a>
-<a href="sources.html">Sources</a></div>
+<a href="sixty-second-credential.html">Chapter 1 &middot; Threat</a>
+<a href="nothing-catches-everything.html">Chapter 2 &middot; Detection</a>
+<span aria-current="page">Chapter 3 &middot; Implementation</span>
+<a href="unnamed-control.html">Chapter 4 &middot; Governance</a>
+<a href="sources.html">Chapter 5 &middot; Sources</a></div>
   <header class="masthead">
     <p class="kicker">Application Security &middot; Implementation</p>
     <h1>The Governed Pipeline</h1>
-    <p class="dek">Part two chose a scanner. This is the part where it becomes a control: five control points, each with an owner, a failure behaviour and a bypass authority. And a test suite that proves the configuration still works.</p>
+    <p class="dek">Choosing a scanner is the easy half. This is where it becomes a control: five control points, each with an owner, a failure behaviour and a bypass authority. And a test suite that proves the configuration still works.</p>
     <div class="byline">
-      <span>Part 3 of 4 &middot; Implementation</span>
+      <span>Chapter 3 of 5 &middot; Implementation</span>
       <span>Reference implementation current to August 2026</span>
       <span>~5,700 words &middot; 26 min</span>
     </div>
@@ -97,7 +97,7 @@
         <h4>Scheduled history and wider-source discovery</h4>
         <p>A weekly full-history scan with a broader detector set and a lower confidence threshold, plus discovery on the surfaces that are not repositories at all. Nobody is waiting, so this control can afford breadth that would be intolerable at a gate.</p>
         <ul>
-          <li>Different tool, deliberately. Gate tools optimise for precision; discovery tools should optimise for reach. Part two measured the difference rather than assuming it.</li>
+          <li>Different tool, deliberately. Gate tools optimise for precision; discovery tools should optimise for reach. That difference is measured, not assumed.</li>
           <li>Catches the pre-existing exposure. Everything committed before the gates existed, which is the majority of what a new programme finds in its first month.</li>
           <li>Findings go to a triage queue with an owner, not to a pull request.</li>
         </ul>
@@ -198,10 +198,10 @@
 
     <div class="col flow" style="margin-top:1.5rem">
       <p>Three columns in that table are the ones that get skipped, and each has a characteristic failure.</p>
-      <p><strong>Bypass authority.</strong> A preventive control with no escape hatch gets switched off within a quarter. A preventive control whose escape hatch is undocumented and unlogged is theatre. The only version that survives contact with delivery is one where bypass is available, attributable and counted. And where the count is a reported metric rather than an embarrassment. Part four treats the bypass rate as a primary governance number for exactly this reason.</p>
+      <p><strong>Bypass authority.</strong> A preventive control with no escape hatch gets switched off within a quarter. A preventive control whose escape hatch is undocumented and unlogged is theatre. The only version that survives contact with delivery is one where bypass is available, attributable and counted. And where the count is a reported metric rather than an embarrassment. The bypass rate is a primary governance number for exactly this reason.</p>
       <p><strong>Response owner.</strong> Not the team that runs the scanner. The team that owns the credential, per class, by name. The measured failure across the industry is that findings do not become revocations, and unowned findings are where that failure lives.</p>
       <p><strong>Evidence produced.</strong> Decide this before an assessor asks. "The scanner runs" is not evidence; a check run with a retained job summary and a bypass log is. Note also what is <em>not</em> evidence: a clean scan means the configured detectors did not match, which is a statement about your ruleset and not about your repository.</p>
-      <p>The fifth row is the one most implementations lack entirely. A finding that does not automatically start a revocation clock with a named owner is a ticket, and part one has the number for what happens to those.</p>
+      <p>The fifth row is the one most implementations lack entirely. A finding that does not automatically start a revocation clock with a named owner is a ticket, and a ticket does not revoke anything.</p>
     </div>
   </section>
 
@@ -214,7 +214,7 @@
 
     <div class="col flow">
       <p>Everything below is in <a href="https://github.com/llody9977/secret-scanner-benchmark"><code>llody9977/secret-scanner-benchmark</code></a> and runs on every push. <sup class="fn"><a href="sources.html#p3-fn-2">2</a></sup> It is GitHub-specific in its syntax and not in its structure; the four decisions that matter port to any host.</p>
-      <p>One thing to establish before the configuration, because it is the most common way to get this wrong at the design stage: <strong>the gate's ruleset and the benchmark's ruleset are different artifacts and must stay that way.</strong> The benchmark in part two runs every tool stock, because a benchmark against a tuned configuration measures the tuning. The gate runs a configuration tuned hard for this repository, because a gate that has not been tuned to the formats you actually have is covering someone else's threat model. Merging them produces a number that is neither a measurement nor a control.</p>
+      <p>One thing to establish before the configuration, because it is the most common way to get this wrong at the design stage: <strong>the gate's ruleset and the benchmark's ruleset are different artifacts and must stay that way.</strong> The benchmark runs every tool stock, because a benchmark against a tuned configuration measures the tuning. The gate runs a configuration tuned hard for this repository, because a gate that has not been tuned to the formats you actually have is covering someone else's threat model. Merging them produces a number that is neither a measurement nor a control.</p>
     </div>
 
     <h3 class="wide">The gate's ruleset</h3>
@@ -248,20 +248,20 @@
         <span class="gap-name">3<br>History depth</span>
         <div>
           <p><strong><code>fetch-depth: 0</code>, and <code>persist-credentials: false</code>.</strong> The first because what reaches the server is the history, not the working tree. The benchmark plants secrets in a reverted commit and six commits deep precisely because that is where real ones are found, and every history-capable scanner finds them. A shallow clone makes the job pass on a repository whose secret is one commit back.</p>
-          <p>The second because a scanning job has no need for a token in the runner environment, and part one's third case study is what happens when a job that did not need a credential had one anyway.</p>
+          <p>The second because a scanning job has no need for a token in the runner environment, and a publishing token sitting in a runner that never needed it is how the LiteLLM packages were replaced.</p>
         </div>
       </div>
       <div class="gap">
         <span class="gap-name">4<br>Pinning</span>
         <div>
           <p><strong>Pin the version and verify the archive.</strong> Every tool is pinned to an exact release and its download is checked against a recorded SHA-256 before it is executed. Pinning a version tag alone still trusts whatever that tag points at today.</p>
-          <p>Actions are pinned to release tags here for readability; in production, pin each to its 40-character commit SHA. Part one's Shai-Hulud case turned on an unpinned third-party action, and a security-scanning workflow is a particularly attractive place to put one, because it runs on every push and nobody reads its diff.</p>
+          <p>Actions are pinned to release tags here for readability; in production, pin each to its 40-character commit SHA. The Shai-Hulud campaign turned on an unpinned third-party action, and a security-scanning workflow is a particularly attractive place to put one, because it runs on every push and nobody reads its diff.</p>
         </div>
       </div>
     </div>
 
     <div class="col flow" style="margin-top:2rem">
-      <p>The remaining choices are smaller but worth stating. <strong>Output format</strong>: JSON for the gate, because the workflow needs to count and group findings by rule and to verify redaction; SARIF where a code-scanning UI consumes it. <strong>Corpus exclusions</strong>: both test populations are excluded from the gate's own scan, because neither is a finding about this repository. And, more importantly, the generated corpus is never committed at all, so the exclusion is a backstop rather than the mechanism. <strong>Verification</strong>: disabled everywhere in this repository. No candidate from a scan is sent to an issuing provider, and part two's <code>verified-only</code> row shows what happens when verification is treated as a scan filter rather than a triage input.</p>
+      <p>The remaining choices are smaller but worth stating. <strong>Output format</strong>: JSON for the gate, because the workflow needs to count and group findings by rule and to verify redaction; SARIF where a code-scanning UI consumes it. <strong>Corpus exclusions</strong>: both test populations are excluded from the gate's own scan, because neither is a finding about this repository. And, more importantly, the generated corpus is never committed at all, so the exclusion is a backstop rather than the mechanism. <strong>Verification</strong>: disabled everywhere in this repository. No candidate from a scan is sent to an issuing provider, and a verification-capable tool run in verified-only mode against a synthetic corpus reports nothing at all, which is what happens when verification is treated as a scan filter rather than a triage input.</p>
     </div>
   </section>
 
@@ -301,8 +301,8 @@
     <div class="col flow" style="margin-top:2rem">
       <p>The regression suite asserts one thing per scenario: the control decision. Sixteen credential classes must block; five inputs must pass. Detector names and finding counts are <em>recorded but not asserted</em>. Detector names change between releases, and pinning them produces failures that teach nothing and get muted within two version bumps. The record exists so a reviewer can diff detector attribution across an upgrade and see <em>how</em> the gate reached the same decision, which is often where a coming regression is visible first.</p>
       <p>One further assertion sits outside the decision: any report the gate produces must be fully redacted. That is checked per scenario, because it is the property most likely to regress unnoticed when someone adds a flag.</p>
-      <p><strong>The five must-pass scenarios are the ones that keep the gate usable.</strong> A runtime secret reference, a documentation placeholder, an SSH <em>public</em> key, a connection string with an interpolated password, and a bare AWS access key id. A ruleset change that improves coverage by breaking one of those has not improved anything. It has moved cost onto every developer who writes a config file, and bypass requests are how that cost gets paid. Part four has the friction evidence; this is where the friction budget is actually spent or saved.</p>
-      <p>The access key id case connects directly to part two. A bare <code>AKIA…</code> with no secret access key near it does not block, and that is specified behaviour rather than a gap: an access key id is an identifier AWS transmits in cleartext in every signed request,<sup class="fn"><a href="sources.html#p3-fn-3">3</a></sup> so blocking a push on one costs a bypass request and prevents no exposure. It is the same distinction the benchmark scores as an <em>indicator</em> (asserted here as a control decision instead of measured). The trade-off is real and named in the manifest: the id is what incident response feeds to <code>aws iam delete-access-key</code>, so an organisation that wants key ids surfaced should route them to scheduled discovery, not to the gate.</p>
+      <p><strong>The five must-pass scenarios are the ones that keep the gate usable.</strong> A runtime secret reference, a documentation placeholder, an SSH <em>public</em> key, a connection string with an interpolated password, and a bare AWS access key id. A ruleset change that improves coverage by breaking one of those has not improved anything. It has moved cost onto every developer who writes a config file, and bypass requests are how that cost gets paid. This is where the friction budget is actually spent or saved.</p>
+      <p>A bare <code>AKIA…</code> with no secret access key near it does not block, and that is specified behaviour rather than a gap: an access key id is an identifier AWS transmits in cleartext in every signed request,<sup class="fn"><a href="sources.html#p3-fn-3">3</a></sup> so blocking a push on one costs a bypass request and prevents no exposure. It is the same distinction the benchmark scores as an <em>indicator</em> (asserted here as a control decision instead of measured). The trade-off is real and named in the manifest: the id is what incident response feeds to <code>aws iam delete-access-key</code>, so an organisation that wants key ids surfaced should route them to scheduled discovery, not to the gate.</p>
     </div>
 
     <div class="verdict" style="margin-top:2rem" data-tone="accent">
@@ -355,14 +355,14 @@
       <p><strong>It is one provider-pattern scenario, not a detection rate.</strong> It says nothing about the other twenty scenarios in the regression corpus, several of which are generic or internal shapes.</p>
       <p><strong>The tested repository was public and personal.</strong> Provider-pattern scanning and push protection were on; non-provider generic patterns, validity checks and repository custom patterns were unavailable or off (the custom-pattern endpoint returned 404). An eligible organisation on a paid secret-protection plan gets generic detection, AI-assisted detection, validity checks and custom patterns, none of which were exercised. Assess those on your own plan; this is neither a ceiling nor a floor for them.</p>
       <p><strong>The fixture was never issued and validity checks were disabled.</strong> The result records pattern classification and push behaviour, not credential validity.</p>
-      <p><strong>One format, one run, provider checks off.</strong> Detection claims belong in part two, against a corpus built for them.</p>
+      <p><strong>One format, one run, provider checks off.</strong> Detection claims belong against a corpus built for them.</p>
     </div>
 
     <div class="verdict" style="margin-top:2rem" data-tone="critical">
       <span class="sec-label">The fixture value changed the result</span>
       <p>An earlier run of this same experiment, in the predecessor repository on 25 August 2026, recorded TruffleHog as <em>not</em> detecting this fixture. The re-run detects it. TruffleHog did not change. The version is identical. <strong>The fixture value did.</strong></p>
       <p>The old fixture used a sequential low-entropy placeholder of the correct shape. This repository generates the value from a committed seed, so it is random hex of the same shape. Side by side, at the same version: <strong>sequential value, 0 findings; random value, 1 finding.</strong> TruffleHog is filtering the placeholder, not failing to match the pattern (so the earlier result measured the tool's placeholder filter rather than its detector).</p>
-      <p>This is the same class of error as the AWS access-key-id correction in part two: <strong>a property of the corpus, read as a property of the tool.</strong> Stated as a rule for anyone building fixtures. A fixture that looks like a placeholder will be treated as one, and a corpus of hand-typed <code>0123456789&hellip;</code> values systematically understates every tool that filters them. Generate from a seed; do not type a pattern by hand.</p>
+      <p>This is the same class of error as the AWS access-key-id correction: <strong>a property of the corpus, read as a property of the tool.</strong> Stated as a rule for anyone building fixtures. A fixture that looks like a placeholder will be treated as one, and a corpus of hand-typed <code>0123456789&hellip;</code> values systematically understates every tool that filters them. Generate from a seed; do not type a pattern by hand.</p>
     </div>
 
     <div class="col flow" style="margin-top:2rem">
@@ -413,7 +413,7 @@
       <div class="rung" data-tier="3">
         <div class="rung-head"><span class="rung-tier">6</span></div>
         <h4>Search adjacent surfaces</h4>
-        <p>Issues, pull-request descriptions, wikis, chat, CI logs, build artifacts, container layers, package registries, IaC state, MCP configuration, documentation. Part two put 28 percent of incidents in collaboration tools alone (Slack, Jira, Confluence) and no git scanner looks at any of these surfaces. The rest of the list is unmeasured, which is worse than a known number, not better.</p>
+        <p>Issues, pull-request descriptions, wikis, chat, CI logs, build artifacts, container layers, package registries, IaC state, MCP configuration, documentation. GitGuardian put 28 percent of incidents in collaboration tools alone (Slack, Jira, Confluence) and no git scanner looks at any of these surfaces. The rest of the list is unmeasured, which is worse than a known number, not better.</p>
       </div>
       <div class="rung" data-tier="4">
         <div class="rung-head"><span class="rung-tier">7</span></div>
@@ -446,7 +446,7 @@
       <ul>
         <li><strong>Manual deployment</strong> (a human running a deploy command, or copying a file onto a host).</li>
         <li><strong>Administrative consoles</strong> (a cloud console, a SaaS admin panel, a feature-flag service, a CDN configuration UI).</li>
-        <li><strong>Direct registry publication</strong> (a package or image pushed from a laptop rather than built by the pipeline). This is the path in two of part one's three cases.</li>
+        <li><strong>Direct registry publication</strong> (a package or image pushed from a laptop rather than built by the pipeline). This is how both the Shai-Hulud and LiteLLM compromises reached their targets.</li>
         <li><strong>Manually installed MCP and agent configuration</strong>. Files that live on a workstation or in an agent deployment and were never in a repository.</li>
         <li><strong>CI variables and environment configuration</strong> (set in a platform UI, versioned nowhere).</li>
         <li><strong>Out-of-band configuration upload</strong> (a config blob posted to an API, a secret pasted into a runtime store).</li>
@@ -473,8 +473,8 @@
     <div class="col flow">
       <p>Every control in sections one to five is a way of catching a static secret. The alternative is not having one.</p>
       <ul>
-        <li><strong>Workload identity and OIDC federation.</strong> A CI job exchanges its own identity for a short-lived cloud token instead of holding a long-lived key. <sup class="fn"><a href="sources.html#p3-fn-5">5</a></sup> This removes the standing credential from the runner, which is precisely the failure mode in part one's third case study.</li>
-        <li><strong>Trusted publishing for packages.</strong> The same exchange for a registry: no publishing token in the runner environment at all. Given that a stolen publishing token is how two of part one's three cases proceeded, this is the highest-leverage single change available to most projects.</li>
+        <li><strong>Workload identity and OIDC federation.</strong> A CI job exchanges its own identity for a short-lived cloud token instead of holding a long-lived key. <sup class="fn"><a href="sources.html#p3-fn-5">5</a></sup> This removes the standing credential from the runner, which is precisely how the LiteLLM publishing token was taken.</li>
+        <li><strong>Trusted publishing for packages.</strong> The same exchange for a registry: no publishing token in the runner environment at all. Given that a stolen publishing token is how both the Shai-Hulud and LiteLLM compromises proceeded, this is the highest-leverage single change available to most projects.</li>
         <li><strong>Dynamic, short-lived credentials.</strong> Minted per job, expiring in minutes. Keep the claim honest, though: a short lifetime removes persistence and shrinks the replay window; it does not remove initial impact. Fifteen minutes is ample to exfiltrate data or mint a second credential.</li>
         <li><strong>Sender-constrained tokens.</strong> The only item here that makes a stolen credential useless to the thief. Workload identity still usually issues a <em>bearer</em> token. Whoever holds the string can use it.mTLS-bound or DPoP-bound tokens<sup class="fn"><a href="sources.html#p3-fn-6">6</a></sup> are cryptographically tied to the client, so a copied string is not usable by the copier. This is the only item on the list that makes the leak itself inert.</li>
       </ul>
@@ -490,18 +490,18 @@
         <li><strong>Endpoint telemetry.</strong> Process-level access to browser cookie stores, keychains and credential caches (the acquisition path for the runtime class that never touches a repository).</li>
         <li><strong>Credential-use monitoring at the provider.</strong> The only signal that answers the question incident response actually has, which is not "was it leaked" but "was it used".</li>
       </ul>
-      <p>These are different teams, different budgets and a different article. The point of naming them here is scoping: <strong>a credible credential-risk programme reports on both surfaces and does not let coverage of the cheap one stand in for coverage of the expensive one.</strong> Part four is about what you can honestly claim, and this is the claim most often overstated (a scanner coverage percentage presented as a credential-risk percentage, in a control narrative that never mentions the surface it cannot see).</p>
+      <p>These are different teams, different budgets and a different article. The point of naming them here is scoping: <strong>a credible credential-risk programme reports on both surfaces and does not let coverage of the cheap one stand in for coverage of the expensive one.</strong> This is the claim most often overstated (a scanner coverage percentage presented as a credential-risk percentage, in a control narrative that never mentions the surface it cannot see).</p>
     </div>
   </section>
 
   <div class="nextup">
     <span class="sec-label">Next in this series</span>
-    <a href="unnamed-control.html">Part 4 &middot; The Unnamed Control</a>
+    <a href="unnamed-control.html">Chapter 4 &middot; The Unnamed Control</a>
     <p>The governance layer over this pipeline: what each placement lets you claim to an assessor, which standards require secret scanning and which only imply it (with the clause numbers) the friction it imposes and how to budget for it, and the metrics that map to risk rather than to headcount.</p>
   </div>
 
   <footer class="colophon">
-    <span>Secrets in the Software Supply Chain &middot; Part 3 of 4</span>
+    <span>Secrets in the Software Supply Chain &middot; Chapter 3 of 5</span>
     <span>Reference implementation current to August 2026</span>
     <span>Regression suite: 21 scenarios, Gitleaks 8.30.1. Re-run before citing</span>
   </footer>

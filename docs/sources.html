@@ -23,23 +23,23 @@
 <body>
 <div class="page">
 <div class="serienav"><span class="sn-title">Secrets in the Software Supply Chain</span>
-<a href="sixty-second-credential.html">Part 1 &middot; Threat</a>
-<a href="nothing-catches-everything.html">Part 2 &middot; Detection</a>
-<a href="governed-pipeline.html">Part 3 &middot; Implementation</a>
-<a href="unnamed-control.html">Part 4 &middot; Governance</a>
-<span aria-current="page">Sources</span></div>
+<a href="sixty-second-credential.html">Chapter 1 &middot; Threat</a>
+<a href="nothing-catches-everything.html">Chapter 2 &middot; Detection</a>
+<a href="governed-pipeline.html">Chapter 3 &middot; Implementation</a>
+<a href="unnamed-control.html">Chapter 4 &middot; Governance</a>
+<span aria-current="page">Chapter 5 &middot; Sources</span></div>
   <header class="masthead">
     <p class="kicker">Secrets in the Software Supply Chain</p>
     <h1>Sources</h1>
     <p class="dek">Where every figure in the series comes from, how far each one can be pushed, and what is inference rather than measurement.</p>
     <div class="byline">
-      <span>Appendix</span>
+      <span>Chapter 5 of 5 &middot; Sources</span>
       <span>Research current to August 2026</span>
     </div>
   </header>
 
   <div class="sec-head" style="margin-top:4rem">
-    <span class="sec-label">Part 1</span>
+    <span class="sec-label">Chapter 1</span>
     <h2><a href="sixty-second-credential.html">The Sixty-Second Credential</a></h2>
   </div>
 <!-- ============ SOURCING ============ -->
@@ -85,7 +85,7 @@
 
   
   <div class="sec-head" style="margin-top:4rem">
-    <span class="sec-label">Part 2</span>
+    <span class="sec-label">Chapter 2</span>
     <h2><a href="nothing-catches-everything.html">Nothing Catches Everything</a></h2>
   </div>
 <!-- ============ SOURCING ============ -->
@@ -105,7 +105,7 @@
       <ol>
         <li id="p2-fn-1">Security Boulevard, <a href="https://securityboulevard.com/2026/08/when-ai-hackers-meet-machine-identity-the-ignored-attack-surface/">"When AI Hackers Meet Machine Identity: The Ignored Attack Surface"</a>, August 2026.</li>
         <li id="p2-fn-2">GitGuardian, <a href="https://blog.gitguardian.com/the-state-of-secrets-sprawl-2026/"><em>The State of Secrets Sprawl 2026</em></a>, March 2026. Vendor research; treat figures as directional.</li>
-        <li id="p2-fn-3">See <a href="sixty-second-credential.html">Part 1 of this series</a> for the Salesloft Drift, Shai-Hulud 2.0 and LiteLLM case studies and their sourcing. Note on LiteLLM: the malicious packages were uploaded directly to PyPI with a token stolen from a CI runner, not built by the project's release pipeline.</li>
+        <li id="p2-fn-3">See <a href="sixty-second-credential.html">chapter 1</a> for the Salesloft Drift, Shai-Hulud 2.0 and LiteLLM case studies and their sourcing. Note on LiteLLM: the malicious packages were uploaded directly to PyPI with a token stolen from a CI runner, not built by the project's release pipeline.</li>
         <li id="p2-fn-4">PCI Security Standards Council, PCI DSS v4.0.1, requirement 8.6.2; effective dates per the <a href="https://listings.pcisecuritystandards.org/documents/PCI-DSS-v3-2-1-to-v4-0-Summary-of-Changes-r1.pdf">Summary of Changes from v3.2.1 to v4.0</a>.</li>
         <li id="p2-fn-5">S. K. Basak, J. Cox, B. Reaves and L. Williams (North Carolina State University), <a href="https://arxiv.org/abs/2307.00714">"A Comparative Study of Software Secrets Reporting by Secret Detection Tools"</a>, ESEM 2023. Nine tools, 818 repositories, 97,479 labelled candidates.</li>
         <li id="p2-fn-6">Yelp, <a href="https://github.com/Yelp/detect-secrets">detect-secrets</a>. Plugin architecture, keyword detector, baseline model, and the documented decision not to scan git history.</li>
@@ -138,7 +138,7 @@
 
   
   <div class="sec-head" style="margin-top:4rem">
-    <span class="sec-label">Part 3</span>
+    <span class="sec-label">Chapter 3</span>
     <h2><a href="governed-pipeline.html">The Governed Pipeline</a></h2>
   </div>
 <!-- ============ SOURCING ============ -->
@@ -173,7 +173,7 @@
 
   
   <div class="sec-head" style="margin-top:4rem">
-    <span class="sec-label">Part 4</span>
+    <span class="sec-label">Chapter 4</span>
     <h2><a href="unnamed-control.html">The Unnamed Control</a></h2>
   </div>
 <!-- ============ SOURCING ============ -->
@@ -210,14 +210,14 @@
         <li id="p4-fn-18">Schellman, <a href="https://www.schellman.com/blog/pci-compliance/pci-dss-service-account-requirements">"PCI DSS service account requirements"</a>. QSA commentary on the interactive-login scoping of 8.6.1 and 8.6.2 versus the universal scope of 8.6.3.</li>
         <li id="p4-fn-19">US Securities and Exchange Commission, <a href="https://www.sec.gov/files/litigation/complaints/2023/comp-pr2023-227.pdf"><em>SEC v. SolarWinds Corp. and Timothy G. Brown</em>, complaint</a>, 30 October 2023, paragraph 83.</li>
         <li id="p4-fn-20">Harvard Law School Forum on Corporate Governance, <a href="https://corpgov.law.harvard.edu/2024/08/03/court-dismisses-most-of-secs-claims-against-solarwinds/">"Court Dismisses Most of SEC's Claims Against SolarWinds"</a>, August 2024. Essential caveat on the preceding reference.</li>
-        <li id="p4-fn-21"><a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md"><code>secret-scanner-benchmark</code>, run #6</a>, 29 August 2026. Six tools against 41 synthetic secrets, 18 decoys and 4 indicators. Precision figures from a synthetic corpus are not comparable to precision on a real codebase; see <a href="nothing-catches-everything.html">Part 2</a>, section four, for the limitations.</li>
+        <li id="p4-fn-21"><a href="https://github.com/llody9977/secret-scanner-benchmark/blob/main/docs/RESULTS.md"><code>secret-scanner-benchmark</code>, run #6</a>, 29 August 2026. Six tools against 41 synthetic secrets, 18 decoys and 4 indicators. Precision figures from a synthetic corpus are not comparable to precision on a real codebase; see <a href="nothing-catches-everything.html">chapter 2</a>, section four, for the limitations.</li>
       </ol>
     </div>
   </section>
 
   
   <footer class="colophon">
-    <span>Secrets in the Software Supply Chain &middot; Sources</span>
+    <span>Secrets in the Software Supply Chain &middot; Chapter 5 of 5</span>
     <span>Research current to August 2026</span>
   </footer>
 
