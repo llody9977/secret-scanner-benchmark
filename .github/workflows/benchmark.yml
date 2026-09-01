@@ -164,13 +164,15 @@ jobs:
           sudo install "$(find "$RUNNER_TEMP" -maxdepth 2 -type f -name kingfisher | head -1)" /usr/local/bin/kingfisher
           kingfisher --version | tee scan-output/kingfisher.version
           # Walks history by default; --validation-filter all keeps every finding.
-          # Exit code 205 means "findings", which is a result and not an error.
+          # Kingfisher exits 200 when it finds something, which is a result and
+          # not an error. Anything else is a failure and must not be swallowed:
+          # the previous "|| true" hid the fact that nobody knew this code.
           set +e
           kingfisher scan ./bench --format sarif --output scan-output/kingfisher.sarif \
             --validation-filter all --confidence low
           status=$?
           set -e
-          if [ "$status" -ne 0 ] && [ "$status" -ne 205 ]; then
+          if [ "$status" -ne 0 ] && [ "$status" -ne 200 ]; then
             echo "::error::kingfisher exited $status"; exit "$status"
           fi
           jq -e '.runs[0].results | type == "array"' scan-output/kingfisher.sarif > /dev/null
