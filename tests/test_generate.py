@@ -36,39 +36,55 @@ def test_different_seed_changes_the_corpus(tmp_path):
 
 def test_has_planted_and_decoys(corpus):
     _, manifest = corpus
-    assert manifest.stats.planted_total >= 40
+    assert manifest.stats.planted_total >= 35
     assert manifest.stats.decoy_total >= 15
     assert manifest.stats.history_only >= 5
     assert "feature/payments" in manifest.branches
 
 
-def test_access_key_ids_are_indicators_not_planted_secrets(corpus):
+def test_unscored_values_are_not_planted_secrets(corpus):
     """Ground truth has three populations and they do not overlap.
 
     An AWS access key id is planted in the corpus and recorded in the manifest,
-    but as an indicator: it is not confidential on its own, so it cannot count
+    but as unscored: it is not confidential on its own, so it cannot count
     toward recall. Regression guard for the run-5 ground-truth correction.
     """
     _, manifest = corpus
-    assert manifest.stats.indicator_total == len(manifest.indicators) > 0
-    assert all(i.secret_type == "aws-access-key-id" for i in manifest.indicators)
+    assert manifest.stats.unscored_total == len(manifest.unscored) > 0
+    assert {u.reason for u in manifest.unscored} == {"identifier", "malformed"}
+    assert all(u.secret_type == "aws-access-key-id" for u in manifest.unscored if u.reason == "identifier")
+    assert not any(p.checksum_valid is False for p in manifest.planted)
     assert not any(p.secret_type == "aws-access-key-id" for p in manifest.planted)
     assert manifest.stats.planted_total == len(manifest.planted)
 
     ids = [p.id for p in manifest.planted] + [d.id for d in manifest.decoys]
-    ids += [i.id for i in manifest.indicators]
+    ids += [i.id for i in manifest.unscored]
     assert len(ids) == len(set(ids)), "ground-truth ids must be unique across populations"
 
 
 def test_every_access_key_id_is_paired_with_a_planted_secret_key(corpus):
-    """The pair is still planted whole — only its scoring changed."""
+    """The pair is still planted whole; only its scoring changed."""
     _, manifest = corpus
     secret_keys = [p for p in manifest.planted if p.secret_type == "aws-secret-access-key"]
-    assert len(secret_keys) == len(manifest.indicators)
-    for indicator in manifest.indicators:
-        assert indicator.id.endswith("-id")
-        partner = indicator.id[:-len("-id")]
+    ids = [u for u in manifest.unscored if u.reason == "identifier"]
+    assert len(secret_keys) == len(ids)
+    for unscored_item in ids:
+        assert unscored_item.id.endswith("-id")
+        partner = unscored_item.id[:-len("-id")]
         assert any(p.id == partner for p in secret_keys)
+
+
+def test_broken_checksum_tokens_are_unscored_not_planted(corpus):
+    """A token that cannot authenticate is not a planted secret.
+
+    Regression guard: scoring one as planted charges a false negative to any
+    scanner that validates the checksum and correctly declines to report it.
+    """
+    _, manifest = corpus
+    malformed = [u for u in manifest.unscored if u.reason == "malformed"]
+    assert malformed, "the corpus must still plant broken-checksum tokens"
+    assert all(u.secret_type.startswith("github-token-") for u in malformed)
+    assert not any(p.checksum_valid is False for p in manifest.planted)
 
 
 def test_history_only_secrets_are_absent_from_head(corpus):

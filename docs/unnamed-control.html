@@ -31,7 +31,7 @@
   <header class="masthead">
     <p class="kicker">Application Security &middot; Governance &amp; Assurance</p>
     <h1>The Unnamed Control</h1>
-    <p class="dek">No framework requires you to operate a thing called a secret scanner. Three name hardcoded secrets in normative text, each with a scope limit that matters; the rest reach the control by inference. That gap explains most of what goes wrong in governing it.</p>
+    <p class="dek">None of the frameworks surveyed here requires you to operate a thing called a secret scanner. Three mention secrets in normative text and only two prohibit hardcoding, each with a scope limit that matters; the rest reach the control by inference. That gap explains most of what goes wrong in governing it.</p>
     <div class="byline">
       <span>Chapter 4 of 5 &middot; Governance</span>
       <span>Research current to August 2026</span>
@@ -323,7 +323,7 @@
     </div>
 
     <div class="col flow">
-      <p>Here is the finding that gives this article its title. Across eight frameworks that an enterprise is plausibly assessed against, <strong>three name hardcoded secrets in normative text. Not one of them names a scanner</strong>. Every framework here requires an <em>outcome</em>: secrets not hardcoded, secrets managed for their lifecycle, source and deployment artifacts reviewed, plaintext secrets monitored, credentials rotated. Automated scanning is an implementation choice and an evidence mechanism, not the obligation. The three explicit ones are also each scope-limited (PCI to interactively-loggable accounts, ASVS to organisations that have adopted ASVS, SP 800-218A to AI and dual-use environments) so "explicit" is not the same as "applies to you". The rest reach the control by inference. Which is entirely valid for an auditor, and entirely useless for a security leader trying to get it funded on a compliance argument.</p>
+      <p>Here is the finding that gives this article its title. Across the nine framework entries surveyed here, <strong>three mention secrets in normative text, two of them prohibit hardcoding, and not one names a scanner</strong>. The distinction matters: OWASP ASVS 13.3.1 and PCI DSS 8.6.2 prohibit hardcoded secrets within their scopes, while NIST SP 800-218A requires monitoring environments for plaintext secrets, which is a different obligation. Every framework here requires an <em>outcome</em>: secrets not hardcoded, secrets managed for their lifecycle, source and deployment artifacts reviewed, plaintext secrets monitored, credentials rotated. Automated scanning is an implementation choice and an evidence mechanism, not the obligation. The three explicit ones are also each scope-limited (PCI to interactively-loggable accounts, ASVS to organisations that have adopted ASVS, SP 800-218A to AI and dual-use environments) so "explicit" is not the same as "applies to you". The rest reach the control by inference. Which is entirely valid for an auditor, and entirely useless for a security leader trying to get it funded on a compliance argument.</p>
       <p>The mapping below separates the general enterprise set from the regulated-industry set. Clause identifiers were verified against the sources listed; where a source was paywalled or gated, that is flagged in the sourcing box rather than papered over.</p>
     </div>
 
@@ -401,7 +401,7 @@
             <th scope="row">EU DORA<br><span style="font-weight:400;color:var(--ink-mute)">RTS 2024/1774</span></th>
             <td class="num">Art. 16(3), Art. 7, Art. 20</td>
             <td>Source code reviews "covering both static and dynamic testing" prior to deployment; cryptographic key management across the full lifecycle including revocation and destruction; unique identification and authentication of natural persons <em>and systems</em>. Level 1: DORA Art. 9(4)(d) on strong authentication and key protection. <sup class="fn"><a href="sources.html#p4-fn-16">16</a></sup></td>
-            <td class="no">No (but mandates the mechanism)</td>
+            <td class="no">No (mandates review and testing, not this control)</td>
           </tr>
           <tr>
             <th scope="row">MAS TRM Guidelines<br><span style="font-weight:400;color:var(--ink-mute)">(Singapore, 2021)</span></th>
@@ -467,7 +467,7 @@
 
       <div class="tablewrap">
       <table>
-        <caption>Rotation SLA by exposure class: a standard that can be tested</caption>
+        <caption>Rotation SLA by exposure class: a model policy, not an external standard</caption>
         <thead>
           <tr>
             <th scope="col">Exposure class</th>

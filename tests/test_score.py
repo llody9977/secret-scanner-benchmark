@@ -129,7 +129,7 @@ def test_coverage_analysis_union_unique_and_minimal_cover(tmp_path, manifest):
     # tool A catches the first 20, tool B the middle 20 (overlap 10), C only id[40]
     (tmp_path / "a.json").write_text(report(ids[:20]))
     (tmp_path / "b.json").write_text(report(ids[10:30]))
-    (tmp_path / "c.json").write_text(report([ids[40]]))
+    (tmp_path / "c.json").write_text(report([ids[-1]]))
     run_index = _write_runs(tmp_path, manifest, [
         {"tool": "A", "version": "1", "parser": "gitleaks", "mode": "default",
          "capabilities": ["working-tree", "history"], "path": "a.json"},
@@ -141,7 +141,7 @@ def test_coverage_analysis_union_unique_and_minimal_cover(tmp_path, manifest):
     cov = score(manifest, run_index, tmp_path).coverage
     assert cov is not None
     assert cov.union_caught == 31  # 30 from A∪B + id[40] from C
-    assert cov.per_tool_unique["C"] == [ids[40]]
+    assert cov.per_tool_unique["C"] == [ids[-1]]
     assert set(cov.minimal_cover) >= {"C"}  # C is the only source of id[40]
     assert cov.per_tool_caught == {"A": 20, "B": 20, "C": 1}
 
@@ -154,11 +154,11 @@ def test_indicator_finding_is_neither_a_hit_nor_a_false_positive(tmp_path, manif
     that is not a secret; charging it as a false positive would punish a
     legitimate one. It is counted separately and scored nowhere.
     """
-    assert manifest.indicators, "corpus must plant at least one indicator"
+    assert manifest.unscored, "corpus must plant at least one unscored_item"
     findings = [
         {"RuleID": "aws-access-key-id", "File": i.file, "StartLine": i.line,
          "Secret": i.value, "Commit": ""}
-        for i in manifest.indicators
+        for i in manifest.unscored
     ]
     (tmp_path / "ind.json").write_text(json.dumps(findings))
     run_index = _write_runs(tmp_path, manifest, [{
@@ -168,7 +168,7 @@ def test_indicator_finding_is_neither_a_hit_nor_a_false_positive(tmp_path, manif
     run = score(manifest, run_index, tmp_path).runs[0]
     assert run.overall.tp == 0
     assert run.overall.fp == 0
-    assert run.indicators_reported == sorted(i.id for i in manifest.indicators)
+    assert run.unscored_reported == sorted(i.id for i in manifest.unscored)
     assert run.overall.planted == manifest.stats.planted_total
 
 
@@ -179,12 +179,12 @@ def test_access_key_id_hit_is_not_credited_to_the_adjacent_secret_key(tmp_path, 
     claimed by the secret access key beside it — inflating recall for tools
     that never detected the confidential half at all.
     """
-    indicator = manifest.indicators[0]
-    partner = next(p for p in manifest.planted if p.id == indicator.id[:-len("-id")])
-    assert abs(partner.line - indicator.line) <= 3, "the pair must be adjacent for this to test anything"
+    unscored_item = next(u for u in manifest.unscored if u.reason == "identifier")
+    partner = next(p for p in manifest.planted if p.id == unscored_item.id[:-len("-id")])
+    assert abs(partner.line - unscored_item.line) <= 3, "the pair must be adjacent for this to test anything"
 
-    findings = [{"RuleID": "aws-access-key-id", "File": indicator.file,
-                 "StartLine": indicator.line, "Secret": indicator.value, "Commit": ""}]
+    findings = [{"RuleID": "aws-access-key-id", "File": unscored_item.file,
+                 "StartLine": unscored_item.line, "Secret": unscored_item.value, "Commit": ""}]
     (tmp_path / "adj.json").write_text(json.dumps(findings))
     run_index = _write_runs(tmp_path, manifest, [{
         "tool": "id-only", "version": "1", "parser": "gitleaks", "mode": "default",
@@ -192,4 +192,4 @@ def test_access_key_id_hit_is_not_credited_to_the_adjacent_secret_key(tmp_path, 
     }])
     run = score(manifest, run_index, tmp_path).runs[0]
     assert partner.id in run.missed_planted_ids
-    assert run.indicators_reported == [indicator.id]
+    assert run.unscored_reported == [unscored_item.id]

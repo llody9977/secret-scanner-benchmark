@@ -25,13 +25,13 @@ placement_requires:
   reverted-commit: history
   non-default-branch: history
 stats:
-  planted_total: 41
+  planted_total: 39
   decoy_total: 18
-  indicator_total: 4
+  unscored_total: 6
   by_category:
     generic: 13
     private-key: 5
-    structured: 23
+    structured: 21
   by_secret_type:
     anthropic-api-key: 2
     aws-secret-access-key: 4
@@ -39,8 +39,7 @@ stats:
     deepseek-api-key: 1
     generic-high-entropy-b64: 1
     generic-high-entropy-hex: 2
-    github-token-gho: 1
-    github-token-ghp: 3
+    github-token-ghp: 2
     github-token-ghs: 1
     github-token-github_pat: 1
     google-api-key: 1
@@ -69,14 +68,14 @@ stats:
     dockerfile-env: 2
     dotenv: 6
     history-depth: 3
-    json-fixture: 5
+    json-fixture: 4
     jupyter-output: 1
     minified-bundle: 2
     non-default-branch: 2
     reverted-commit: 2
     terraform-vars: 4
-    working-tree: 10
-  present_at_head: 34
+    working-tree: 9
+  present_at_head: 32
   history_only: 7
 planted:
 - id: gh-pat-valid
@@ -94,22 +93,6 @@ planted:
   present_at_head: true
   expected_detectable: true
   notes: personal access token; CRC32 checksum is correct.
-- id: gh-pat-broken
-  secret_type: github-token-ghp
-  category: structured
-  value: '<redacted: synthetic; regenerate from corpus/seed>'
-  value_sha256: a7c3a8e78107647a32d736ffee6ebbca58c43dd4685a66b558a5a81414cde7a7
-  checksum_valid: false
-  branch: main
-  file: src/app/config.py
-  line: 11
-  placement: working-tree
-  obfuscation: plain
-  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
-  present_at_head: true
-  expected_detectable: true
-  notes: personal access token; checksum deliberately broken. A validating scanner should reject this;
-    a regex-only scanner will still match.
 - id: gh-server-valid
   secret_type: github-token-ghs
   category: structured
@@ -125,22 +108,6 @@ planted:
   present_at_head: true
   expected_detectable: true
   notes: server-to-server token; CRC32 checksum is correct.
-- id: gh-oauth-broken
-  secret_type: github-token-gho
-  category: structured
-  value: '<redacted: synthetic; regenerate from corpus/seed>'
-  value_sha256: fd82e2a614a3933939a3d3fefa80137ef2c7653517077c0be6049dd66890e119
-  checksum_valid: false
-  branch: main
-  file: tests/fixtures/session.json
-  line: 4
-  placement: json-fixture
-  obfuscation: plain
-  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
-  present_at_head: true
-  expected_detectable: true
-  notes: OAuth access token; checksum deliberately broken. A validating scanner should reject this; a
-    regex-only scanner will still match.
 - id: gh-fine-grained
   secret_type: github-token-github_pat
   category: structured
@@ -863,9 +830,40 @@ decoys:
   line: 32
   placement: decoy-file
   reason: a certificate is public material; not a private key
-indicators:
+unscored:
+- id: gh-pat-broken-unscored
+  secret_type: github-token-ghp
+  reason: malformed
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: a7c3a8e78107647a32d736ffee6ebbca58c43dd4685a66b558a5a81414cde7a7
+  branch: main
+  file: src/app/config.py
+  line: 11
+  placement: working-tree
+  obfuscation: plain
+  introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
+  present_at_head: true
+  notes: 'personal access token; checksum deliberately broken, so it authenticates nowhere. A validating
+    scanner should reject it and a regex-only scanner will still match: both are correct, which is why
+    this is scored on neither axis.'
+- id: gh-oauth-broken-unscored
+  secret_type: github-token-gho
+  reason: malformed
+  value: '<redacted: synthetic; regenerate from corpus/seed>'
+  value_sha256: fd82e2a614a3933939a3d3fefa80137ef2c7653517077c0be6049dd66890e119
+  branch: main
+  file: tests/fixtures/session.json
+  line: 4
+  placement: json-fixture
+  obfuscation: plain
+  introduced_commit: a76fe688aeac83ae938ffa27e1bbe57090326a6f
+  present_at_head: true
+  notes: 'OAuth access token; checksum deliberately broken, so it authenticates nowhere. A validating
+    scanner should reject it and a regex-only scanner will still match: both are correct, which is why
+    this is scored on neither axis.'
 - id: aws-key-plain-id
   secret_type: aws-access-key-id
+  reason: identifier
   value: '<redacted: synthetic; regenerate from corpus/seed>'
   value_sha256: 4f6b22aa5698777c4b86a42b410a761a7c041acf5ac295fe62a4c6fa75fdabbb
   branch: main
@@ -875,11 +873,12 @@ indicators:
   obfuscation: plain
   introduced_commit: 58735b30ee78da8627ba496de2cbbc3078715129
   present_at_head: true
-  reason: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
-    the paired secret access key. Scored as an indicator, never as a planted secret. No checksum exists
-    for this format; account id 0 is embedded and decodes to 0.'
+  notes: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
+    the paired secret access key. Scored as unscored, never as a planted secret. No checksum exists for
+    this format; account id 0 is embedded and decodes to 0.'
 - id: aws-key-concat-id
   secret_type: aws-access-key-id
+  reason: identifier
   value: '<redacted: synthetic; regenerate from corpus/seed>'
   value_sha256: e1d134f0c55fcfefd1621dadf5dd5a3cd1eddff8f7756796a4a0a56c67f92adb
   branch: main
@@ -889,11 +888,12 @@ indicators:
   obfuscation: concat
   introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
   present_at_head: true
-  reason: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
-    the paired secret access key. Scored as an indicator, never as a planted secret. No checksum exists
-    for this format; account id 0 is embedded and decodes to 0.'
+  notes: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
+    the paired secret access key. Scored as unscored, never as a planted secret. No checksum exists for
+    this format; account id 0 is embedded and decodes to 0.'
 - id: aws-temp-key-id
   secret_type: aws-access-key-id
+  reason: identifier
   value: '<redacted: synthetic; regenerate from corpus/seed>'
   value_sha256: 64f4218e3ea4e2428bc7990f582696a9b4815608e16afc397b208627732c521c
   branch: main
@@ -903,11 +903,12 @@ indicators:
   obfuscation: plain
   introduced_commit: 01c25e61c30db11c2d8bed2e5329a65907cb036e
   present_at_head: true
-  reason: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
-    the paired secret access key. Scored as an indicator, never as a planted secret. No checksum exists
-    for this format; account id 0 is embedded and decodes to 0.'
+  notes: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
+    the paired secret access key. Scored as unscored, never as a planted secret. No checksum exists for
+    this format; account id 0 is embedded and decodes to 0.'
 - id: hist-aws-id
   secret_type: aws-access-key-id
+  reason: identifier
   value: '<redacted: synthetic; regenerate from corpus/seed>'
   value_sha256: 40cc8cd734ecab97c7b4648a9c394ba2c9d135cd4bd12b174c1143f149648877
   branch: main
@@ -917,6 +918,6 @@ indicators:
   obfuscation: plain
   introduced_commit: 9e2c6310bd0f78c8335afd6775259ec9db7f17cc
   present_at_head: false
-  reason: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
-    the paired secret access key. Scored as an indicator, never as a planted secret. No checksum exists
-    for this format; account id 0 is embedded and decodes to 0.'
+  notes: 'identifier, not an authenticator: sent in cleartext in every SigV4 request, and useless without
+    the paired secret access key. Scored as unscored, never as a planted secret. No checksum exists for
+    this format; account id 0 is embedded and decodes to 0.'

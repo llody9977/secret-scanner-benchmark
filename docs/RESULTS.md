@@ -145,15 +145,6 @@ confidential half, the one that grants access. A 40-character base64 string with
 no prefix, no delimiter and no checksum is exactly the shape a pattern-detector
 engine has no rule for.
 
-Be careful with the causal story, though: "no entropy channel" is too broad, and
-the per-type data contradicts it. Both tools detect the `postgres` and `mongodb`
-URIs where the password is the secret (3 of 3 between them), and Kingfisher
-detects the JWT. What they miss is credential material with **no recognisable
-shape** — the generic hex and base64 strings, the AWS secret keys, the headerless
-PEM body. A URI has a scheme and a `user:pass@host` structure to key on; a bare
-base64 string has nothing. The tool that misses the URIs is Gitleaks (0 of 3),
-which is neither detector-only nor short of an entropy channel.
-
 Titus is the only tool that reports access key IDs at all (3 of 4 — it misses
 the one split across a string concatenation). That is worth knowing for
 incident response, where the ID is what you feed to `aws iam
@@ -168,14 +159,22 @@ synthetic corpus and you will conclude it is useless. Always run `all-results`
 for a benchmark; treat verification as a triage input in production, not a
 filter.
 
-### 4. Detector-only tools miss the generic and the obfuscated
+### 4. Detector-only tools miss the unstructured
 
-TruffleHog `all-results` (53.7%) and Kingfisher (58.5%) are pattern-detector
-engines with little or no entropy channel. They miss every generic
-high-entropy string, every AWS secret access key, JWTs, `mongodb`/`postgres`
-URIs where the password is the secret, split-string obfuscation, and the
-base64-wrapped blob. They are also the most *precise* (100% / 96%) — a real
-trade-off, not a defect.
+TruffleHog `all-results` and Kingfisher miss every generic high-entropy string,
+every AWS secret access key, the headerless PEM body and the base64-wrapped
+blob. They are also the most *precise* in the field, which is the trade-off
+rather than a defect.
+
+Two corrections to the obvious reading, both from the per-type table above.
+"No entropy channel" is too broad: both tools detect the `postgres` and
+`mongodb` URIs where the password is the secret, and Kingfisher detects the
+JWT. And the tool that misses those URIs is **Gitleaks** (0 of 3), which is
+neither detector-only nor short of an entropy channel.
+
+What these two actually miss is credential material with **no recognisable
+shape**. A URI has a scheme and a `user:pass@host` structure to key on; a bare
+40-character base64 string has nothing.
 
 ### 5. Test-mode Stripe keys split the field
 

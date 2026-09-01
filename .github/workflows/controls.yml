@@ -20,15 +20,14 @@ name: controls
 
 on:
   workflow_dispatch:
+  # No path filter. The gate scans history, so any push can change what it sees;
+  # filtering on controls/** meant a push to application code never triggered it,
+  # which made the gate look enforcing while covering almost nothing.
   push:
-    paths:
-      - "controls/**"
-      - "regression/**"
-      - ".github/workflows/controls.yml"
   pull_request:
   schedule:
-    # Discovery runs weekly; the gate does not need a schedule because it runs
-    # on every push that could change what it sees.
+    # Discovery runs weekly. The gate needs no schedule because it now genuinely
+    # runs on every push.
     - cron: "17 3 * * 1"
 
 permissions:

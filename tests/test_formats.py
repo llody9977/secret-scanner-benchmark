@@ -29,7 +29,7 @@ def test_aws_access_key_encodes_account_zero():
     assert len(key.companion.value) == 40
 
 
-def test_aws_access_key_id_is_an_indicator_not_a_secret():
+def test_aws_access_key_id_is_unscored_not_a_secret():
     """The id is half a credential, not a credential.
 
     It travels in cleartext in every signed request, so it cannot be scored as
@@ -43,7 +43,7 @@ def test_aws_access_key_id_is_an_indicator_not_a_secret():
     assert key.companion.secret_type == "aws-secret-access-key"
 
 
-def test_aws_temporary_key_id_is_also_an_indicator():
+def test_aws_temporary_key_id_is_also_unscored():
     key = aws.build_temporary_access_key(SeededRNG(3))
     assert key.value.startswith("ASIA")
     assert key.is_secret is False
@@ -69,3 +69,21 @@ def test_b62_encode_int_width():
     assert len(b62_encode_int(0, 6)) == 6
     assert len(b62_encode_int(2**32 - 1, 6)) == 6
     assert crc32_base62("abc") == crc32_base62("abc")
+
+
+def test_broken_checksum_github_token_is_unscored():
+    """A token with an invalid CRC32 authenticates nowhere, so it is not a secret.
+
+    Scoring it as planted would charge a false negative to any scanner that
+    validates the checksum and correctly declines to report it.
+    """
+    spec = github.build_token(SeededRNG(9), prefix="ghp", valid_checksum=False)
+    assert spec.checksum_valid is False
+    assert spec.is_secret is False
+    assert spec.unscored_reason == "malformed"
+    assert github.verify_token(spec.value) is False
+
+
+def test_valid_checksum_github_token_is_still_a_planted_secret():
+    spec = github.build_token(SeededRNG(9), prefix="ghp", valid_checksum=True)
+    assert spec.is_secret is True

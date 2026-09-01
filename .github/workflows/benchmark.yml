@@ -48,6 +48,15 @@ env:
   KINGFISHER_VERSION: "2.0.0"
   TITUS_VERSION: "1.2.8"
   DETECT_SECRETS_VERSION: "1.5.0"
+  # Pinning a version tag still trusts whatever that tag points at today, so every
+  # archive is checked against its digest before it is executed. Chapter three
+  # says to do this; the benchmark did not, which is the sort of gap the
+  # regression suite exists to catch and this workflow had no equivalent of.
+  GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+  BETTERLEAKS_SHA256: "efa407244e1ea8e35f582b8a42becdeac08bdead04f68eb752adda722d583c2a"
+  TRUFFLEHOG_SHA256: "f863ea3a8d786f7d097870496c977944cce7372a2fe1e56707d965016e543ece"
+  KINGFISHER_SHA256: "d30d71f82e25e8c024f98cce3258c90e17b5be31d0fdb6f30b438d2fac1f130b"
+  TITUS_SHA256: "435f2b37e5532d850ddedc32dd366cc213af5f32b1336a2a0d8be34a6dea4c50"
 
 jobs:
   generate:
@@ -106,75 +115,86 @@ jobs:
       - name: gitleaks
         if: matrix.tool == 'gitleaks'
         run: |
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | tar -xz -C /usr/local/bin gitleaks
+          set -euo pipefail
+          archive="$RUNNER_TEMP/gitleaks.tar.gz"
+          curl --proto '=https' --tlsv1.2 -sSLf "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o "$archive"
+          printf '%s  %s\n' "$GITLEAKS_SHA256" "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C /usr/local/bin gitleaks
           gitleaks version | tee scan-output/gitleaks.version
           gitleaks git ./bench --report-format json --report-path scan-output/gitleaks.json --no-banner --exit-code 0
-          test -s scan-output/gitleaks.json
-
-      # --- betterleaks: Gitleaks successor; RE2 regex + keyword prefilter, history, verification ---
+          jq -e 'type == "array"' scan-output/gitleaks.json > /dev/null
       - name: betterleaks
         if: matrix.tool == 'betterleaks'
         run: |
-          curl -sSL "https://github.com/betterleaks/betterleaks/releases/download/v${BETTERLEAKS_VERSION}/betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/bl.tgz
-          tar -xzf /tmp/bl.tgz -C /tmp
-          sudo install "$(find /tmp -maxdepth 2 -type f -name betterleaks | head -1)" /usr/local/bin/betterleaks
+          set -euo pipefail
+          archive="$RUNNER_TEMP/betterleaks.tar.gz"
+          curl --proto '=https' --tlsv1.2 -sSLf "https://github.com/betterleaks/betterleaks/releases/download/v${BETTERLEAKS_VERSION}/betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz" -o "$archive"
+          printf '%s  %s\n' "$BETTERLEAKS_SHA256" "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          sudo install "$(find "$RUNNER_TEMP" -maxdepth 2 -type f -name betterleaks | head -1)" /usr/local/bin/betterleaks
           betterleaks version | tee scan-output/betterleaks.version
-          # 'git' walks full history. No --validation: synthetic secrets are non-live.
-          betterleaks git ./bench --report-path scan-output/betterleaks.sarif --report-format sarif --exit-code 0 || true
-          test -s scan-output/betterleaks.sarif
-
-      # --- trufflehog: regex detectors + live verification ------------------
+          # No --validation: synthetic secrets are non-live. 'git' walks full history.
+          betterleaks git ./bench --report-path scan-output/betterleaks.sarif --report-format sarif --exit-code 0
+          jq -e '.runs[0].results | type == "array"' scan-output/betterleaks.sarif > /dev/null
       - name: trufflehog
         if: matrix.tool == 'trufflehog'
         run: |
-          curl -sSL "https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/trufflehog_${TRUFFLEHOG_VERSION}_linux_amd64.tar.gz" \
-            | tar -xz -C /usr/local/bin trufflehog
+          set -euo pipefail
+          archive="$RUNNER_TEMP/trufflehog.tar.gz"
+          curl --proto '=https' --tlsv1.2 -sSLf "https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/trufflehog_${TRUFFLEHOG_VERSION}_linux_amd64.tar.gz" -o "$archive"
+          printf '%s  %s\n' "$TRUFFLEHOG_SHA256" "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C /usr/local/bin trufflehog
           trufflehog --version 2>&1 | tee scan-output/trufflehog.version
-          # Run 1: all results (unverified included) — the correct mode for a synthetic corpus.
+          # Run 1: every result. The only correct mode against a non-live corpus.
           trufflehog git file://./bench --json --no-update --results=verified,unknown,unverified \
-            > scan-output/trufflehog-all.json || true
-          # Run 2: verified only — every synthetic secret is non-live, so this is
-          # expected to be ~empty. Reported to show the benchmarking trap explicitly.
+            > scan-output/trufflehog-all.json
+          # Run 2: verified only. Expected to be empty, and reported to show the trap.
           trufflehog git file://./bench --json --no-update --only-verified \
-            > scan-output/trufflehog-verified.json || true
-          test -f scan-output/trufflehog-all.json
-
-      # --- kingfisher: SIMD regex + language-aware parsing + checksums, history, verification ---
+            > scan-output/trufflehog-verified.json
+          # JSON Lines: every non-blank line must parse as an object.
+          jq -e -s 'all(.[]; type == "object")' scan-output/trufflehog-all.json > /dev/null
       - name: kingfisher
         if: matrix.tool == 'kingfisher'
         run: |
-          curl -sSL "https://github.com/mongodb/kingfisher/releases/download/v${KINGFISHER_VERSION}/kingfisher-linux-x64.tgz" -o /tmp/kf.tgz
-          tar -xzf /tmp/kf.tgz -C /tmp
-          sudo install "$(find /tmp -maxdepth 2 -type f -name kingfisher | head -1)" /usr/local/bin/kingfisher
+          set -euo pipefail
+          archive="$RUNNER_TEMP/kingfisher.tgz"
+          curl --proto '=https' --tlsv1.2 -sSLf "https://github.com/mongodb/kingfisher/releases/download/v${KINGFISHER_VERSION}/kingfisher-linux-x64.tgz" -o "$archive"
+          printf '%s  %s\n' "$KINGFISHER_SHA256" "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          sudo install "$(find "$RUNNER_TEMP" -maxdepth 2 -type f -name kingfisher | head -1)" /usr/local/bin/kingfisher
           kingfisher --version | tee scan-output/kingfisher.version
-          # Scans git history by default; --validation-filter all keeps every finding.
+          # Walks history by default; --validation-filter all keeps every finding.
+          # Exit code 205 means "findings", which is a result and not an error.
+          set +e
           kingfisher scan ./bench --format sarif --output scan-output/kingfisher.sarif \
-            --validation-filter all --confidence low || true
-          test -s scan-output/kingfisher.sarif
-
-      # --- titus: NoseyParker successor; Hyperscan regex + validation, history, verification ---
+            --validation-filter all --confidence low
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 205 ]; then
+            echo "::error::kingfisher exited $status"; exit "$status"
+          fi
+          jq -e '.runs[0].results | type == "array"' scan-output/kingfisher.sarif > /dev/null
       - name: titus
         if: matrix.tool == 'titus'
         run: |
-          curl -sSL "https://github.com/praetorian-inc/titus/releases/download/v${TITUS_VERSION}/titus-linux-amd64" -o /usr/local/bin/titus
-          chmod +x /usr/local/bin/titus
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSLf "https://github.com/praetorian-inc/titus/releases/download/v${TITUS_VERSION}/titus-linux-amd64" -o "$RUNNER_TEMP/titus"
+          printf '%s  %s\n' "$TITUS_SHA256" "$RUNNER_TEMP/titus" | sha256sum --check --strict
+          sudo install "$RUNNER_TEMP/titus" /usr/local/bin/titus
           titus version | tee scan-output/titus.version
-          # scan populates a datastore (git history via --git); report renders SARIF.
-          titus scan ./bench --git --ruleset all --output titus.ds >/dev/null 2>&1 || true
+          # scan populates a datastore (--git walks history); report renders SARIF.
+          titus scan ./bench --git --ruleset all --output titus.ds
           titus report --datastore titus.ds --format sarif > scan-output/titus.sarif
-          test -s scan-output/titus.sarif
-
-      # --- detect-secrets: regex + entropy + keyword, working tree only ------
+          jq -e '.runs[0].results | type == "array"' scan-output/titus.sarif > /dev/null
       - name: detect-secrets
         if: matrix.tool == 'detect-secrets'
         run: |
+          set -euo pipefail
           pip install "detect-secrets==${DETECT_SECRETS_VERSION}"
           detect-secrets --version | tee scan-output/detect-secrets.version
-          # Scans the checked-out tree (HEAD), not history — by design.
+          # Scans the checked-out tree, not history, by design.
           ( cd bench && detect-secrets scan --all-files ) > scan-output/detect-secrets.json
-          test -s scan-output/detect-secrets.json
-
+          jq -e '.results | type == "object"' scan-output/detect-secrets.json > /dev/null
       - uses: actions/upload-artifact@v6.0.0
         with:
           name: scan-${{ matrix.tool }}

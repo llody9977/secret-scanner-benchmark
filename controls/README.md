@@ -46,24 +46,29 @@ response is the most common honest-seeming overclaim in this control family.
 | [`trufflehog.yml`](trufflehog.yml) | Scheduled history scan | Detector set for scheduled discovery. |
 | [`trufflehog-exclude-paths.txt`](trufflehog-exclude-paths.txt) | Scheduled history scan | Keeps both test corpora out of discovery findings. |
 
-## Why two different tools for two different jobs
+## Why two different tools, and the argument that does not work
 
-Gitleaks gates; TruffleHog discovers. That is not a ranking, it is a
-consequence of what each job needs.
+Gitleaks gates; TruffleHog discovers. The usual justification is that the gate
+wants precision and discovery wants reach, and this repository's own benchmark
+does not support it: Gitleaks has the higher recall of the two, 85.4% against
+53.7%, at 97.2% precision against 100%. Running TruffleHog as the wide net
+would mean running the narrower tool.
 
-A **gate** runs on the critical path of a developer waiting for a check, so it
-needs to be fast, deterministic, and precise enough that a failure is believed.
-It is allowed to miss things, because it is not the last line.
+The defensible reason is that the two **fail differently**. Gitleaks misses the
+`postgres` and `mongodb` URIs where the password is the secret, which TruffleHog
+catches. TruffleHog misses every AWS secret access key and every generic
+high-entropy string, which Gitleaks catches. A second engine on the scheduled
+scan buys independent blind spots rather than additional coverage, and the
+scheduled scan is where that is affordable because nobody is waiting on it.
 
-**Discovery** runs on a schedule with nobody waiting, so it can afford breadth,
-a wider detector set, and a lower confidence threshold. Its findings go to a
-triage queue, not to a developer's pull request.
+What holds without the benchmark: a **gate** runs on the critical path of a
+developer waiting for a check, so it needs to be fast, deterministic and
+precise enough that a failure is believed. **Discovery** runs on a schedule, so
+it can afford a wider ruleset, a lower threshold and surfaces the gate never
+sees, and its findings go to a triage queue rather than a pull request.
 
-Running the wide tool at the gate produces bypass requests. Running the narrow
-tool as discovery produces false confidence. The
-[benchmark](../docs/RESULTS.md) shows these two tools have genuinely different
-shapes — Gitleaks 97.2% precision at 85.4% recall, TruffleHog 100% precision at
-53.7% — which is what makes the split defensible rather than arbitrary.
+Running one product in two modes is a reasonable alternative and this
+repository does not argue against it.
 
 ## Verifying the configuration still works
 

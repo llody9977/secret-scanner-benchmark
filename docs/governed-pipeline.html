@@ -70,8 +70,8 @@
         <h4>Required CI check for merge and deployment</h4>
         <p>A full-history scan wired into branch protection as a required status. It does not prevent exposure (the objects are already on the server) but it prevents <em>promotion</em>, which is the next thing worth stopping.</p>
         <ul>
-          <li>Required, or it is advisory. An unrequired check is a notification with a spinner.</li>
-          <li>Full history, not the diff. A shallow clone makes this job pass on a repository whose secret is one commit back, and it passes quietly.</li>
+          <li>Required, or it is advisory. An unrequired check is a notification with a spinner. This repository runs the workflow but does not enforce it through branch protection, so what it demonstrates is the gate, not the enforcement. Treat the enforcement half as design rather than as something proven here.</li>
+          <li>Full history, not the diff. A shallow clone makes this job pass on a repository whose secret is one commit back, and it passes quietly. Full history on every pull request does not scale to a large monorepository: it is slow and it rediscovers the same legacy findings every run. The pattern that does scale is blocking new secrets on the diff, holding an approved baseline for what is already there, and running full history on onboarding, on a schedule, and after any ruleset or visibility change.</li>
           <li>This is where your custom internal formats get enforced, because the host almost certainly does not know them.</li>
         </ul>
       </div>
@@ -79,9 +79,9 @@
       <div class="rung" data-tier="3">
         <div class="rung-head"><span class="rung-tier">Third &middot; Detective, no critical path</span></div>
         <h4>Scheduled history and wider-source discovery</h4>
-        <p>A weekly full-history scan with a broader detector set and a lower confidence threshold, plus discovery on the surfaces that are not repositories at all. Nobody is waiting, so this control can afford breadth that would be intolerable at a gate.</p>
+        <p>A weekly full-history scan with a broader detector set and a lower confidence threshold, plus discovery on the surfaces that are not repositories at all. Nobody is waiting, so this control can afford a wider ruleset, a lower threshold and surfaces the gate never sees.</p>
         <ul>
-          <li>Different tool, deliberately. Gate tools optimise for precision; discovery tools should optimise for reach. That difference is measured, not assumed.</li>
+          <li><strong>Different tool, deliberately, though not for the reason usually given.</strong> It is not a breadth argument. On the benchmark corpus Gitleaks has the higher recall, 85.4 percent against TruffleHog's 53.7, so running TruffleHog as the wide net means running the narrower tool. What a second engine buys is <em>independent failure modes</em>: Gitleaks misses the connection-string URIs TruffleHog catches, and TruffleHog misses the AWS secret access keys and generic high-entropy strings Gitleaks catches. That is worth having on a scheduled scan, where the extra triage costs nobody a pull request. Running one product in two modes is a reasonable alternative and nothing measured here argues against it.</li>
           <li>Catches the pre-existing exposure. Everything committed before the gates existed, which is the majority of what a new programme finds in its first month.</li>
           <li>Findings go to a triage queue with an owner, not to a pull request.</li>
         </ul>
@@ -90,7 +90,7 @@
       <div class="rung" data-tier="4">
         <div class="rung-head"><span class="rung-tier">Last &middot; Preventive, advisory</span></div>
         <h4>Local hooks, optional by design</h4>
-        <p>Fast feedback on the developer's own machine, before the commit exists. Genuinely valuable, and genuinely worthless as a control: it is opt-in, bypassable with <code>--no-verify</code>, and evidences nothing.</p>
+        <p>Fast feedback on the developer's own machine, before the commit exists. Genuinely valuable, and weak as an auditable control: it is opt-in, bypassable with <code>--no-verify</code>, and evidences nothing on its own. Weak is not worthless. It is still a preventive safeguard, and in a managed development environment it can be centrally provisioned rather than left to each developer to install.</p>
         <ul>
           <li>Ship it as a convenience with an honest description. A local hook presented as a control is the most common overclaim in this family.</li>
           <li>Its real value is economic: failing in two seconds locally rather than two minutes into a pipeline is the difference between a fix and a bypass request.</li>
@@ -169,9 +169,9 @@
           </tr>
           <tr>
             <th scope="row">Incident-response trigger</th>
-            <td>Corrective</td>
+            <td>Orchestration; the corrective step is the revocation it starts</td>
             <td>Security engineering</td>
-            <td>Incident opened; revocation clock starts</td>
+            <td>Incident opened and the revocation clock starts. Opening it corrects nothing; revoking does</td>
             <td class="no">None. Revocation is not optional</td>
             <td>Incident record, exposure window, revocation timestamp</td>
             <td>Named owner per credential class</td>
@@ -331,7 +331,7 @@
 
     <div class="col flow" style="margin-top:1.5rem">
       <p><strong>The push was stopped before the object reached a server anyone else could read.</strong> Not detected, not alerted on. Stopped. Nothing downstream of a push can do that, however fast it runs. This is the distinction the series keeps insisting on, and this is the one place in four articles where it is demonstrated rather than asserted.</p>
-      <p><strong>The bypass is the control, not the hole in it.</strong> The push succeeded on retry, because a developer with a legitimate reason could give one. What matters is that the bypass produced a durable record naming the actor, the reason and the commit. Judge this control by whether its bypasses are attributable and counted, not by whether they exist.</p>
+      <p><strong>Enforcement is the control. The bypass is its exception mechanism, and the record is what makes the exception governable.</strong> The push succeeded on retry, because a developer with a legitimate reason could give one. What matters is that the bypass produced a durable record naming the actor, the reason and the commit. Judge this control by whether its bypasses are attributable and counted, not by whether they exist.</p>
     </div>
 
     <div class="verdict" style="margin-top:2rem">

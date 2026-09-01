@@ -69,10 +69,14 @@ def build_token(rng: SeededRNG, prefix: str = "ghp", valid_checksum: bool = True
         category="structured",
         value=token,
         checksum_valid=False,
+        is_secret=False,
+        unscored_reason="malformed",
         assignment_key="GITHUB_TOKEN",
         notes=(
-            f"{PREFIXES[prefix]}; checksum deliberately broken. A validating "
-            "scanner should reject this; a regex-only scanner will still match."
+            f"{PREFIXES[prefix]}; checksum deliberately broken, so it authenticates "
+            "nowhere. A validating scanner should reject it and a regex-only scanner "
+            "will still match: both are correct, which is why this is scored on "
+            "neither axis."
         ),
     )
 

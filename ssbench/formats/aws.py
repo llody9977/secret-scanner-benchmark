@@ -9,7 +9,7 @@ that must never be disclosed, and the only one that can be regenerated
 independently of the pair.
 
 So this module plants the pair, but marks only the secret access key as a
-planted secret. The id rides along as an *indicator*: ``is_secret=False``, so
+planted secret. The id rides along as *unscored*: ``is_secret=False``, so
 a scanner that never reports it loses no recall, and a scanner that does
 report it is not charged a false positive. It is a real signal — it names the
 account and the key to disable during response — but on its own it does not
@@ -51,7 +51,7 @@ def decode_account_id(key_id: str) -> int:
 
 
 def build_access_key_pair(rng: SeededRNG, prefix: str = "AKIA") -> SecretSpec:
-    """The id (indicator) with the secret access key (the planted secret) attached.
+    """The id (unscored) with the secret access key (the planted secret) attached.
 
     The id is returned as the primary spec so that it is written to the file
     first, as it would be in a real ``.env`` or credentials block; the manifest
@@ -78,7 +78,7 @@ def build_access_key_pair(rng: SeededRNG, prefix: str = "AKIA") -> SecretSpec:
         notes=(
             "identifier, not an authenticator: sent in cleartext in every SigV4 "
             "request, and useless without the paired secret access key. Scored as "
-            "an indicator, never as a planted secret. No checksum exists for this "
+            "unscored, never as a planted secret. No checksum exists for this "
             f"format; account id {SYNTHETIC_AWS_ACCOUNT_ID} is embedded and decodes to 0."
         ),
         companion=secret_spec,

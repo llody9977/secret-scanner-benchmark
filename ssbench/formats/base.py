@@ -29,6 +29,9 @@ class SecretSpec:
     # cannot be a planted secret. An AWS access key id is the case that matters
     # here. Missing one is not a miss; reporting one is not a false positive.
     is_secret: bool = True
+    # When is_secret is False, why: "identifier" (half a credential, sent in
+    # the clear) or "malformed" (right shape, cannot authenticate).
+    unscored_reason: str = "identifier"
     multiline: bool = False
     # For multiline secrets (PEM blocks, service-account JSON) the value is
     # written more or less verbatim; ``assignment_key`` names the variable used

@@ -59,20 +59,30 @@ class Decoy(BaseModel):
     reason: str
 
 
-class Indicator(BaseModel):
-    """A credential *identifier* planted in the corpus — not a secret.
+class Unscored(BaseModel):
+    """A planted value that is credential-shaped but cannot authenticate.
 
-    An AWS access key id is the canonical case: it is half of a credential and
-    a genuine investigative signal, but it is transmitted in cleartext by
-    design and authenticates nothing on its own. It is scored on neither axis.
-    Failing to report one is not a miss (it is not in ``planted_total``);
-    reporting one is not a false positive (unlike a decoy). Tools that do
-    report them get a separate, uncounted tally, because "which tools surface
-    key ids" is a real question — it is just not a recall question.
+    Two things end up here and they share the property that matters: neither is
+    a secret, so neither can be scored.
+
+    ``identifier`` — half of a credential, transmitted in the clear by design.
+    An AWS access key id is the case: it names the account and the key for
+    incident response, and authenticates nothing without the paired secret.
+
+    ``malformed`` — the right shape with the wrong internals. A GitHub token
+    with a deliberately broken CRC32 cannot authenticate anywhere. A scanner
+    that validates the checksum and declines to report it is behaving
+    correctly, and scoring that as a miss would penalise the better tool.
+
+    Either way the value is scored on neither axis: failing to report one is
+    not a false negative, reporting one is not a false positive. Reports are
+    tallied separately, because "which tools surface these" is a real question
+    and simply not a recall question.
     """
 
     id: str
     secret_type: str
+    reason: str = Field(description="identifier | malformed")
     value: str
     value_sha256: str
     branch: str
@@ -82,13 +92,13 @@ class Indicator(BaseModel):
     obfuscation: str
     introduced_commit: Optional[str] = None
     present_at_head: bool = True
-    reason: str = ""
+    notes: str = ""
 
 
 class ManifestStats(BaseModel):
     planted_total: int
     decoy_total: int
-    indicator_total: int = 0
+    unscored_total: int = 0
     by_category: Dict[str, int]
     by_secret_type: Dict[str, int]
     by_placement: Dict[str, int]
@@ -107,7 +117,7 @@ class Manifest(BaseModel):
     stats: ManifestStats
     planted: List[PlantedSecret]
     decoys: List[Decoy]
-    indicators: List[Indicator] = Field(default_factory=list)
+    unscored: List[Unscored] = Field(default_factory=list)
 
 
 # --------------------------------------------------------------------------- #
@@ -207,7 +217,7 @@ class RunScore(BaseModel):
     false_positives: List[Finding]
     missed_planted_ids: List[str]
     decoys_triggered: List[str]
-    indicators_reported: List[str] = Field(
+    unscored_reported: List[str] = Field(
         default_factory=list,
         description="credential identifiers (e.g. AWS access key ids) this run "
         "reported. Neither a true positive nor a false positive — informational.",
@@ -247,4 +257,4 @@ class ScoreCard(BaseModel):
     coverage: Optional[CoverageAnalysis] = None
     planted_total: int
     decoy_total: int
-    indicator_total: int = 0
+    unscored_total: int = 0

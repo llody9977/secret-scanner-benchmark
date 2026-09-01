@@ -16,7 +16,7 @@ from ssbench.formats.base import SecretSpec
 from ssbench.gitbuild import Commit, build_repo
 from ssbench.models import (
     Decoy,
-    Indicator,
+    Unscored,
     Manifest,
     ManifestStats,
     PlantedSecret,
@@ -95,7 +95,8 @@ def _collect(rng: SeededRNG) -> Tuple[List[_Stub], Dict[str, DecoySpec]]:
             if part.is_secret:
                 sid = entry.id if n == 0 else f"{entry.id}-{n + 1}"
             else:
-                sid = f"{entry.id}-id" if n == 0 else f"{entry.id}-id{n + 1}"
+                suffix = "id" if part.unscored_reason == "identifier" else "unscored"
+                sid = f"{entry.id}-{suffix}" if n == 0 else f"{entry.id}-{suffix}{n + 1}"
             stubs.append(_Stub(sid, part, placement, entry.obfuscation))
 
     decoys = {f"decoy-{i:02d}": d for i, d in enumerate(build_decoys(rng))}
@@ -227,7 +228,7 @@ def _manifest_placement(placement: Placement) -> str:
 
 
 def _stats(
-    planted: List[PlantedSecret], decoys: List[Decoy], indicators: List[Indicator]
+    planted: List[PlantedSecret], decoys: List[Decoy], unscored: List[Unscored]
 ) -> ManifestStats:
     by_cat: Dict[str, int] = defaultdict(int)
     by_type: Dict[str, int] = defaultdict(int)
@@ -241,7 +242,7 @@ def _stats(
     return ManifestStats(
         planted_total=len(planted),
         decoy_total=len(decoys),
-        indicator_total=len(indicators),
+        unscored_total=len(unscored),
         by_category=dict(sorted(by_cat.items())),
         by_secret_type=dict(sorted(by_type.items())),
         by_placement=dict(sorted(by_place.items())),
@@ -262,7 +263,7 @@ def _redact(data: dict) -> dict:
     exact values are a pure function of ``corpus/seed`` and are reproduced by
     ``python generator/generate.py --seed "$(cat corpus/seed)" --output ./bench``.
     """
-    for group in ("planted", "decoys", "indicators"):
+    for group in ("planted", "decoys", "unscored"):
         for entry in data.get(group, []):
             if entry.get("value"):
                 entry["value"] = REDACTED_VALUE
@@ -302,7 +303,7 @@ def generate(seed: int, output_dir: Path, record_to: Optional[Path] = None) -> M
     result = build_repo(output_dir, commits, labels)
 
     planted: List[PlantedSecret] = []
-    indicators: List[Indicator] = []
+    unscored: List[Unscored] = []
     for stub in stubs:
         path, line = _line_of(stub.id, files)
         layer = _classify(stub)
@@ -310,7 +311,7 @@ def generate(seed: int, output_dir: Path, record_to: Optional[Path] = None) -> M
         if introduced is None and layer == "branch":
             introduced = result.branch_commits.get(stub.branch)
         if not stub.spec.is_secret:
-            indicators.append(Indicator(
+            unscored.append(Unscored(
                 id=stub.id,
                 secret_type=stub.spec.secret_type,
                 value=stub.spec.value,
@@ -322,7 +323,8 @@ def generate(seed: int, output_dir: Path, record_to: Optional[Path] = None) -> M
                 obfuscation=stub.obfuscation,
                 introduced_commit=introduced,
                 present_at_head=(layer == "head"),
-                reason=stub.spec.notes,
+                reason=stub.spec.unscored_reason,
+                notes=stub.spec.notes,
             ))
             continue
         planted.append(PlantedSecret(
@@ -365,10 +367,10 @@ def generate(seed: int, output_dir: Path, record_to: Optional[Path] = None) -> M
         corpus_head_commit=result.head_commit,
         branches=["main", *sorted(result.branch_commits)],
         placement_requires=dict(PLACEMENT_REQUIRES),
-        stats=_stats(planted, decoy_models, indicators),
+        stats=_stats(planted, decoy_models, unscored),
         planted=planted,
         decoys=decoy_models,
-        indicators=indicators,
+        unscored=unscored,
     )
 
     (output_dir / "manifest.yaml").write_text(_dump_manifest(manifest), encoding="utf-8")

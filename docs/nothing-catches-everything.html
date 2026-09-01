@@ -648,8 +648,8 @@
     <div class="ladder" style="margin-top:2rem">
       <div class="rung" data-tier="4">
         <div class="rung-head"><span class="rung-tier">Reason 1 &middot; Permanent</span></div>
-        <h4>"Is this string a secret" is not decidable from the string</h4>
-        <p>A forty-character hexadecimal value is a password, a git SHA, a content hash, or a test fixture, and the string itself does not say which. Structured formats are detectable because a provider chose to make them so. Everything else is inference. No amount of model improvement makes an undecidable question decidable (it only shifts where the errors land).</p>
+        <h4>No scanner can guarantee both perfect recall and perfect precision</h4>
+        <p>A forty-character hexadecimal value is a password, a git SHA, a content hash, or a test fixture, and the string itself does not say which. Structured formats are detectable because a provider chose to make them so. Everything else is inference. A scanner is not limited to the string: provider validation, a credential inventory, dataflow, configuration semantics and runtime identity all change the classification, and each of those is worth adding. What none of them delivers is a guarantee of both perfect recall and perfect precision across arbitrary formats, obfuscations, histories and surfaces. Model improvement shifts where the errors land rather than removing them.</p>
       </div>
       <div class="rung" data-tier="4">
         <div class="rung-head"><span class="rung-tier">Reason 2 &middot; Permanent</span></div>

@@ -18,12 +18,14 @@ A planted secret whose placement needs a capability the run lacks is N/A, never
 a miss.
 
 Ground truth has three populations, not two. Alongside planted secrets and
-decoys there are **indicators**: credential identifiers that are not themselves
-confidential (an AWS access key id is the only case at present). A finding that
-resolves to an indicator is scored on neither axis — not a true positive,
-because nothing secret was found; not a false positive, because the value is a
-legitimate signal. It is tallied in ``indicators_reported`` and nowhere else.
-Indicators are matched before planted secrets so that a hit on an access key id
+decoys there are **unscored** values: credential-shaped strings that cannot
+authenticate. Two kinds qualify. An AWS access key id is half a credential and
+is transmitted in the clear by design. A GitHub token with a deliberately
+broken CRC32 has the right shape and authenticates nowhere. A finding that
+resolves to either is scored on neither axis: not a true positive, because
+nothing secret was found; not a false positive, because reporting it is
+defensible. It is tallied in ``unscored_reported`` and nowhere else.
+Unscored values are matched before planted secrets so that a hit on an access key id
 cannot be credited, by line proximity, to the secret access key beside it.
 """
 
@@ -36,7 +38,7 @@ from typing import Dict, List, Optional, Tuple
 from ssbench.models import (
     Decoy,
     Finding,
-    Indicator,
+    Unscored,
     Manifest,
     Metrics,
     PlantedSecret,
@@ -69,7 +71,7 @@ class _Index:
     def __init__(self, manifest: Manifest) -> None:
         self.planted = manifest.planted
         self.decoys = manifest.decoys
-        self.indicators = manifest.indicators
+        self.unscored = manifest.unscored
         self.by_hash: Dict[str, List[PlantedSecret]] = defaultdict(list)
         self.by_file: Dict[str, List[PlantedSecret]] = defaultdict(list)
         for p in self.planted:
@@ -103,14 +105,14 @@ class _Index:
         """Rank every ground-truth item against a finding.
 
         Returns ``(item, kind, strength, line_distance)`` tuples over both
-        planted secrets and indicators. Strength dominates; line distance breaks
+        planted secrets and unscored. Strength dominates; line distance breaks
         ties, which is what keeps a finding on an AWS access key id from being
         credited to the secret access key on the adjacent line.
         """
         hashes = set(finding.secret_hashes())
         raw = (finding.raw_secret or "").strip("'\"` \t\r\n")
         out = []
-        for kind, items in (("planted", self.planted), ("indicator", self.indicators)):
+        for kind, items in (("planted", self.planted), ("unscored_item", self.unscored)):
             for item in items:
                 strength = self._match_strength(finding, item, hashes, raw)
                 if strength:
@@ -118,10 +120,10 @@ class _Index:
                     out.append((item, kind, strength, distance))
         return sorted(out, key=lambda c: (-c[2], c[3]))
 
-    def match_indicator(self, finding: Finding) -> Optional[Indicator]:
-        """The finding's best interpretation, if that interpretation is an indicator."""
+    def match_unscored(self, finding: Finding) -> Optional[Unscored]:
+        """The finding's best interpretation, if that interpretation is an unscored_item."""
         ranked = self.candidates(finding)
-        if ranked and ranked[0][1] == "indicator":
+        if ranked and ranked[0][1] == "unscored_item":
             return ranked[0][0]
         return None
 
@@ -164,16 +166,16 @@ def _assign(findings: List[Finding], index: _Index):
     """
     hits: Dict[str, PlantedSecret] = {}
     decoys_triggered: List[str] = []
-    indicators_reported: List[str] = []
+    unscored_reported: List[str] = []
     false_positives: List[Finding] = []
     claimed: set = set()
 
     ordered = sorted(findings, key=lambda f: (f.line is None, f.file or ""))
     for finding in ordered:
-        indicator = index.match_indicator(finding)
-        if indicator is not None:
+        unscored_item = index.match_unscored(finding)
+        if unscored_item is not None:
             # A credential identifier, not a credential. Scored on neither axis.
-            indicators_reported.append(indicator.id)
+            unscored_reported.append(unscored_item.id)
             continue
         planted = index.match_planted(finding, claimed)
         if planted is not None and planted.id not in claimed:
@@ -187,12 +189,12 @@ def _assign(findings: List[Finding], index: _Index):
         if decoy is not None:
             decoys_triggered.append(decoy.id)
         false_positives.append(finding)
-    return hits, decoys_triggered, false_positives, sorted(set(indicators_reported))
+    return hits, decoys_triggered, false_positives, sorted(set(unscored_reported))
 
 
 def score_run(manifest: Manifest, run: ToolRun, findings: List[Finding], index: _Index) -> RunScore:
     caps = set(run.capabilities)
-    hits, decoys_triggered, false_positives, indicators_reported = _assign(findings, index)
+    hits, decoys_triggered, false_positives, unscored_reported = _assign(findings, index)
 
     overall = Metrics()
     by_type = _metrics_bucket()
@@ -246,7 +248,7 @@ def score_run(manifest: Manifest, run: ToolRun, findings: List[Finding], index: 
         false_positives=false_positives,
         missed_planted_ids=missed,
         decoys_triggered=sorted(set(decoys_triggered)),
-        indicators_reported=indicators_reported,
+        unscored_reported=unscored_reported,
     )
 
 
@@ -370,7 +372,7 @@ def score(manifest: Manifest, run_index: RunIndex, results_dir: Path) -> ScoreCa
         coverage=coverage,
         planted_total=manifest.stats.planted_total,
         decoy_total=manifest.stats.decoy_total,
-        indicator_total=manifest.stats.indicator_total,
+        unscored_total=manifest.stats.unscored_total,
     )
 
 
@@ -389,7 +391,7 @@ def verify_manifest_values(manifest: Manifest) -> List[str]:
     ``ssbench verify --seed``, which regenerates and compares the HEAD commit).
     """
     bad = []
-    for item in (*manifest.planted, *manifest.decoys, *manifest.indicators):
+    for item in (*manifest.planted, *manifest.decoys, *manifest.unscored):
         if item.value.startswith("<redacted"):
             continue
         if sha256_hex(item.value) != item.value_sha256:
