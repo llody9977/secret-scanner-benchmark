@@ -40,7 +40,7 @@ read.** Not detected, not alerted on — stopped. Nothing downstream of a push
 can do that, however fast it runs. This is the difference the series keeps
 insisting on, demonstrated rather than asserted.
 
-**The bypass is the control, not the hole in it.** The push succeeded on retry,
+**Enforcement is the control; the bypass is its governed exception.** The push succeeded on retry,
 because a developer with a legitimate reason could give one. What matters for
 governance is that the bypass produced a durable record naming the actor, the
 reason and the commit. A preventive control with no escape hatch gets disabled;

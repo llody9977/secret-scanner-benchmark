@@ -516,7 +516,7 @@
 
     <div class="verdict">
       <span class="sec-label">Closing the series</span>
-      <p>Secret scanning is a detection control that most frameworks require without naming, that most organisations buy without operating, and that no tool performs completely. None of those three facts is a reason not to run it.</p>
+      <p>Secret scanning is a detection control that not one framework surveyed here names, that most organisations buy without operating, and that no tool performs completely. None of those three facts is a reason not to run it.</p>
       <p>They are reasons to describe it accurately: preventive at the pre-receive boundary and detective everywhere downstream, a sensor that tells a revocation pipeline where to act, funded on the strength of that pipeline rather than on detector counts, evidenced at the three placements that produce an audit trail, and paid for in developer friction that is spent deliberately rather than consumed by accident.</p>
       <p>And it is worth resisting the tidy closing line this subject invites. The credential that never existed is the only unambiguous win. A short-lived one is not a win by itself. Fifteen minutes is ample for an automated attacker to take data, create persistence, or mint a longer-lived credential. What genuinely reduces risk is the combination: short-lived, tightly scoped, sender-constrained where the protocol allows, and monitored in use. Note that workload identity federation and sender constraint are different controls. Federation removes the standing credential, while mTLS or DPoP binding is what stops a stolen token from being replayed. Governance that asks "are our credentials short-lived?" has asked a quarter of the question.</p>
     </div>

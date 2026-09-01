@@ -8,8 +8,9 @@ the six scanners, or read the latest `results` artifact from
 
 | | |
 |---|---|
-| Run | #7, GitHub Actions, `ubuntu-24.04` |
-| Date | 2026-08-29 |
+| Run | Scoring generation #7. GitHub Actions workflow [run 9](https://github.com/llody9977/secret-scanner-benchmark/actions/runs/33478315806), `ubuntu-24.04`, commit `9ca7fce` |
+| Executed | 2026-09-01 |
+| Corpus generated | 2026-08-29 (the seed date, not the run date) |
 | Corpus | seed `20260829`, HEAD `07e07fadb192ef0610047cc82b404e441d15d44d` |
 | Ground truth | 39 planted secrets · 18 decoys · **6 unscored** · 32 present at HEAD · 7 history-only |
 | Tool versions | Gitleaks 8.30.1 · Betterleaks 1.8.1 · TruffleHog 3.97.1 · Kingfisher 2.0.0 · Titus 1.2.8 · detect-secrets 1.5.0 |
@@ -251,7 +252,8 @@ Those belong in a pilot, not in a recall table.
 
 ## Provenance and limits
 
-- Run #6 is a GitHub Actions run on `ubuntu-24.04`, same six tools at the same
+- Scoring generation #7 is GitHub Actions workflow run 9 on `ubuntu-24.04`,
+  executed 2026-09-01 at commit `9ca7fce`, same six tools at the same
   pinned versions, against a byte-identical corpus (HEAD unchanged), scored with
   the corrected ground truth.
 - The correction was developed against a local `darwin/arm64` rescore of the

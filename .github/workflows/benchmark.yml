@@ -233,11 +233,17 @@ jobs:
               return f.read_text().strip().splitlines()[-1] if f.exists() else "unknown"
 
           FULL = ["working-tree", "history", "verification"]
-          runs = []
+          runs, missing = [], []
 
+          # A report that is absent means its scanner did not run. Dropping it
+          # here and scoring the rest yields a comparison that looks complete
+          # and is not, which is the three-outcome rule failing at the level of
+          # the run instead of the level of a single scan.
           def add(report, **kw):
               if (out / report).exists():
                   runs.append(dict(path=report, **kw))
+              else:
+                  missing.append(f"{kw['tool']} ({kw['mode']}): {report}")
 
           add("gitleaks.json", tool="gitleaks", version=version("gitleaks"), parser="gitleaks",
               mode="default", capabilities=["working-tree", "history"])
@@ -255,17 +261,40 @@ jobs:
               parser="detect-secrets", mode="default", capabilities=["working-tree"])
 
           (out / "index.yaml").write_text(yaml.safe_dump({"runs": runs}, sort_keys=False))
+          (out / "missing.txt").write_text("\n".join(missing))
           print(yaml.safe_dump({"runs": runs}, sort_keys=False))
+          if missing:
+              print("::warning::incomplete run, missing reports: " + "; ".join(missing))
           PY
       - name: Score
+        shell: bash
         run: |
+          set -euo pipefail
+          # Score either way: a partial result is still useful as a diagnostic.
+          # Publishing it as a comparison is what is not allowed.
           python scoring/score.py --manifest ./bench/manifest.yaml --results ./scan-output --out ./results
+
+          missing="$(cat scan-output/missing.txt 2>/dev/null || true)"
+          if [[ -n "$missing" ]]; then
+            {
+              printf '## INCOMPLETE RUN. COMPARISON SUPPRESSED\n\n'
+              printf 'One or more scanners produced no report, so the tools that did run\n'
+              printf 'cannot be ranked against a field that is missing members. The scored\n'
+              printf 'output is uploaded as a diagnostic and is not a benchmark result.\n\n'
+              printf '### Missing reports\n\n'
+              printf '%s\n' "$missing" | sed 's/^/- /'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::incomplete run; comparison suppressed. Missing: $(tr '\n' ' ' < scan-output/missing.txt)"
+            exit 1
+          fi
+
           {
             echo "## Benchmark results"
             echo
             cat results/results.md
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v6.0.0
+        if: always()
         with:
           name: results
           path: results/

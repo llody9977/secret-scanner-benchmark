@@ -31,7 +31,7 @@
   <header class="masthead">
     <p class="kicker">Application Security &middot; Implementation</p>
     <h1>The Governed Pipeline</h1>
-    <p class="dek">Choosing a scanner is the easy half. This is where it becomes a control: five control points, each with an owner, a failure behaviour and a bypass authority. And a test suite that proves the configuration still works.</p>
+    <p class="dek">Choosing a scanner is the easy half. This is where it becomes a control: five control points, each with an owner, a failure behaviour and a bypass authority. And a test suite that proves the configuration still works. Every configuration here is written and tested against GitHub. The control points and their ownership should port, but nothing below has been verified on GitLab, Azure DevOps or Bitbucket.</p>
     <div class="byline">
       <span>Chapter 3 of 5 &middot; Implementation</span>
       <span>Reference implementation current to August 2026</span>
@@ -460,7 +460,7 @@
         <li><strong>Workload identity and OIDC federation.</strong> A CI job exchanges its own identity for a short-lived cloud token instead of holding a long-lived key. <sup class="fn"><a href="sources.html#p3-fn-5">5</a></sup> This removes the standing credential from the runner, which is precisely how the LiteLLM publishing token was taken.</li>
         <li><strong>Trusted publishing for packages.</strong> The same exchange for a registry: no publishing token in the runner environment at all. Given that a stolen publishing token is how both the Shai-Hulud and LiteLLM compromises proceeded, this is the highest-leverage single change available to most projects.</li>
         <li><strong>Dynamic, short-lived credentials.</strong> Minted per job, expiring in minutes. Keep the claim honest, though: a short lifetime removes persistence and shrinks the replay window; it does not remove initial impact. Fifteen minutes is ample to exfiltrate data or mint a second credential.</li>
-        <li><strong>Sender-constrained tokens.</strong> The only item here that makes a stolen credential useless to the thief. Workload identity still usually issues a <em>bearer</em> token. Whoever holds the string can use it.mTLS-bound or DPoP-bound tokens<sup class="fn"><a href="sources.html#p3-fn-6">6</a></sup> are cryptographically tied to the client, so a copied string is not usable by the copier. This is the only item on the list that makes the leak itself inert.</li>
+        <li><strong>Sender-constrained tokens.</strong> Workload identity still usually issues a <em>bearer</em> token. Whoever holds the string can use it. mTLS-bound or DPoP-bound tokens<sup class="fn"><a href="sources.html#p3-fn-6">6</a></sup> are cryptographically tied to the client, so replaying a copied string requires the bound key as well. This raises the cost of theft rather than making the leak inert. The token still names a real principal, and the binding is only as strong as the key holding it.</li>
       </ul>
       <p>Each of these reduces the number of things the pipeline has to catch. A format that no longer exists as a static value cannot be missed by a scanner, cannot be scored in a benchmark, and does not need a regression scenario.</p>
     </div>

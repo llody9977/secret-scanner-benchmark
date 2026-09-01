@@ -1,0 +1,160 @@
+{
+  "_": "Canonical published figures. docs/*.html and docs/RESULTS.md are hand-maintained; tests/test_published_figures.py asserts they agree with this file. Update this file first.",
+  "run": {
+    "generation": 7,
+    "workflow_run": 9,
+    "workflow_run_id": 33478315806,
+    "commit": "9ca7fce",
+    "executed": "2026-09-01",
+    "runner": "ubuntu-24.04",
+    "corpus_generated": "2026-08-29",
+    "corpus_seed": "20260829",
+    "corpus_head": "07e07fadb192ef0610047cc82b404e441d15d44d"
+  },
+  "ground_truth": {
+    "planted": 39,
+    "decoys": 18,
+    "unscored": 6,
+    "unscored_reasons": {
+      "identifier": 4,
+      "malformed": 2
+    },
+    "at_head": 32,
+    "history_only": 7
+  },
+  "tools": [
+    {
+      "tool": "Betterleaks",
+      "version": "1.8.1",
+      "mode": "default",
+      "tp": 37,
+      "fp": 2,
+      "fn": 2,
+      "na": 0,
+      "sigma": 39,
+      "precision": "94.9%",
+      "recall": "94.9%",
+      "f1": "94.9%",
+      "unscored": "2/6"
+    },
+    {
+      "tool": "Titus",
+      "version": "1.2.8",
+      "mode": "default",
+      "tp": 35,
+      "fp": 4,
+      "fn": 4,
+      "na": 0,
+      "sigma": 39,
+      "precision": "89.7%",
+      "recall": "89.7%",
+      "f1": "89.7%",
+      "unscored": "5/6"
+    },
+    {
+      "tool": "Gitleaks",
+      "version": "8.30.1",
+      "mode": "default",
+      "tp": 33,
+      "fp": 1,
+      "fn": 6,
+      "na": 0,
+      "sigma": 39,
+      "precision": "97.1%",
+      "recall": "84.6%",
+      "f1": "90.4%",
+      "unscored": "2/6"
+    },
+    {
+      "tool": "detect-secrets",
+      "version": "1.5.0",
+      "mode": "default",
+      "tp": 23,
+      "fp": 13,
+      "fn": 9,
+      "na": 7,
+      "sigma": 39,
+      "precision": "63.9%",
+      "recall": "71.9%",
+      "f1": "67.7%",
+      "unscored": "2/6"
+    },
+    {
+      "tool": "Kingfisher",
+      "version": "2.0.0",
+      "mode": "default",
+      "tp": 22,
+      "fp": 1,
+      "fn": 17,
+      "na": 0,
+      "sigma": 39,
+      "precision": "95.7%",
+      "recall": "56.4%",
+      "f1": "71.0%",
+      "unscored": "2/6"
+    },
+    {
+      "tool": "TruffleHog",
+      "version": "3.97.1",
+      "mode": "all-results",
+      "tp": 20,
+      "fp": 0,
+      "fn": 19,
+      "na": 0,
+      "sigma": 39,
+      "precision": "100.0%",
+      "recall": "51.3%",
+      "f1": "67.8%",
+      "unscored": "2/6"
+    },
+    {
+      "tool": "TruffleHog",
+      "version": "3.97.1",
+      "mode": "verified-only",
+      "tp": 0,
+      "fp": 0,
+      "fn": 39,
+      "na": 0,
+      "sigma": 39,
+      "precision": "\u2014",
+      "recall": "0.0%",
+      "f1": "\u2014",
+      "unscored": "0/6"
+    }
+  ],
+  "coverage": {
+    "union": 38,
+    "best_single": 37,
+    "caught_by_no_tool": 1,
+    "caught_by_exactly_one": 0,
+    "minimal_set": [
+      "Betterleaks",
+      "Titus"
+    ],
+    "uncaught": "hist-openai"
+  },
+  "findings": {
+    "tools_reporting_both_malformed_tokens": 6,
+    "tools_validating_github_crc32": 0
+  },
+  "retired": {
+    "note": "Superseded by a later scoring generation. No published page may quote these except where the correction itself is narrated.",
+    "patterns": [
+      "\\bof 41\\b",
+      "\\b41[- ]secret\\b",
+      "\\b41 planted\\b",
+      "\\bof 45\\b",
+      "\\b45 planted\\b",
+      "\\b90\\.2\\b",
+      "\\b95\\.1\\b",
+      "\\b53\\.7\\b",
+      "\\b85\\.4\\b",
+      "\\b25 true positives\\b",
+      "\\b38 findings\\b",
+      "best single tool of 39"
+    ],
+    "allowed_context": [
+      "fell from 45 to 41 on the first correction and to 39 on the second"
+    ]
+  }
+}
