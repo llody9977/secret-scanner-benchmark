@@ -50,8 +50,8 @@ response is the most common honest-seeming overclaim in this control family.
 
 Gitleaks gates; TruffleHog discovers. The usual justification is that the gate
 wants precision and discovery wants reach, and this repository's own benchmark
-does not support it: Gitleaks has the higher recall of the two, 85.4% against
-53.7%, at 97.2% precision against 100%. Running TruffleHog as the wide net
+does not support it: Gitleaks has the higher recall of the two, 84.6% against
+51.3%, at 97.1% precision against 100%. Running TruffleHog as the wide net
 would mean running the narrower tool.
 
 The defensible reason is that the two **fail differently**. Gitleaks misses the

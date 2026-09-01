@@ -46,7 +46,7 @@ secrets.
 | Lives in | `corpus/`, generated to `bench/` | `regression/` |
 | Question | Which tool detects what? | Does *our* gate still work? |
 | Configuration | Stock, per tool | This repo's `controls/gitleaks.toml` |
-| Population | 41 planted secrets, 18 decoys, 4 indicators | 16 must-block, 5 must-pass |
+| Population | 39 planted secrets, 18 decoys, 6 unscored | 16 must-block, 5 must-pass |
 | Output | Precision, recall, F1, coverage | Pass or fail, per control decision |
 | A failure means | Interesting; write it up | Something is broken; fix it |
 
@@ -60,7 +60,7 @@ python regression/run.py        # 21 scenarios; needs gitleaks 8.30.1
 ```
 
 **Latest results:** [docs/RESULTS.md](docs/RESULTS.md) — best single-tool recall
-95% (Betterleaks); no tool has a unique catch; two tools reach 40/41; one
+95% (Betterleaks); no tool has a unique catch; two tools reach 38/39; one
 obfuscated secret in history is caught by nothing; every false positive in the
 field is a planted decoy.
 
@@ -126,7 +126,7 @@ false positive. The 40-character secret access key beside it is the planted
 secret. See [the AWS IAM
 documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html).
 
-Current corpus: **41 planted secrets, 18 decoys, 4 indicators** (34 visible at
+Current corpus: **39 planted secrets, 18 decoys, 6 unscored** (34 visible at
 HEAD, 7 history-only). Regenerate `corpus/manifest.yaml` after changing the
 plan:
 

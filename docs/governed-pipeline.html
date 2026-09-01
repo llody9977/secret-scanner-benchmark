@@ -35,7 +35,7 @@
     <div class="byline">
       <span>Chapter 3 of 5 &middot; Implementation</span>
       <span>Reference implementation current to August 2026</span>
-      <span>~5,300 words &middot; 24 min</span>
+      <span>~5,500 words &middot; 25 min</span>
     </div>
   </header>
 
@@ -81,7 +81,7 @@
         <h4>Scheduled history and wider-source discovery</h4>
         <p>A weekly full-history scan with a broader detector set and a lower confidence threshold, plus discovery on the surfaces that are not repositories at all. Nobody is waiting, so this control can afford a wider ruleset, a lower threshold and surfaces the gate never sees.</p>
         <ul>
-          <li><strong>Different tool, deliberately, though not for the reason usually given.</strong> It is not a breadth argument. On the benchmark corpus Gitleaks has the higher recall, 85.4 percent against TruffleHog's 53.7, so running TruffleHog as the wide net means running the narrower tool. What a second engine buys is <em>independent failure modes</em>: Gitleaks misses the connection-string URIs TruffleHog catches, and TruffleHog misses the AWS secret access keys and generic high-entropy strings Gitleaks catches. That is worth having on a scheduled scan, where the extra triage costs nobody a pull request. Running one product in two modes is a reasonable alternative and nothing measured here argues against it.</li>
+          <li><strong>Different tool, deliberately, though not for the reason usually given.</strong> It is not a breadth argument. On the benchmark corpus Gitleaks has the higher recall, 84.6 percent against TruffleHog's 51.3, so running TruffleHog as the wide net means running the narrower tool. What a second engine buys is <em>independent failure modes</em>: Gitleaks misses the connection-string URIs TruffleHog catches, and TruffleHog misses the AWS secret access keys and generic high-entropy strings Gitleaks catches. That is worth having on a scheduled scan, where the extra triage costs nobody a pull request. Running one product in two modes is a reasonable alternative and nothing measured here argues against it.</li>
           <li>Catches the pre-existing exposure. Everything committed before the gates existed, which is the majority of what a new programme finds in its first month.</li>
           <li>Findings go to a triage queue with an owner, not to a pull request.</li>
         </ul>
@@ -274,7 +274,7 @@
         <tbody>
           <tr><th scope="row">Question</th><td>Which tool detects what?</td><td>Does <em>our</em> gate still work?</td></tr>
           <tr><th scope="row">Configuration</th><td>Stock, per tool</td><td>This repository's <code>controls/gitleaks.toml</code></td></tr>
-          <tr><th scope="row">Population</th><td>41 planted secrets, 18 decoys, 4 indicators</td><td>16 must-block, 5 must-pass scenarios</td></tr>
+          <tr><th scope="row">Population</th><td>39 planted secrets, 18 decoys, 6 unscored</td><td>16 must-block, 5 must-pass scenarios</td></tr>
           <tr><th scope="row">Output</th><td>Precision, recall, F1, cross-tool coverage</td><td>Pass or fail, per control decision</td></tr>
           <tr><th scope="row">Changes when</th><td>A tool ships a new ruleset</td><td><em>We</em> change our configuration</td></tr>
           <tr><th scope="row">A failure means</th><td>Interesting. Write it up.</td><td class="no">Something is broken. Fix it today.</td></tr>

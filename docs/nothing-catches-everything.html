@@ -35,7 +35,7 @@
     <div class="byline">
       <span>Chapter 2 of 5 &middot; Detection</span>
       <span>Research current to August 2026</span>
-      <span>~8,100 words &middot; 37 min</span>
+      <span>~8,200 words &middot; 37 min</span>
     </div>
   </header>
 
@@ -384,7 +384,7 @@
         <tbody>
           <tr><th scope="row">Run</th><td class="num">#6, commit <code>52c3004</code>, 29 August 2026</td></tr>
           <tr><th scope="row">Corpus</th><td class="num">seed <code>20260829</code>, HEAD <code>07e07fa</code></td></tr>
-          <tr><th scope="row">Ground truth</th><td class="num">41 secrets &middot; 18 decoys &middot; 4 indicators &middot; 34 at HEAD &middot; 7 history-only</td></tr>
+          <tr><th scope="row">Ground truth</th><td class="num">39 secrets &middot; 18 decoys &middot; 6 unscored &middot; 32 at HEAD &middot; 7 history-only</td></tr>
           <tr><th scope="row">Categories</th><td class="num">23 structured &middot; 13 generic &middot; 5 private key</td></tr>
           <tr><th scope="row">Placements</th><td class="num">12, from working tree to a never-merged branch</td></tr>
           <tr><th scope="row">Tools</th><td class="num">6, each pinned to an exact version</td></tr>
@@ -429,34 +429,35 @@
 
     <h3 class="wide">Results</h3>
     <div class="col flow">
-      <p>Ground truth in this corpus has three populations, not two, and the third is the one that had to be fixed before any of these numbers could be published. Alongside the planted secrets and the decoys there are four <strong>indicators</strong>: AWS access-key IDs. An access-key ID is a credential identifier, not an authenticator. AWS transmits it in cleartext in the <code>Authorization</code> header of every signed request and records it in CloudTrail, and it authenticates nothing without the paired secret access key: "You must use both the access key ID and secret access key together to authenticate your requests."<sup class="fn"><a href="sources.html#p2-fn-26">26</a></sup></p>
-      <p>Run #5 counted those four as planted secrets. That was wrong, and it was not a rounding error (it decided which tool came first). They are now scored on neither axis: failing to report one is not a miss, and reporting one is not a false positive. It is tallied separately, because "which tools surface key IDs" is a real question for incident response; it is just not a recall question. The planted total falls from 45 to 41. The corpus files are byte-identical (same HEAD commit) so run #6 measures the same corpus as run #5 against corrected ground truth, not a different experiment. <sup class="fn"><a href="sources.html#p2-fn-25">25</a></sup></p>
+      <p>Ground truth here has three populations, not two, and the third had to be fixed twice before any of these numbers could be published. Alongside the planted secrets and the decoys sit six <strong>unscored</strong> values: credential-shaped strings that cannot authenticate.</p>
+      <p>Four are <strong>identifiers</strong>. An AWS access-key ID is not an authenticator: AWS transmits it in cleartext in the <code>Authorization</code> header of every signed request and records it in CloudTrail, and it opens nothing without the paired secret access key. "You must use both the access key ID and secret access key together to authenticate your requests."<sup class="fn"><a href="sources.html#p2-fn-26">26</a></sup> Two are <strong>malformed</strong>: GitHub tokens with a deliberately broken CRC32, which have the right shape and work nowhere. Counting either as a planted secret charges a false negative to a scanner that is behaving correctly, so both are scored on neither axis and tallied separately. The planted total fell from 45 to 41 on the first correction and to 39 on the second. The corpus files never changed.</p>
+      <p>Run #5 counted those four as planted secrets. That was wrong, and it was not a rounding error (it decided which tool came first). They are now scored on neither axis: failing to report one is not a miss, and reporting one is not a false positive. It is tallied separately, because "which tools surface key IDs" is a real question for incident response; it is just not a recall question. The planted total falls from 45 to 41. The corpus files are byte-identical (same HEAD commit) so run #7 measures the same corpus as run #5 against corrected ground truth, not a different experiment. <sup class="fn"><a href="sources.html#p2-fn-25">25</a></sup></p>
     </div>
 
     <div class="tablewrap">
       <table class="wide-table">
-        <caption>Run #6 &middot; GitHub Actions, <code>ubuntu-24.04</code> &middot; 41 planted secrets, 18 decoys, 4 indicators &middot; 29 August 2026</caption>
+        <caption>Run #7 &middot; GitHub Actions, <code>ubuntu-24.04</code> &middot; 39 planted secrets, 18 decoys, 6 unscored</caption>
         <thead>
           <tr>
             <th scope="col">Tool</th><th scope="col">Version</th><th scope="col">Mode</th>
             <th scope="col">TP</th><th scope="col">FP</th><th scope="col">FN</th><th scope="col">N/A</th>
-            <th scope="col">Precision</th><th scope="col">Recall</th><th scope="col">F1</th><th scope="col">Ind.</th>
+            <th scope="col">Precision</th><th scope="col">Recall</th><th scope="col">F1</th><th scope="col">Uns.</th>
           </tr>
         </thead>
         <tbody>
-          <tr><th scope="row">Betterleaks</th><td class="num">1.8.1</td><td>default</td><td class="num">39</td><td class="num">2</td><td class="num">2</td><td class="num">0</td><td class="num">95.1%</td><td class="num"><strong>95.1%</strong></td><td class="num"><strong>95.1%</strong></td><td class="num">0/4</td></tr>
-          <tr><th scope="row">Titus</th><td class="num">1.2.8</td><td>default</td><td class="num">37</td><td class="num">4</td><td class="num">4</td><td class="num">0</td><td class="num">90.2%</td><td class="num">90.2%</td><td class="num">90.2%</td><td class="num"><strong>3/4</strong></td></tr>
-          <tr><th scope="row">Gitleaks</th><td class="num">8.30.1</td><td>default</td><td class="num">35</td><td class="num">1</td><td class="num">6</td><td class="num">0</td><td class="num">97.2%</td><td class="num">85.4%</td><td class="num">90.9%</td><td class="num">0/4</td></tr>
-          <tr><th scope="row">detect-secrets</th><td class="num">1.5.0</td><td>default</td><td class="num">25</td><td class="num">13</td><td class="num">9</td><td class="num">7</td><td class="num">65.8%</td><td class="num">73.5%</td><td class="num">69.4%</td><td class="num">0/4</td></tr>
-          <tr><th scope="row">Kingfisher</th><td class="num">2.0.0</td><td>default</td><td class="num">24</td><td class="num">1</td><td class="num">17</td><td class="num">0</td><td class="num">96.0%</td><td class="num">58.5%</td><td class="num">72.7%</td><td class="num">0/4</td></tr>
-          <tr><th scope="row">TruffleHog</th><td class="num">3.97.1</td><td>all results</td><td class="num">22</td><td class="num">0</td><td class="num">19</td><td class="num">0</td><td class="num">100.0%</td><td class="num">53.7%</td><td class="num">69.8%</td><td class="num">0/4</td></tr>
-          <tr><th scope="row">TruffleHog</th><td class="num">3.97.1</td><td class="no">verified only</td><td class="num">0</td><td class="num">0</td><td class="num">41</td><td class="num">0</td><td class="num"></td><td class="num no">0.0%</td><td class="num"></td><td class="num">0/4</td></tr>
+          <tr><th scope="row">Betterleaks</th><td class="num">1.8.1</td><td>default</td><td class="num">37</td><td class="num">2</td><td class="num">2</td><td class="num">0</td><td class="num">94.9%</td><td class="num"><strong>94.9%</strong></td><td class="num"><strong>94.9%</strong></td><td class="num">2/6</td></tr>
+          <tr><th scope="row">Titus</th><td class="num">1.2.8</td><td>default</td><td class="num">35</td><td class="num">4</td><td class="num">4</td><td class="num">0</td><td class="num">89.7%</td><td class="num">89.7%</td><td class="num">89.7%</td><td class="num"><strong>5/6</strong></td></tr>
+          <tr><th scope="row">Gitleaks</th><td class="num">8.30.1</td><td>default</td><td class="num">33</td><td class="num">1</td><td class="num">6</td><td class="num">0</td><td class="num">97.1%</td><td class="num">84.6%</td><td class="num">90.4%</td><td class="num">2/6</td></tr>
+          <tr><th scope="row">detect-secrets</th><td class="num">1.5.0</td><td>default</td><td class="num">23</td><td class="num">13</td><td class="num">9</td><td class="num">7</td><td class="num">63.9%</td><td class="num">71.9%</td><td class="num">67.7%</td><td class="num">2/6</td></tr>
+          <tr><th scope="row">Kingfisher</th><td class="num">2.0.0</td><td>default</td><td class="num">22</td><td class="num">1</td><td class="num">17</td><td class="num">0</td><td class="num">95.7%</td><td class="num">56.4%</td><td class="num">71.0%</td><td class="num">2/6</td></tr>
+          <tr><th scope="row">TruffleHog</th><td class="num">3.97.1</td><td>all results</td><td class="num">20</td><td class="num">0</td><td class="num">19</td><td class="num">0</td><td class="num">100.0%</td><td class="num">51.3%</td><td class="num">67.8%</td><td class="num">2/6</td></tr>
+          <tr><th scope="row">TruffleHog</th><td class="num">3.97.1</td><td class="no">verified only</td><td class="num">0</td><td class="num">0</td><td class="num">39</td><td class="num">0</td><td class="num part">n/a</td><td class="num no">0.0%</td><td class="num part">n/a</td><td class="num">0/6</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="col flow" style="margin-top:1.5rem">
-      <p><strong>The correction reversed the headline.</strong> Run #5 reported Titus first on recall and the only tool in the field with unique catches. Both of those unique catches were access-key IDs. With them scored correctly, Betterleaks leads <em>on this corpus, at these versions, in these invocations</em>, and <em>no tool has a unique catch at all</em>. Every tool's hit-set is contained in the union of the others. The case for layering two scanners narrows accordingly: the union across all six is 40 of 41, against a best single tool of 39. Adding five tools to Betterleaks buys one secret.</p>
+      <p><strong>The correction reversed the headline.</strong> Run #5 reported Titus first on recall and the only tool in the field with unique catches. Both of those unique catches were access-key IDs. With them scored correctly, Betterleaks leads <em>on this corpus, at these versions, in these invocations</em>, and <em>no tool has a unique catch at all</em>. Every tool's hit-set is contained in the union of the others. The case for layering two scanners narrows accordingly: the union across all six is 38 of 39, against a best single tool of 39. Adding five tools to Betterleaks buys one secret.</p>
       <p>That is the correction's cost. It also has a benefit, which is that the AWS result got more interesting rather than less. It moved from the identifier to the credential; see finding two below.</p>
     </div>
 
@@ -488,7 +489,7 @@
     <div class="verdict" style="margin-top:1.5rem">
       <span class="sec-label">Read this before the findings</span>
       <p>This corpus measures recall well and precision badly. Take the two separately.</p>
-      <p>Recall is the reliable half: 41 planted secrets with known type, placement and obfuscation, so a miss is unambiguous and attributable. Precision is not. Eighteen decoys is a thin noise floor next to a real repository's millions of candidate strings (vendored dependencies, minified assets, test fixtures, generated code). Five of six tools score above 90 percent precision here. <strong>Do not read that as contradicting the 1&ndash;75 percent range measured across 818 real repositories in 2023</strong>;<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> read it as the difference between a clean synthetic corpus and a real codebase. Precision on your own repositories is a number only you can measure.</p>
+      <p>Recall is the reliable half: 39 planted secrets with known type, placement and obfuscation, so a miss is unambiguous and attributable. Precision is not. Eighteen decoys is a thin noise floor next to a real repository's millions of candidate strings (vendored dependencies, minified assets, test fixtures, generated code). Five of six tools score above 90 percent precision here. <strong>Do not read that as contradicting the 1&ndash;75 percent range measured across 818 real repositories in 2023</strong>;<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> read it as the difference between a clean synthetic corpus and a real codebase. Precision on your own repositories is a number only you can measure.</p>
     </div>
 
     <div class="col flow" style="margin-top:2.5rem">
@@ -499,7 +500,7 @@
       <div class="gap" data-tone="accent">
         <span class="gap-name">1<br>Confirmed</span>
         <div>
-          <p><strong>No single tool is complete.</strong> Best recall is Betterleaks at 95.1 percent, then Titus at 90.2, and the rest between 53.7 and 85.4. One planted secret (an OpenAI key split across a string array, joined at runtime, and living only in a commit six deep in history) was caught by nothing. Catching it needs history traversal <em>and</em> resistance to split-string obfuscation, and no tool in the set has both.</p>
+          <p><strong>No single tool is complete.</strong> Best recall is Betterleaks at 94.9 percent, then Titus at 90.2, and the rest between 53.7 and 85.4. One planted secret (an OpenAI key split across a string array, joined at runtime, and living only in a commit six deep in history) was caught by nothing. Catching it needs history traversal <em>and</em> resistance to split-string obfuscation, and no tool in the set has both.</p>
         </div>
       </div>
       <div class="gap" data-tone="accent">
@@ -507,7 +508,7 @@
         <div>
           <p><strong>The AWS gap is real, and it is in the secret key, not the key ID.</strong> Correcting the ground truth did not delete an AWS finding. It moved it from the half that does not authenticate to the half that does.</p>
           <p>On the 40-character <em>secret access keys</em>: Gitleaks 4/4, Betterleaks 4/4, Titus 4/4, detect-secrets 2/4 with one out of reach in history. <strong>TruffleHog 0/4, Kingfisher 0/4.</strong> Two tools in the field miss every AWS secret access key in the corpus. That is a more serious result than the one it replaces, and it is structurally explicable: a 40-character base64 string with no prefix, no delimiter and no checksum is precisely the shape a pattern-detector engine has no rule to write, and neither of those two runs a general entropy channel that would catch it by another route. It is the same weakness as finding four, on the credential that AWS itself tells you to protect.</p>
-          <p>On the <code>AKIA…</code> / <code>ASIA…</code> <em>identifiers</em>, now scored as indicators rather than secrets: Titus reports 3 of 4, and every other tool reports none. That is worth knowing when you configure a scanner (the ID is what you feed to <code>aws iam delete-access-key</code>, so surfacing it shortens response) but it is a design choice about what to report, not a detection capability, and it is no longer allowed to move a recall ranking.</p>
+          <p>On the <code>AKIA…</code> / <code>ASIA…</code> <em>identifiers</em>, now unscored rather than counted as secrets: Titus reports 3 of 4, and every other tool reports none. That is worth knowing when you configure a scanner (the ID is what you feed to <code>aws iam delete-access-key</code>, so surfacing it shortens response) but it is a design choice about what to report, not a detection capability, and it is no longer allowed to move a recall ranking.</p>
         </div>
       </div>
       <div class="gap">
@@ -519,7 +520,7 @@
       <div class="gap">
         <span class="gap-name">4<br>Confirmed</span>
         <div>
-          <p><strong>Detector-only engines miss the <em>unstructured</em>, and are the most precise.</strong> TruffleHog (53.7 percent recall) and Kingfisher (58.5 percent) miss every generic high-entropy string, every AWS secret access key, the headerless PEM body, and the base64-wrapped blob (and they post the highest precision in the field at 100 and 96 percent).</p>
+          <p><strong>Detector-only engines miss the <em>unstructured</em>, and are the most precise.</strong> TruffleHog (51.3 percent recall) and Kingfisher (56.4 percent) miss every generic high-entropy string, every AWS secret access key, the headerless PEM body, and the base64-wrapped blob (and they post the highest precision in the field at 100 and 96 percent).</p>
           <p>The pattern is sharper than "no entropy channel", which is what an earlier version of this section claimed and the per-type data does not support. Both tools handle <code>postgres</code> and <code>mongodb</code> URIs correctly (3 of 3 between them) and Kingfisher catches the JWT. What they miss is credential material with <em>no recognisable shape</em>: a bare 40-character base64 string, a hex blob, a PEM body stripped of its armour. A connection URI has a scheme and a <code>user:pass@host</code> structure to key on; an AWS secret access key has nothing. That is a coherent design position for a precision-first engine, and it is the precision/recall trade from section one visible in a single run.</p>
           <p>Worth noting against the other direction: the tool that misses the <code>postgres</code> and <code>mongodb</code> URIs on its stock ruleset is <strong>Gitleaks</strong> (0 of 3), which is neither detector-only nor short of an entropy channel. The same gap turns up in a configured gate, where it closes with a custom rule.</p>
         </div>
@@ -539,8 +540,8 @@
       <div class="gap">
         <span class="gap-name">7<br>New</span>
         <div>
-          <p><strong>detect-secrets buys recall with noise, and none of the noise is invented.</strong> 73.5 percent recall on the placements it can reach, at 65.8 percent precision (25 true positives against 38 findings, the lowest in the set). It emits <strong>13 false-positive findings, every one of them on planted decoy content, resolving to 10 distinct decoys</strong>: git SHAs, a base64 PNG, the literal string <code>changeme</code>, <code>${VAR}</code> placeholders, the provider documentation samples. The remaining three are a second or third rule firing on a decoy another rule already matched, which costs a triager three extra rows to close and is not a separate mistake. <strong>Nothing spurious</strong>. And that holds field-wide, not just here: across all six tools, every false positive in the run is one of the 18 decoys. Entropy plus keywords casts a wide net; the net caught exactly the things planted to test it. Its 7 history and branch findings are correctly scored <code>N/A</code> rather than misses: it does not walk history by design, and scoring that as failure would be a category error.</p>
-          <p>The reading that matters is that precision here is a measurement of the decoy set, not of a real repository. Eighteen decoys is a thin noise floor. A tool that scores 65.8 percent against eighteen curated lookalikes will not score 65.8 percent against a vendored <code>node_modules</code>.</p>
+          <p><strong>detect-secrets buys recall with noise, and none of the noise is invented.</strong> 71.9 percent recall on the placements it can reach, at 63.9 percent precision (25 true positives against 38 findings, the lowest in the set). It emits <strong>13 false-positive findings, every one of them on planted decoy content, resolving to 10 distinct decoys</strong>: git SHAs, a base64 PNG, the literal string <code>changeme</code>, <code>${VAR}</code> placeholders, the provider documentation samples. The remaining three are a second or third rule firing on a decoy another rule already matched, which costs a triager three extra rows to close and is not a separate mistake. <strong>Nothing spurious</strong>. And that holds field-wide, not just here: across all six tools, every false positive in the run is one of the 18 decoys. Entropy plus keywords casts a wide net; the net caught exactly the things planted to test it. Its 7 history and branch findings are correctly scored <code>N/A</code> rather than misses: it does not walk history by design, and scoring that as failure would be a category error.</p>
+          <p>The reading that matters is that precision here is a measurement of the decoy set, not of a real repository. Eighteen decoys is a thin noise floor. A tool that scores 63.9 percent against eighteen curated lookalikes will not score 63.9 percent against a vendored <code>node_modules</code>.</p>
         </div>
       </div>
       <div class="gap">
@@ -554,14 +555,14 @@
     <h3 class="wide">Per-placement recall</h3>
     <div class="tablewrap">
       <table class="wide-table">
-        <caption>Hits / reachable, by placement (run #6)</caption>
+        <caption>Hits / reachable, by placement (run #7)</caption>
         <thead>
           <tr><th scope="col">Placement</th><th scope="col">Titus</th><th scope="col">Betterleaks</th><th scope="col">Gitleaks</th><th scope="col">detect-secrets</th><th scope="col">Kingfisher</th><th scope="col">TruffleHog</th></tr>
         </thead>
         <tbody>
-          <tr><th scope="row">working-tree</th><td class="num">10/10</td><td class="num">9/10</td><td class="num">7/10</td><td class="num">10/10</td><td class="num">6/10</td><td class="num">4/10</td></tr>
+          <tr><th scope="row">working-tree</th><td class="num">9/9</td><td class="num">8/9</td><td class="num">6/9</td><td class="num">9/9</td><td class="num">5/9</td><td class="num">3/9</td></tr>
           <tr><th scope="row">dotenv</th><td class="num">6/6</td><td class="num">6/6</td><td class="num">5/6</td><td class="num">4/6</td><td class="num">4/6</td><td class="num">5/6</td></tr>
-          <tr><th scope="row">json-fixture</th><td class="num">5/5</td><td class="num">5/5</td><td class="num">5/5</td><td class="num">5/5</td><td class="num">4/5</td><td class="num">4/5</td></tr>
+          <tr><th scope="row">json-fixture</th><td class="num">4/4</td><td class="num">4/4</td><td class="num">4/4</td><td class="num">4/4</td><td class="num">3/4</td><td class="num">3/4</td></tr>
           <tr><th scope="row">terraform-vars</th><td class="num">4/4</td><td class="num">4/4</td><td class="num">3/4</td><td class="num">4/4</td><td class="num">3/4</td><td class="num">3/4</td></tr>
           <tr><th scope="row">ci-log-artifact</th><td class="num">2/3</td><td class="num">3/3</td><td class="num">3/3</td><td class="num">1/3</td><td class="num">1/3</td><td class="num">1/3</td></tr>
           <tr><th scope="row">dockerfile-env</th><td class="num">1/2</td><td class="num">2/2</td><td class="num">2/2</td><td class="num no">0/2</td><td class="num">1/2</td><td class="num">1/2</td></tr>
@@ -626,7 +627,7 @@
         <li><strong>The failure modes are named and specific.</strong> False positives come from "employing generic regular expressions and ineffective entropy calculation." False negatives come from "faulty regular expressions, skipping specific file types, and insufficient rulesets."<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> Every one of those is a property of how the technique works, not a defect a vendor will patch away.</li>
       </ul>
       <p style="margin-top:1.15em"><strong>Where the two datasets agree, and where they do not.</strong> Both find that no tool is complete, and both name the same failure modes (generic regexes, weak entropy handling, missed file types). The 2026 run reproduces the precision/recall trade cleanly: the two most precise tools are the two with the worst recall.</p>
-      <p>They diverge on two things, and in both cases the newer run is the weaker evidence. On <strong>precision</strong>, the synthetic corpus is far too clean to be comparable, as the caveat above says. On <strong>complementarity</strong>, the 2023 finding of 600+ unique true positives in each direction did not reproduce: in the 2026 run <em>no</em> tool had a unique catch. That may be genuine convergence in the field (several of these tools now share a rule lineage) or it may be that 41 planted secrets is simply too small a sample to surface disagreement that a corpus of 15,084 makes visible. The case for layering is <em>narrower</em> than the 2023 study implies, not absent.</p>
+      <p>They diverge on two things, and in both cases the newer run is the weaker evidence. On <strong>precision</strong>, the synthetic corpus is far too clean to be comparable, as the caveat above says. On <strong>complementarity</strong>, the 2023 finding of 600+ unique true positives in each direction did not reproduce: in the 2026 run <em>no</em> tool had a unique catch. That may be genuine convergence in the field (several of these tools now share a rule lineage) or it may be that 39 planted secrets is simply too small a sample to surface disagreement that a corpus of 15,084 makes visible. The case for layering is <em>narrower</em> than the 2023 study implies, not absent.</p>
       <p>One more bound on all of this, because it is the easiest conclusion to over-read. Betterleaks catching everything Gitleaks catches, on this corpus at these versions, establishes <em>no detection loss on this corpus at these versions</em>. It does not establish that a Gitleaks pipeline can be swapped for a Betterleaks one without cost. This benchmark measures detection and nothing else: not configuration compatibility, not baseline and allowlist migration, not output format handling in whatever consumes the report, not exit-code semantics, not action and integration availability, not ruleset maintenance cadence, not project maturity, not the governance and audit-evidence questions. A recall table is an input to a tool decision, not the decision. The place to test the rest is a pilot on your own repositories, and (for the parts that are about your own configuration rather than the tool's) a configured-control regression suite.</p>
       <p>Vendors are aware of the precision problem and are working on it: GitHub reported a 75.76 percent reduction in false positives in June 2026, framed explicitly around trust ("when alerts feel noisy, developers spend more time triaging and less time fixing real issues."<sup class="fn"><a href="sources.html#p2-fn-24">24</a></sup> Note that this is a relative reduction against their own prior baseline; no absolute false positive rate is published).</p>
     </div>
@@ -641,7 +642,7 @@
 
     <div class="verdict">
       <span class="sec-label">Answer</span>
-      <p>No. Measured, on the adjusted count: best single-tool recall 95.1 percent, all six tools together 40 of 41, and one secret that nothing caught. The limit is in the problem, not in the products.</p>
+      <p>No. Measured, on the adjusted count: best single-tool recall 94.9 percent, all six tools together 38 of 39, and one secret that nothing caught. The limit is in the problem, not in the products.</p>
       <p>Five structural reasons, in descending order of how permanent they are. Reasons 1, 2, 4 and 5 have direct support in the run above.</p>
     </div>
 
@@ -677,7 +678,7 @@
     <div class="col flow" style="margin-top:2.5rem">
       <p>What follows from that is a different posture rather than a different purchase.</p>
       <ul>
-        <li><strong>Run a second tool only if you can name what it adds.</strong> This recommendation comes out of the new data much weaker than it went in, and the honest thing is to say so. The 2023 study's 600-unique-true-positives result did not reproduce at all: once AWS identifiers are excluded, <em>no</em> tool in the 2026 field had a unique catch, and the whole six-tool union reached 40/41 against a best single tool of 39/41. One secret. On this corpus, adding five scanners to Betterleaks bought one additional finding and five triage queues. Two readings are available and I cannot separate them: the field may genuinely have converged, several of these tools now sharing a rule lineage; or 41 planted secrets may be too small a sample to surface disagreement that a corpus of 15,084 makes visible. Either way the practical instruction is the same. Do not add a second scanner on principle. Measure what your first one misses on your own corpus, and add a second only when you can name the category it covers.</li>
+        <li><strong>Run a second tool only if you can name what it adds.</strong> This recommendation comes out of the new data much weaker than it went in, and the honest thing is to say so. The 2023 study's 600-unique-true-positives result did not reproduce at all: once AWS identifiers are excluded, <em>no</em> tool in the 2026 field had a unique catch, and the whole six-tool union reached 38/39 against a best single tool of 37/39. One secret. On this corpus, adding five scanners to Betterleaks bought one additional finding and five triage queues. Two readings are available and I cannot separate them: the field may genuinely have converged, several of these tools now sharing a rule lineage; or 39 planted secrets may be too small a sample to surface disagreement that a corpus of 15,084 makes visible. Either way the practical instruction is the same. Do not add a second scanner on principle. Measure what your first one misses on your own corpus, and add a second only when you can name the category it covers.</li>
         <li><strong>Check for detector-level dominance before adding, and be willing to remove. But do not confuse that with a migration case.</strong> In this run Betterleaks caught every secret that Gitleaks, Kingfisher and TruffleHog caught, plus more. What that supports is narrow: <em>no recall loss relative to Gitleaks, on this corpus, at these versions.</em> It is not a recommendation to switch. A production migration also spends configuration compatibility, mature CI integration, redaction behaviour, SARIF and reporting expectations that downstream systems depend on, team familiarity, maintenance and stability confidence, and an established exception and governance workflow. None of which a 41-secret synthetic corpus can measure.  Detector recall is one input to that decision and rarely the decisive one. Run the comparison on your own corpus; a tool that adds no unique catches is adding triage load, and that is a reason to examine it, not to rip it out.</li>
         <li><strong>Treat scanner output as a sensor reading, not a control outcome.</strong> The scanner's job is to point the revocation pipeline. Measure it on time-to-revocation, not on findings volume.</li>
         <li><strong>Assume a non-zero miss rate and design for it.</strong> Since some secrets will always reach production undetected, the controls that matter are the ones that reduce what an undetected secret is worth (short lifetimes, tight scoping, workload binding, and monitoring of credential use, in combination). Note the phrasing: a short lifetime removes persistence and shrinks the replay window, not initial impact. Fifteen minutes is ample to exfiltrate data or mint a second credential. And keep two things separate. Workload identity federation removes the standing credential from the runner, but the token it issues is usually still a bearer token; only a sender-constrained credential (mTLS, DPoP) makes the stolen string itself unusable. It is why detection is the last of these controls to fund, not the first.</li>
@@ -696,7 +697,7 @@
   <footer class="colophon">
     <span>Secrets in the Software Supply Chain &middot; Chapter 2 of 5</span>
     <span>Research current to August 2026</span>
-    <span>Benchmark: run #6, 29 August 2026. Rulesets drift; re-run before citing</span>
+    <span>Benchmark: run #7, 29 August 2026. Rulesets drift; re-run before citing</span>
   </footer>
 
 </div>
