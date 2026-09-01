@@ -35,27 +35,11 @@
     <div class="byline">
       <span>Chapter 3 of 5 &middot; Implementation</span>
       <span>Reference implementation current to August 2026</span>
-      <span>~5,700 words &middot; 26 min</span>
+      <span>~5,300 words &middot; 24 min</span>
     </div>
   </header>
 
-  <!-- ============ EXEC ============ -->
-  <section id="summary" style="margin-top:0">
-    <div class="exec">
-      <h2>Executive summary</h2>
-      <ol class="exec-list">
-        <li><strong>Roll out server-side push protection first, and alone if you can only do one thing.</strong> It is the only control point in this article that stops a secret before it reaches a server other people can read. Everything else in the pipeline is detection, however fast it runs, and should be described that way.</li>
-        <li><strong>Every control point needs six things named before it is a control:</strong> control type, configuration owner, failure behaviour, bypass authority, evidence produced, response owner. A scanner with none of those is a script. The table in section two fills them in for all five.</li>
-        <li><strong>The three-outcome rule is the implementation detail that decides whether any of this works.</strong> A scan has three results (clean, findings, and <em>did not run</em>) and pipelines that collapse the third into the first report green while covering nothing. Every workflow here validates that a report exists and parses before believing a zero.</li>
-        <li><strong>Never republish what the gate caught.</strong> A job summary has wider read access than the branch the secret came from. Redaction is verified before any summary is written; an unredacted report fails the run.</li>
-        <li><strong>A configured gate is not self-verifying.</strong> A rule that stops matching fails silently and looks exactly like a clean repository. The <a href="#regression">configured-control regression suite</a> (21 scenarios, 16 must-block and 5 must-pass) is what makes that failure loud.</li>
-        <li><strong>It found two gaps the first time it ran</strong>, on classes this repository claims to care about: a PostgreSQL URL with an inline password, and an HTTP Basic header. Nobody discovers a missing rule by rereading the rules they already have.</li>
-        <li><strong>The hosted push-protection test is the series' one positive case.</strong> A non-issued Mailchimp-shaped fixture was rejected at push, bypassed with a logged reason, and produced an alert. <sup class="fn"><a href="sources.html#p3-fn-1">1</a></sup> That is prevention, demonstrated rather than claimed. And the bypass record is the control, not the hole in it.</li>
-        <li><strong>This whole control set assumes every deployable change reaches production through the enforced repository and pipeline path.</strong> Where production can also change by manual deployment, an admin console, direct registry publication, CI variables or break-glass, the repository control covers one route of several. The testable principle is coverage of every production <em>ingress path</em>. And automating the pipeline does not by itself achieve it, because an automated pipeline still injects values that were never in the repository.</li>
-        <li><strong>Static scanning cannot reach runtime credentials at all</strong> (stolen session cookies, tokens in process memory, values from a metadata service). The last section is about making the static surface smaller rather than scanning it harder.</li>
-      </ol>
-    </div>
-  </section>
+  
 
   <!-- ============ SECTION 1: ROLLOUT ============ -->
   <section id="rollout">

@@ -35,27 +35,11 @@
     <div class="byline">
       <span>Chapter 4 of 5 &middot; Governance</span>
       <span>Research current to August 2026</span>
-      <span>~4,600 words &middot; 21 min</span>
+      <span>~4,200 words &middot; 19 min</span>
     </div>
   </header>
 
-  <!-- ============ EXEC ============ -->
-  <section id="summary" style="margin-top:0">
-    <div class="exec">
-      <h2>Executive summary</h2>
-      <ol class="exec-list">
-        <li><strong>No framework in this set requires an organisation to buy or operate a product called a "secret scanner."</strong> They require outcomes (secrets not hardcoded, secrets managed securely, source and deployment artifacts reviewed, plaintext secrets monitored, credentials rotated and protected, controls evidenced). Automated scanning is one implementation of those outcomes and one way to evidence them. Reading a scanner requirement into a framework that requires an outcome is the most common error in this space, and it cuts both ways: it oversells the tool and it lets an organisation think a purchase discharged an obligation.</li>
-        <li>Three frameworks name hardcoded secrets in <em>normative</em> text, and each carries a scope limit that is usually dropped in the retelling: <strong>PCI DSS v4.0.1 requirement 8.6.2</strong> (mandatory since 31 March 2025, but bounded to application and system accounts capable of interactive login, not every API key or machine credential); <strong>OWASP ASVS 5.0.0 requirement 13.3.1</strong> (explicit and unambiguous, but ASVS binds you only if you adopt it, and it is not itself a regulatory obligation); and <strong>NIST SP 800-218A</strong> ("continuously monitor each environment for plaintext secrets", the most explicit line in the family but scoped to generative-AI and dual-use environments). Everything else (ISO 27001, SOC 2, base NIST SSDF, CIS, DORA) reaches the control by inference. <sup class="fn"><a href="sources.html#p4-fn-1">1</a></sup><sup class="fn"><a href="sources.html#p4-fn-2">2</a></sup></li>
-        <li>That inference gap is not academic. It is why secret scanning is funded inconsistently, owned ambiguously, and evidenced badly. An auditor will map it to SOC 2 CC6.1, a criterion that never mentions secrets. <sup class="fn"><a href="sources.html#p4-fn-3">3</a></sup></li>
-        <li>Where you install the scanner determines what you can claim. <strong>Server-side pre-receive push protection is the control to lead with</strong>. It is the only preventive placement that applies to every push regardless of local setup and cannot be removed by the developer it constrains. Local hooks are defence in depth; everything downstream of the push is detective, and should be described that way in a control narrative.</li>
-        <li>Governance routinely measures the wrong thing. Detection volume rises with headcount. GitGuardian and CyberArk's practitioner survey found average time to remediate a leaked secret was <strong>27 days</strong>. That is the number that maps to risk. <sup class="fn"><a href="sources.html#p4-fn-4">4</a></sup></li>
-        <li>The friction is real and measured. Precision across nine tools ranged from 1 to 75 percent in peer-reviewed testing;<sup class="fn"><a href="sources.html#p4-fn-5">5</a></sup> a USENIX study found developers "often bypass prevention approaches when workflow changes create friction," citing excessive false positives directly. <sup class="fn"><a href="sources.html#p4-fn-6">6</a></sup></li>
-        <li>The same survey found <strong>79 percent of organisations had experienced a secrets leak</strong>, while <strong>75 percent of respondents expressed strong confidence</strong> in their secrets management (and reported only 44 percent of developers following best practice). <sup class="fn"><a href="sources.html#p4-fn-4">4</a></sup> Confidence is not the control.</li>
-        <li>There is enforcement precedent. The FTC's complaint against Uber describes a plaintext AWS access key posted to GitHub as the proximate cause of two breaches. And expressly notes the second key was in a <strong>private</strong> repository. <sup class="fn"><a href="sources.html#p4-fn-7">7</a></sup></li>
-        <li>Governance that works looks like: named owners per credential class, a rotation SLA by exposure class, a friction budget the security team spends deliberately, and metrics reported on revocation rather than detection.</li>
-      </ol>
-    </div>
-  </section>
+  
 
   <!-- ============ WHERE SCANNERS GO ============ -->
   <section id="placement">
@@ -213,6 +197,7 @@
     </div>
 
     <div class="col flow">
+      <p><strong>Confidence is not the control.</strong> The same practitioner survey found 79 percent of organisations had experienced a secrets leak, while 75 percent of respondents expressed strong confidence in their secrets management, and reported only 44 percent of developers following best practice.<sup class="fn"><a href="sources.html#p4-fn-4">4</a></sup> A programme that polls its own leadership for assurance will hear that it is fine.</p>
       <p>A deployed scanner proves coverage. It does not prove control. The distinction matters because most secrets programmes report the first and imply the second.</p>
     </div>
 

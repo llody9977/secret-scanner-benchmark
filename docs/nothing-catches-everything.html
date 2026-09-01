@@ -35,28 +35,11 @@
     <div class="byline">
       <span>Chapter 2 of 5 &middot; Detection</span>
       <span>Research current to August 2026</span>
-      <span>~8,400 words &middot; 38 min</span>
+      <span>~8,100 words &middot; 37 min</span>
     </div>
   </header>
 
-  <!-- ============ WHY BUSINESS CARES ============ -->
-  <section id="why" style="margin-top:0">
-    <div class="exec">
-      <h2>Before the engineering: why anyone is paying for this</h2>
-      <p style="max-width:68ch; margin-bottom:1.25rem; color:var(--ink-soft)">If you are an engineer being asked to stand up secret scanning, this is the argument that funded the request. Skip it if you already have the budget.</p>
-      <ol class="exec-list">
-        <li>A leaked credential reaching a public surface is exploited in under sixty seconds by automated harvesters watching commit streams. <sup class="fn"><a href="sources.html#p2-fn-1">1</a></sup> Anything downstream of the push is a race you have already lost. That is why placement matters as much as tool choice.</li>
-        <li>The volume is not falling. GitGuardian counted 28.65 million hardcoded secrets reaching public GitHub in 2025, up 34 percent year on year, with AI-service credentials up 81 percent. <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup></li>
-        <li>Detection is not the failure. Revocation is. GitGuardian found 64 percent of secrets confirmed valid in 2022 were still valid in January 2026.<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> Scanning, validity checking, revocation and credential architecture are four different control types; Your scanner's job is to feed a remediation pipeline, not to be one.</li>
-        <li>Three recent exposures, selected for structural variety rather than size, turned on credentials that no repository scanner would have flagged. One was an issued OAuth token, one was a publishing token sitting in a CI runner's environment, and one campaign used a secret scanner as its harvesting tool. <sup class="fn"><a href="sources.html#p2-fn-3">3</a></sup></li>
-        <li>Even within its own remit, no scanner is complete. Against a purpose-built corpus of 41 synthetic secrets, the best of six selected scanners reached 95 percent recall, all six together reached 40 of 41, none caught anything the other five missed, and one secret was caught by nothing. <sup class="fn"><a href="sources.html#p2-fn-28">28</a></sup> Section four has the run.</li>
-        <li>Regulation now names this explicitly. PCI DSS v4.0.1 requirement 8.6.2 prohibits hardcoded passwords in scripts, configuration files and source code, and became mandatory on 31 March 2025.<sup class="fn"><a href="sources.html#p2-fn-4">4</a></sup></li>
-      </ol>
-    </div>
-    <div class="col flow" style="margin-top:2rem">
-      <p>So the engineering question is not "should we scan." It is narrower and more useful: <strong>which detection techniques exist, which tool implements which, where do you install it, and how do you find out what it misses before an attacker does.</strong></p>
-    </div>
-  </section>
+  
 
   <!-- ============ HOW SCANNERS WORK ============ -->
   <section id="capabilities">
@@ -66,6 +49,7 @@
     </div>
 
     <div class="col flow">
+      <p>The engineering question is not "should we scan". It is narrower and more useful: which detection techniques exist, which tool implements which, where do you install it, and how do you find out what it misses before an attacker does.</p>
       <p>"Secret scanner" describes a category, not a technique. Every tool in the category is some combination of the five approaches below, and the combination determines both what it finds and how much noise it generates. Choosing a tool without knowing which techniques it implements is how programmes end up with 90 percent of their alerts being test fixtures.</p>
       <p>Keep one distinction in view throughout, because it decides what any of this is worth: <strong>detection technique and control type are independent axes.</strong> The same tool is a preventive control at the pre-commit or pre-receive boundary and a detective one everywhere downstream. Validity checking is neither (it prioritises). Revocation is the only corrective step, and short-lived, scoped, workload-bound identity is preventive architecture that operates on a different plane entirely.</p>
     </div>
@@ -82,28 +66,28 @@
         <span class="gap-name">2<br>Entropy</span>
         <div>
           <p><strong>What it does.</strong> Shannon entropy over base64 or hexadecimal strings, on the theory that a random-looking 40-character string in a config file is probably a key. This is the only technique that has any chance at unstructured secrets.</p>
-          <p><strong>What it cannot see, and what it wrongly sees.</strong> Entropy is a proxy, not a test. It misses low-entropy secrets (<code>password: Summer2026!</code>) entirely, and it flags every UUID, git SHA, content hash, minified asset, base64-encoded image and test fixture in the tree. Basak and colleagues identified "ineffective entropy calculation" as one of the two root causes of false positives across the nine tools they evaluated. <sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup></p>
+          <p><strong>What it cannot see, and what it wrongly sees.</strong> Entropy is a proxy, not a test. It misses low-entropy secrets (<code>password: Summer2026!</code>) entirely, and it flags every UUID, git SHA, content hash, minified asset, base64-encoded image and test fixture in the tree. Basak and colleagues identified "ineffective entropy calculation" as one of the two root causes of false positives across the nine tools they evaluated. <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup></p>
         </div>
       </div>
       <div class="gap" data-tone="accent">
         <span class="gap-name">3<br>Keyword and context</span>
         <div>
-          <p><strong>What it does.</strong> Looks at the surrounding code rather than the string alone: an assignment to a variable named <code>api_key</code>, a key called <code>password</code> in a YAML map, proximity to a known provider's SDK import. Yelp's detect-secrets ships a dedicated keyword detector alongside its regex plugins. <sup class="fn"><a href="sources.html#p2-fn-6">6</a></sup></p>
+          <p><strong>What it does.</strong> Looks at the surrounding code rather than the string alone: an assignment to a variable named <code>api_key</code>, a key called <code>password</code> in a YAML map, proximity to a known provider's SDK import. Yelp's detect-secrets ships a dedicated keyword detector alongside its regex plugins. <sup class="fn"><a href="sources.html#p2-fn-3">3</a></sup></p>
           <p><strong>What it cannot see.</strong> Secrets in data rather than code (a credential inside a JSON blob, a log line, a fixture file, a Jupyter output cell). It also inherits the naming conventions of whoever wrote the code; a variable called <code>cfg7</code> defeats it.</p>
         </div>
       </div>
       <div class="gap" data-tone="accent">
         <span class="gap-name">4<br>Structural validation</span>
         <div>
-          <p><strong>What it does.</strong> Checks internal consistency without contacting anyone. GitHub's token formats embed a CRC32 checksum in the final six characters; GitHub states that the prefix alone drops the false positive rate to 0.5 percent and the checksum "virtually eliminates false positives for secret scanning offline."<sup class="fn"><a href="sources.html#p2-fn-7">7</a></sup> This is the cheapest precision improvement available and only some tools implement it.</p>
-          <p><strong>What it cannot see.</strong> Only works where the provider designed a checksum in. Notably, AWS access key IDs have <em>no</em> checksum. The format is a four-character prefix plus sixteen characters of custom base32, and altering the trailing characters does not invalidate it. <sup class="fn"><a href="sources.html#p2-fn-8">8</a></sup> Most providers offer nothing to validate against.</p>
+          <p><strong>What it does.</strong> Checks internal consistency without contacting anyone. GitHub's token formats embed a CRC32 checksum in the final six characters; GitHub states that the prefix alone drops the false positive rate to 0.5 percent and the checksum "virtually eliminates false positives for secret scanning offline."<sup class="fn"><a href="sources.html#p2-fn-4">4</a></sup> This is the cheapest precision improvement available and only some tools implement it.</p>
+          <p><strong>What it cannot see.</strong> Only works where the provider designed a checksum in. Notably, AWS access key IDs have <em>no</em> checksum. The format is a four-character prefix plus sixteen characters of custom base32, and altering the trailing characters does not invalidate it. <sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup> Most providers offer nothing to validate against.</p>
         </div>
       </div>
       <div class="gap" data-tone="accent">
         <span class="gap-name">5<br>Live verification</span>
         <div>
-          <p><strong>What it does.</strong> Calls the provider's API to ask whether the credential still works (<code>sts:GetCallerIdentity</code> for AWS, and equivalents elsewhere). TruffleHog made this its defining feature and classifies every finding as verified, unverified or unknown. <sup class="fn"><a href="sources.html#p2-fn-9">9</a></sup> It converts a probabilistic finding into a fact, and it is the single most useful signal for triage priority.</p>
-          <p><strong>What it cannot see, and the trap.</strong> It cannot help with a secret whose provider has no verification endpoint, and it says nothing about a credential that was valid last week and has since rotated but is still in history. The trap: GitGuardian's research found that prioritising by validity alone missed 46 percent of critical secrets. <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> Verification is a triage input, not a filter.</p>
+          <p><strong>What it does.</strong> Calls the provider's API to ask whether the credential still works (<code>sts:GetCallerIdentity</code> for AWS, and equivalents elsewhere). TruffleHog made this its defining feature and classifies every finding as verified, unverified or unknown. <sup class="fn"><a href="sources.html#p2-fn-6">6</a></sup> It converts a probabilistic finding into a fact, and it is the single most useful signal for triage priority.</p>
+          <p><strong>What it cannot see, and the trap.</strong> It cannot help with a secret whose provider has no verification endpoint, and it says nothing about a credential that was valid last week and has since rotated but is still in history. The trap: GitGuardian's research found that prioritising by validity alone missed 46 percent of critical secrets. <sup class="fn"><a href="sources.html#p2-fn-1">1</a></sup> Verification is a triage input, not a filter.</p>
         </div>
       </div>
     </div>
@@ -178,17 +162,17 @@
           <text x="805" y="230" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" opacity="0.85">range across 9 tools</text>
         </svg>
       </div>
-      <figcaption>Stages 1 and 2 are high precision and low coverage. Stages 3 and 4 are the reverse. No tool escapes the trade: every technique that widens coverage widens the false positive channel at the same time. Measured precision across nine tools ranged from 1 percent to 75 percent on the same corpus. <sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup></figcaption>
+      <figcaption>Stages 1 and 2 are high precision and low coverage. Stages 3 and 4 are the reverse. No tool escapes the trade: every technique that widens coverage widens the false positive channel at the same time. Measured precision across nine tools ranged from 1 percent to 75 percent on the same corpus. <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup></figcaption>
     </figure>
 
     <h3 class="wide">Scan surface is a separate axis from technique</h3>
     <div class="col flow">
       <p>A tool with excellent detection installed in the wrong place is worth very little. Four surfaces matter, and most tools support only some of them:</p>
       <ul>
-        <li><strong>Working tree only.</strong> Scans what is checked out now. Fast, suitable for pre-commit. detect-secrets works this way by design, explicitly avoiding "the overhead of digging through all git history."<sup class="fn"><a href="sources.html#p2-fn-6">6</a></sup> If your benchmark plants secrets in old commits, a working-tree scanner scores zero by design, not by failure.</li>
+        <li><strong>Working tree only.</strong> Scans what is checked out now. Fast, suitable for pre-commit. detect-secrets works this way by design, explicitly avoiding "the overhead of digging through all git history."<sup class="fn"><a href="sources.html#p2-fn-3">3</a></sup> If your benchmark plants secrets in old commits, a working-tree scanner scores zero by design, not by failure.</li>
         <li><strong>Full git history.</strong> Walks every commit on every branch. This is the only way to find the secret that was committed and then "removed" in the next commit, which is still in the pack file and still readable. Gitleaks, TruffleHog, Kingfisher and Titus all do this.</li>
         <li><strong>Push time.</strong> Evaluated between <code>git push</code> and the object landing on the server. This is the only genuinely preventive placement, and it belongs to the platform, not to a CLI.</li>
-        <li><strong>Everything that is not a repository.</strong> Ticket systems, wikis, chat, container image layers, CI logs, IaC state files, MCP configuration. GitGuardian put 28 percent of incidents in <em>collaboration tools specifically</em> (Slack, Jira and Confluence). <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> The other surfaces in that list are real and unmeasured here; do not read the 28 percent as covering them. <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> No CLI git scanner addresses any of it.</li>
+        <li><strong>Everything that is not a repository.</strong> Ticket systems, wikis, chat, container image layers, CI logs, IaC state files, MCP configuration. GitGuardian put 28 percent of incidents in <em>collaboration tools specifically</em> (Slack, Jira and Confluence). <sup class="fn"><a href="sources.html#p2-fn-1">1</a></sup> The other surfaces in that list are real and unmeasured here; do not read the 28 percent as covering them. <sup class="fn"><a href="sources.html#p2-fn-1">1</a></sup> No CLI git scanner addresses any of it.</li>
       </ul>
       <p>There is a fifth surface, and it is not a surface these tools have a bad score on. It is one they cannot address in principle. <strong>Repository and artifact scanners do not detect credentials that exist only at runtime.</strong> A stolen session cookie, a token scraped out of process memory, a credential minted dynamically by a workload identity broker, a value read from an instance metadata service: none of these is ever written to a file that a scanner walks, so no amount of ruleset coverage, history traversal or entropy tuning will surface them. Detecting that class requires identity, endpoint and workload telemetry (anomalous token use, impossible-travel and unusual-ASN signals on API calls, process-level access to credential stores, egress from a workload to an endpoint it has never called). Expanding static scan coverage does not close a runtime-credential gap, and a programme that reports scanner coverage as its credential-risk metric is measuring the surface it can see rather than the one that is being attacked. The governance question is a separate one; the point here is scoping, and it bounds every number in this article.</p>
     </div>
@@ -216,11 +200,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr><th scope="row">Coverage of <em>your</em> stack</th><td>Which of the credential types actually present in our estate does it detect? Test with your own inventory, not the vendor's list.</td><td>The ESEM 2023 study's explicit recommendation: "choose tools based on secret types present in their projects to prevent missing secrets."<sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup></td></tr>
+          <tr><th scope="row">Coverage of <em>your</em> stack</th><td>Which of the credential types actually present in our estate does it detect? Test with your own inventory, not the vendor's list.</td><td>The ESEM 2023 study's explicit recommendation: "choose tools based on secret types present in their projects to prevent missing secrets."<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup></td></tr>
           <tr><th scope="row">Generic secret handling</th><td>What does it do with a high-entropy string that matches no known provider? Configurable threshold? Context-aware?</td><td>This is where most of your real secrets are and where most of your false positives come from.</td></tr>
           <tr><th scope="row">History scanning</th><td>Full history across all branches, or working tree only? Does it handle deleted commits and forks?</td><td>A secret "removed" in a follow-up commit is still in the pack file.</td></tr>
           <tr><th scope="row">Live verification</th><td>Does it call the provider? Which providers? Can verification be disabled for offline or air-gapped runs?</td><td>Converts a probability into a fact. Also the single biggest benchmarking trap (see section four).</td></tr>
-          <tr><th scope="row">Precision in your codebase</th><td>Run it on one large real repository. Count the findings. Triage a random 50. What proportion were real?</td><td>Measured precision across tools ranges from 1 to 75 percent. <sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup> A 6 percent tool means 16 false alarms per true finding.</td></tr>
+          <tr><th scope="row">Precision in your codebase</th><td>Run it on one large real repository. Count the findings. Triage a random 50. What proportion were real?</td><td>Measured precision across tools ranges from 1 to 75 percent. <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> A 6 percent tool means 16 false alarms per true finding.</td></tr>
           <tr><th scope="row">Baseline and allowlist model</th><td>Can you accept a known finding without disabling the rule globally? Is the baseline reviewable in code review?</td><td>Without this, teams disable rules. With it, exceptions are visible and expire.</td></tr>
           <tr><th scope="row">Output format</th><td>SARIF, JSON, exit codes? Does it integrate with your existing findings pipeline?</td><td>SARIF is what lets findings land in a platform security tab rather than a log nobody reads.</td></tr>
           <tr><th scope="row">Performance</th><td>Time to scan your largest repository's full history, on your CI runner size.</td><td>A scan that takes 40 minutes will be moved to a nightly job and then to nowhere.</td></tr>
@@ -242,10 +226,10 @@
     <div class="col flow">
       <p>Four things shifted in this category recently, and a comparison written even a year ago now misleads on all four.</p>
       <ul>
-        <li><strong>Gitleaks is feature-frozen.</strong> Its README describes the project as feature complete with new features not being merged. The original author has started a successor, <strong>Betterleaks</strong>, which adds the live verification Gitleaks never had. <sup class="fn"><a href="sources.html#p2-fn-10">10</a></sup><sup class="fn"><a href="sources.html#p2-fn-11">11</a></sup></li>
-        <li><strong>The Gitleaks CLI and its GitHub Action have different licences.</strong> The CLI is MIT. <code>gitleaks-action</code> has been proprietary since v2.0.0 and requires a licence key (free, but a key) for organisation-owned repositories. <sup class="fn"><a href="sources.html#p2-fn-12">12</a></sup> This is the detail most comparison articles get wrong.</li>
-        <li><strong>Nosey Parker was archived in April 2026</strong> and replaced by Praetorian's <strong>Titus</strong>.<sup class="fn"><a href="sources.html#p2-fn-13">13</a></sup> If your pipeline still references it, it is running a frozen ruleset.</li>
-        <li><strong>GitHub unbundled Advanced Security.</strong> From 1 April 2025, secret scanning for private and internal repositories is sold separately as <strong>GitHub Secret Protection at $19 per active committer per month</strong>. Public repositories keep it free, including full history across all branches. <sup class="fn"><a href="sources.html#p2-fn-14">14</a></sup><sup class="fn"><a href="sources.html#p2-fn-15">15</a></sup></li>
+        <li><strong>Gitleaks is feature-frozen.</strong> Its README describes the project as feature complete with new features not being merged. The original author has started a successor, <strong>Betterleaks</strong>, which adds the live verification Gitleaks never had. <sup class="fn"><a href="sources.html#p2-fn-7">7</a></sup><sup class="fn"><a href="sources.html#p2-fn-8">8</a></sup></li>
+        <li><strong>The Gitleaks CLI and its GitHub Action have different licences.</strong> The CLI is MIT. <code>gitleaks-action</code> has been proprietary since v2.0.0 and requires a licence key (free, but a key) for organisation-owned repositories. <sup class="fn"><a href="sources.html#p2-fn-9">9</a></sup> This is the detail most comparison articles get wrong.</li>
+        <li><strong>Nosey Parker was archived in April 2026</strong> and replaced by Praetorian's <strong>Titus</strong>.<sup class="fn"><a href="sources.html#p2-fn-10">10</a></sup> If your pipeline still references it, it is running a frozen ruleset.</li>
+        <li><strong>GitHub unbundled Advanced Security.</strong> From 1 April 2025, secret scanning for private and internal repositories is sold separately as <strong>GitHub Secret Protection at $19 per active committer per month</strong>. Public repositories keep it free, including full history across all branches. <sup class="fn"><a href="sources.html#p2-fn-11">11</a></sup><sup class="fn"><a href="sources.html#p2-fn-12">12</a></sup></li>
       </ul>
     </div>
 
@@ -304,9 +288,9 @@
     <div class="col flow" style="margin-top:1.5rem">
       <p>Notes that matter when you build the pipeline:</p>
       <ul>
-        <li><strong>TruffleHog is AGPL-3.0.</strong> Materially more restrictive than the MIT and Apache-2.0 licences of everything else here. If you are embedding a scanner into an internal developer platform you distribute, get that reviewed. <sup class="fn"><a href="sources.html#p2-fn-9">9</a></sup></li>
+        <li><strong>TruffleHog is AGPL-3.0.</strong> Materially more restrictive than the MIT and Apache-2.0 licences of everything else here. If you are embedding a scanner into an internal developer platform you distribute, get that reviewed. <sup class="fn"><a href="sources.html#p2-fn-6">6</a></sup></li>
         <li><strong>Betterleaks, Kingfisher and Titus ship as single static binaries.</strong> No official Action, but a two-line <code>run:</code> step is trivial. Do not claim an official Action exists for them.</li>
-        <li><strong>Betterleaks development is funded by Aikido</strong>, a commercial vendor in the same category. That does not make it worse (but disclose it if you present a comparison internally). <sup class="fn"><a href="sources.html#p2-fn-11">11</a></sup></li>
+        <li><strong>Betterleaks development is funded by Aikido</strong>, a commercial vendor in the same category. That does not make it worse (but disclose it if you present a comparison internally). <sup class="fn"><a href="sources.html#p2-fn-8">8</a></sup></li>
         <li><strong>Published rule counts, where they exist:</strong> Titus 487, Nosey Parker 188 (archived), detect-secrets 28 plugins, TruffleHog "over 800 secret types", ggshield "500+". Gitleaks, Betterleaks and Kingfisher do not publish an exact figure (count the shipped rules yourself rather than repeating a number).</li>
       </ul>
     </div>
@@ -321,17 +305,17 @@
         <tbody>
           <tr>
             <th scope="row">GitHub</th>
-            <td>Full secret scanning on <strong>public</strong> repos, including git history across all branches; partner programme auto-notifies providers to revoke. <sup class="fn"><a href="sources.html#p2-fn-15">15</a></sup></td>
-            <td><strong>Secret Protection, $19/active committer/month</strong> for private and internal repos, push protection, custom patterns, validity checks. <sup class="fn"><a href="sources.html#p2-fn-14">14</a></sup></td>
+            <td>Full secret scanning on <strong>public</strong> repos, including git history across all branches; partner programme auto-notifies providers to revoke. <sup class="fn"><a href="sources.html#p2-fn-12">12</a></sup></td>
+            <td><strong>Secret Protection, $19/active committer/month</strong> for private and internal repos, push protection, custom patterns, validity checks. <sup class="fn"><a href="sources.html#p2-fn-11">11</a></sup></td>
           </tr>
           <tr>
             <th scope="row">GitLab</th>
-            <td>Pipeline secret detection on <strong>Free, Premium and Ultimate</strong>. But Free and Premium get the scan and a JSON artifact only. <sup class="fn"><a href="sources.html#p2-fn-16">16</a></sup></td>
-            <td><strong>Ultimate</strong> for merge request findings, the security tab, vulnerability management, custom rulesets, and <strong>secret push protection</strong>.<sup class="fn"><a href="sources.html#p2-fn-17">17</a></sup></td>
+            <td>Pipeline secret detection on <strong>Free, Premium and Ultimate</strong>. But Free and Premium get the scan and a JSON artifact only. <sup class="fn"><a href="sources.html#p2-fn-13">13</a></sup></td>
+            <td><strong>Ultimate</strong> for merge request findings, the security tab, vulnerability management, custom rulesets, and <strong>secret push protection</strong>.<sup class="fn"><a href="sources.html#p2-fn-14">14</a></sup></td>
           </tr>
           <tr>
             <th scope="row">Bitbucket</th>
-            <td><strong>Data Center</strong> has native scanning enabled by default. But it scans only new commits as they are pushed, with no history scan. <sup class="fn"><a href="sources.html#p2-fn-18">18</a></sup></td>
+            <td><strong>Data Center</strong> has native scanning enabled by default. But it scans only new commits as they are pushed, with no history scan. <sup class="fn"><a href="sources.html#p2-fn-15">15</a></sup></td>
             <td>Bitbucket <strong>Cloud</strong> has no verified native equivalent; the documented path is running a third-party scanner in Pipelines.</td>
           </tr>
         </tbody>
@@ -346,9 +330,9 @@
     <div class="col flow">
       <p>These require a paid account for meaningful use, so they are excluded from the benchmark in the next section. That is a limitation of the method, not a judgement on the products. And it is worth saying plainly that the tool with the highest measured precision in the peer-reviewed study was a commercial one.</p>
       <ul>
-        <li><strong>GitGuardian</strong> (the most generous free tier of the commercial set: the Starter plan covers up to 25 developers, 1&nbsp;GB scanned, 500 historical detections). <em>Caveat, unresolved:</em> GitGuardian's pricing page lists "no CI/CD scanning" as excluded from Starter, while the ggshield documentation describes service accounts for CI pipeline scanning. These two primary sources appear to conflict; verify with a free account before assuming ggshield is free-tier testable in Actions. <sup class="fn"><a href="sources.html#p2-fn-19">19</a></sup></li>
-        <li><strong>Aikido Security</strong> (free Developer plan at $0 for 2 users and 10 repositories, with secrets detection, liveness detection and pre-commit blocking included; rescans every three days). <sup class="fn"><a href="sources.html#p2-fn-20">20</a></sup> On those limits it is arguably testable, though not at organisation scale.</li>
-        <li><strong>Semgrep Secrets</strong> (not in the open-source edition). Semgrep CE is LGPL-2.1 and covers SAST only; the free tier is 10 repositories and 10 contributors, without Secrets. <sup class="fn"><a href="sources.html#p2-fn-21">21</a></sup></li>
+        <li><strong>GitGuardian</strong> (the most generous free tier of the commercial set: the Starter plan covers up to 25 developers, 1&nbsp;GB scanned, 500 historical detections). <em>Caveat, unresolved:</em> GitGuardian's pricing page lists "no CI/CD scanning" as excluded from Starter, while the ggshield documentation describes service accounts for CI pipeline scanning. These two primary sources appear to conflict; verify with a free account before assuming ggshield is free-tier testable in Actions. <sup class="fn"><a href="sources.html#p2-fn-16">16</a></sup></li>
+        <li><strong>Aikido Security</strong> (free Developer plan at $0 for 2 users and 10 repositories, with secrets detection, liveness detection and pre-commit blocking included; rescans every three days). <sup class="fn"><a href="sources.html#p2-fn-17">17</a></sup> On those limits it is arguably testable, though not at organisation scale.</li>
+        <li><strong>Semgrep Secrets</strong> (not in the open-source edition). Semgrep CE is LGPL-2.1 and covers SAST only; the free tier is 10 repositories and 10 contributors, without Secrets. <sup class="fn"><a href="sources.html#p2-fn-18">18</a></sup></li>
         <li><strong>Snyk</strong>. A Snyk Secrets product exists; the public plans page does not state whether it is included in the free tier. Verify before relying on it.</li>
         <li><strong>Wiz Code</strong> and <strong>Cycode</strong> (no public pricing; paid only). Both correlate secrets to cloud blast radius rather than treating a finding as a file-level event, which is genuinely different from a CLI scanner.</li>
         <li><strong>NHI platforms: Entro, Astrix, Oasis, Clutch.</strong> These start from the identity rather than the file. They inventory service accounts, API keys, OAuth apps and tokens across SaaS and cloud, then attach ownership, permission scope, rotation age and usage telemetry. If your problem is "we do not know what machine identities exist," a repository scanner is the wrong tool entirely.</li>
@@ -364,17 +348,17 @@
     </div>
 
     <div class="col flow">
-      <p>I found no current independent benchmark of these tools with comparable reproducibility. One that publishes its corpus, its seed, its ground truth and its scoring so that a reader can regenerate the whole thing and check the arithmetic. Searching returned vendor blogs and listicles with no reproducible methodology. That is a statement about what a search surfaced, not a proof that nothing exists; if there is one, I would rather cite it than repeat the work. The last peer-reviewed comparison is the 2023 ESEM study,<sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup> which predates Betterleaks, Kingfisher, Titus, and every AI-service credential format.</p>
-      <p>The design below was built as <a href="https://github.com/llody9977/secret-scanner-benchmark"><code>secret-scanner-benchmark</code></a>: it plants a synthetic corpus with known ground truth, assembles it into a git repository with deterministic history, runs six free and self-hostable scanners against it in CI, and scores precision and recall overall, per secret type and per placement. <sup class="fn"><a href="sources.html#p2-fn-28">28</a></sup> The results are in this section. <strong>Read the limitations before the numbers</strong>. One of them substantially qualifies what a benchmark of this shape can measure.</p>
+      <p>I found no current independent benchmark of these tools with comparable reproducibility. One that publishes its corpus, its seed, its ground truth and its scoring so that a reader can regenerate the whole thing and check the arithmetic. Searching returned vendor blogs and listicles with no reproducible methodology. That is a statement about what a search surfaced, not a proof that nothing exists; if there is one, I would rather cite it than repeat the work. The last peer-reviewed comparison is the 2023 ESEM study,<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> which predates Betterleaks, Kingfisher, Titus, and every AI-service credential format.</p>
+      <p>The design below was built as <a href="https://github.com/llody9977/secret-scanner-benchmark"><code>secret-scanner-benchmark</code></a>: it plants a synthetic corpus with known ground truth, assembles it into a git repository with deterministic history, runs six free and self-hostable scanners against it in CI, and scores precision and recall overall, per secret type and per placement. <sup class="fn"><a href="sources.html#p2-fn-25">25</a></sup> The results are in this section. <strong>Read the limitations before the numbers</strong>. One of them substantially qualifies what a benchmark of this shape can measure.</p>
     </div>
 
     <h3 class="wide">Why not just use SecretBench</h3>
     <div class="col flow">
-      <p>SecretBench is the obvious starting point (97,479 candidate secrets from 818 public repositories, of which 15,084 are labelled true secrets). <sup class="fn"><a href="sources.html#p2-fn-22">22</a></sup> Two reasons to build your own instead, and one reason to still read it:</p>
+      <p>SecretBench is the obvious starting point (97,479 candidate secrets from 818 public repositories, of which 15,084 are labelled true secrets). <sup class="fn"><a href="sources.html#p2-fn-19">19</a></sup> Two reasons to build your own instead, and one reason to still read it:</p>
       <ul>
-        <li><strong>It is heavily duplicated.</strong> A 2026 analysis found SecretBench is 69.3 percent exact duplicates and only about 22 percent unique, and that removing duplicates dropped a Random Forest classifier's MCC from 0.89 to 0.65 (concluding that reported performance "may reflect memorization rather than true learning."<sup class="fn"><a href="sources.html#p2-fn-23">23</a></sup> That paper evaluates ML classifiers rather than the CLI tools, so do not transfer its numbers to Gitleaks or TruffleHog). But it is a strong current argument that the standard corpus is contaminated.</li>
+        <li><strong>It is heavily duplicated.</strong> A 2026 analysis found SecretBench is 69.3 percent exact duplicates and only about 22 percent unique, and that removing duplicates dropped a Random Forest classifier's MCC from 0.89 to 0.65 (concluding that reported performance "may reflect memorization rather than true learning."<sup class="fn"><a href="sources.html#p2-fn-20">20</a></sup> That paper evaluates ML classifiers rather than the CLI tools, so do not transfer its numbers to Gitleaks or TruffleHog). But it is a strong current argument that the standard corpus is contaminated.</li>
         <li><strong>Its secrets came from real repositories.</strong> The liveness status of those credentials is not something to assume. If you use it, read the ethics section of the paper first.</li>
-        <li><strong>It still tells you the shape of the answer</strong>, and the companion false-positive dataset FPSecretBench gives raw FP counts per tool over the same repositories (from 429 for GitHub's scanner to over 1.5 million for one commercial tool). <sup class="fn"><a href="sources.html#p2-fn-24">24</a></sup></li>
+        <li><strong>It still tells you the shape of the answer</strong>, and the companion false-positive dataset FPSecretBench gives raw FP counts per tool over the same repositories (from 429 for GitHub's scanner to over 1.5 million for one commercial tool). <sup class="fn"><a href="sources.html#p2-fn-21">21</a></sup></li>
       </ul>
     </div>
 
@@ -427,11 +411,11 @@
     <div class="col flow">
       <p>This is the part that goes wrong quietly. Five rules:</p>
       <ol>
-        <li><strong>AWS keys have no checksum, but they do encode an account ID.</strong> The format is a four-character prefix (<code>AKIA</code> long-lived, <code>ASIA</code> temporary) plus sixteen characters of a custom base32 alphabet, and altering the trailing characters does not invalidate it. There is no validation mechanism. But characters five to thirteen encode the AWS account ID for keys issued since about March 2019, recoverable entirely offline. <sup class="fn"><a href="sources.html#p2-fn-8">8</a></sup> Generate from an obviously invalid account number rather than at random.</li>
-        <li><strong>GitHub tokens have a CRC32 checksum (use it as an experiment.</strong> Prefix (<code>ghp_</code>, <code>gho_</code>, <code>ghu_</code>, <code>ghs_</code>, <code>ghr_</code>), base62 body, and a CRC32 checksum in the last six characters. <sup class="fn"><a href="sources.html#p2-fn-7">7</a></sup> Generate <strong>two variants of each: one with a correct checksum and one deliberately broken</strong>). Tools implementing the checksum reject the broken one; naive regex tools flag both. That single test cleanly separates checksum-aware from regex-only scanners, and no other test does it as precisely.</li>
-        <li><strong>Use test-mode formats where the provider offers them.</strong> Stripe documents <code>sk_test_</code> against <code>sk_live_</code>, and publishable <code>pk_</code> keys as safe to expose. <sup class="fn"><a href="sources.html#p2-fn-25">25</a></sup> A collision with a real test key exposes a sandbox.</li>
+        <li><strong>AWS keys have no checksum, but they do encode an account ID.</strong> The format is a four-character prefix (<code>AKIA</code> long-lived, <code>ASIA</code> temporary) plus sixteen characters of a custom base32 alphabet, and altering the trailing characters does not invalidate it. There is no validation mechanism. But characters five to thirteen encode the AWS account ID for keys issued since about March 2019, recoverable entirely offline. <sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup> Generate from an obviously invalid account number rather than at random.</li>
+        <li><strong>GitHub tokens have a CRC32 checksum (use it as an experiment.</strong> Prefix (<code>ghp_</code>, <code>gho_</code>, <code>ghu_</code>, <code>ghs_</code>, <code>ghr_</code>), base62 body, and a CRC32 checksum in the last six characters. <sup class="fn"><a href="sources.html#p2-fn-4">4</a></sup> Generate <strong>two variants of each: one with a correct checksum and one deliberately broken</strong>). Tools implementing the checksum reject the broken one; naive regex tools flag both. That single test cleanly separates checksum-aware from regex-only scanners, and no other test does it as precisely.</li>
+        <li><strong>Use test-mode formats where the provider offers them.</strong> Stripe documents <code>sk_test_</code> against <code>sk_live_</code>, and publishable <code>pk_</code> keys as safe to expose. <sup class="fn"><a href="sources.html#p2-fn-22">22</a></sup> A collision with a real test key exposes a sandbox.</li>
         <li><strong>Do not build the corpus only from provider "example" keys.</strong> Scanners ship allowlists for documentation samples, so the tool will correctly ignore them and you will misread that as a false negative. Use them deliberately, in the decoy group, where being ignored is the correct behaviour.</li>
-        <li><strong>Plant one canary as a tripwire.</strong> An AWS canary token is a fabricated credential that alerts if anyone ever authenticates with it. <sup class="fn"><a href="sources.html#p2-fn-26">26</a></sup> It is not bulk corpus material, but one in the repository tells you if your synthetic secrets ever end up somewhere they should not.</li>
+        <li><strong>Plant one canary as a tripwire.</strong> An AWS canary token is a fabricated credential that alerts if anyone ever authenticates with it. <sup class="fn"><a href="sources.html#p2-fn-23">23</a></sup> It is not bulk corpus material, but one in the repository tells you if your synthetic secrets ever end up somewhere they should not.</li>
       </ol>
       <p>Two further practices. First, generate from a <strong>seeded deterministic PRNG and commit the seed</strong>, so anyone can regenerate the corpus byte-for-byte and check your scoring. Resist the instinct to reach for a cryptographically secure generator here: unpredictability is exactly what you do <em>not</em> want, and a plain Mersenne Twister makes the point to a reader that these values were never meant to be credentials. (Seeding a CSPRNG is also reproducible, so this is a signalling choice rather than a correctness one (but signal it.) Second, harvest cross-tool: every one of these tools ships test fixtures of format-valid, non-functional secrets, but a tool passes trivially on its own fixtures, so use each tool's fixtures to test the <em>others</em>).</p>
     </div>
@@ -445,8 +429,8 @@
 
     <h3 class="wide">Results</h3>
     <div class="col flow">
-      <p>Ground truth in this corpus has three populations, not two, and the third is the one that had to be fixed before any of these numbers could be published. Alongside the planted secrets and the decoys there are four <strong>indicators</strong>: AWS access-key IDs. An access-key ID is a credential identifier, not an authenticator. AWS transmits it in cleartext in the <code>Authorization</code> header of every signed request and records it in CloudTrail, and it authenticates nothing without the paired secret access key: "You must use both the access key ID and secret access key together to authenticate your requests."<sup class="fn"><a href="sources.html#p2-fn-29">29</a></sup></p>
-      <p>Run #5 counted those four as planted secrets. That was wrong, and it was not a rounding error (it decided which tool came first). They are now scored on neither axis: failing to report one is not a miss, and reporting one is not a false positive. It is tallied separately, because "which tools surface key IDs" is a real question for incident response; it is just not a recall question. The planted total falls from 45 to 41. The corpus files are byte-identical (same HEAD commit) so run #6 measures the same corpus as run #5 against corrected ground truth, not a different experiment. <sup class="fn"><a href="sources.html#p2-fn-28">28</a></sup></p>
+      <p>Ground truth in this corpus has three populations, not two, and the third is the one that had to be fixed before any of these numbers could be published. Alongside the planted secrets and the decoys there are four <strong>indicators</strong>: AWS access-key IDs. An access-key ID is a credential identifier, not an authenticator. AWS transmits it in cleartext in the <code>Authorization</code> header of every signed request and records it in CloudTrail, and it authenticates nothing without the paired secret access key: "You must use both the access key ID and secret access key together to authenticate your requests."<sup class="fn"><a href="sources.html#p2-fn-26">26</a></sup></p>
+      <p>Run #5 counted those four as planted secrets. That was wrong, and it was not a rounding error (it decided which tool came first). They are now scored on neither axis: failing to report one is not a miss, and reporting one is not a false positive. It is tallied separately, because "which tools surface key IDs" is a real question for incident response; it is just not a recall question. The planted total falls from 45 to 41. The corpus files are byte-identical (same HEAD commit) so run #6 measures the same corpus as run #5 against corrected ground truth, not a different experiment. <sup class="fn"><a href="sources.html#p2-fn-25">25</a></sup></p>
     </div>
 
     <div class="tablewrap">
@@ -504,7 +488,7 @@
     <div class="verdict" style="margin-top:1.5rem">
       <span class="sec-label">Read this before the findings</span>
       <p>This corpus measures recall well and precision badly. Take the two separately.</p>
-      <p>Recall is the reliable half: 41 planted secrets with known type, placement and obfuscation, so a miss is unambiguous and attributable. Precision is not. Eighteen decoys is a thin noise floor next to a real repository's millions of candidate strings (vendored dependencies, minified assets, test fixtures, generated code). Five of six tools score above 90 percent precision here. <strong>Do not read that as contradicting the 1&ndash;75 percent range measured across 818 real repositories in 2023</strong>;<sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup> read it as the difference between a clean synthetic corpus and a real codebase. Precision on your own repositories is a number only you can measure.</p>
+      <p>Recall is the reliable half: 41 planted secrets with known type, placement and obfuscation, so a miss is unambiguous and attributable. Precision is not. Eighteen decoys is a thin noise floor next to a real repository's millions of candidate strings (vendored dependencies, minified assets, test fixtures, generated code). Five of six tools score above 90 percent precision here. <strong>Do not read that as contradicting the 1&ndash;75 percent range measured across 818 real repositories in 2023</strong>;<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> read it as the difference between a clean synthetic corpus and a real codebase. Precision on your own repositories is a number only you can measure.</p>
     </div>
 
     <div class="col flow" style="margin-top:2.5rem">
@@ -611,7 +595,7 @@
     </div>
 
     <div class="col flow">
-      <p>The benchmark above is one run against a small synthetic corpus. The ESEM 2023 study by Basak, Cox, Reaves and Williams at North Carolina State University is the opposite (nine tools across 818 real repositories and 97,479 manually labelled candidate secrets). <sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup> It is three years old and predates several tools in the current landscape, but on scale and realism it remains the stronger evidence, and reading the two together is more informative than either alone.</p>
+      <p>The benchmark above is one run against a small synthetic corpus. The ESEM 2023 study by Basak, Cox, Reaves and Williams at North Carolina State University is the opposite (nine tools across 818 real repositories and 97,479 manually labelled candidate secrets). <sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> It is three years old and predates several tools in the current landscape, but on scale and realism it remains the stronger evidence, and reading the two together is more informative than either alone.</p>
     </div>
 
     <div class="tablewrap">
@@ -638,13 +622,13 @@
       <p>Three things to take from that table, none of them the obvious one.</p>
       <ul>
         <li><strong>No tool achieved both.</strong> The highest-precision tool found 6 percent of the secrets. The highest-recall tool was wrong more than half the time. Five of the nine scored under 7 percent precision.</li>
-        <li><strong>The tools disagree profoundly.</strong> Gitleaks and TruffleHog each reported over 600 unique true positives the other missed entirely. The authors' conclusion is unambiguous: this demonstrates "the necessity of not relying on a single tool to identify all the secrets."<sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup></li>
-        <li><strong>The failure modes are named and specific.</strong> False positives come from "employing generic regular expressions and ineffective entropy calculation." False negatives come from "faulty regular expressions, skipping specific file types, and insufficient rulesets."<sup class="fn"><a href="sources.html#p2-fn-5">5</a></sup> Every one of those is a property of how the technique works, not a defect a vendor will patch away.</li>
+        <li><strong>The tools disagree profoundly.</strong> Gitleaks and TruffleHog each reported over 600 unique true positives the other missed entirely. The authors' conclusion is unambiguous: this demonstrates "the necessity of not relying on a single tool to identify all the secrets."<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup></li>
+        <li><strong>The failure modes are named and specific.</strong> False positives come from "employing generic regular expressions and ineffective entropy calculation." False negatives come from "faulty regular expressions, skipping specific file types, and insufficient rulesets."<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> Every one of those is a property of how the technique works, not a defect a vendor will patch away.</li>
       </ul>
       <p style="margin-top:1.15em"><strong>Where the two datasets agree, and where they do not.</strong> Both find that no tool is complete, and both name the same failure modes (generic regexes, weak entropy handling, missed file types). The 2026 run reproduces the precision/recall trade cleanly: the two most precise tools are the two with the worst recall.</p>
       <p>They diverge on two things, and in both cases the newer run is the weaker evidence. On <strong>precision</strong>, the synthetic corpus is far too clean to be comparable, as the caveat above says. On <strong>complementarity</strong>, the 2023 finding of 600+ unique true positives in each direction did not reproduce: in the 2026 run <em>no</em> tool had a unique catch. That may be genuine convergence in the field (several of these tools now share a rule lineage) or it may be that 41 planted secrets is simply too small a sample to surface disagreement that a corpus of 15,084 makes visible. The case for layering is <em>narrower</em> than the 2023 study implies, not absent.</p>
       <p>One more bound on all of this, because it is the easiest conclusion to over-read. Betterleaks catching everything Gitleaks catches, on this corpus at these versions, establishes <em>no detection loss on this corpus at these versions</em>. It does not establish that a Gitleaks pipeline can be swapped for a Betterleaks one without cost. This benchmark measures detection and nothing else: not configuration compatibility, not baseline and allowlist migration, not output format handling in whatever consumes the report, not exit-code semantics, not action and integration availability, not ruleset maintenance cadence, not project maturity, not the governance and audit-evidence questions. A recall table is an input to a tool decision, not the decision. The place to test the rest is a pilot on your own repositories, and (for the parts that are about your own configuration rather than the tool's) a configured-control regression suite.</p>
-      <p>Vendors are aware of the precision problem and are working on it: GitHub reported a 75.76 percent reduction in false positives in June 2026, framed explicitly around trust ("when alerts feel noisy, developers spend more time triaging and less time fixing real issues."<sup class="fn"><a href="sources.html#p2-fn-27">27</a></sup> Note that this is a relative reduction against their own prior baseline; no absolute false positive rate is published).</p>
+      <p>Vendors are aware of the precision problem and are working on it: GitHub reported a 75.76 percent reduction in false positives in June 2026, framed explicitly around trust ("when alerts feel noisy, developers spend more time triaging and less time fixing real issues."<sup class="fn"><a href="sources.html#p2-fn-24">24</a></sup> Note that this is a relative reduction against their own prior baseline; no absolute false positive rate is published).</p>
     </div>
   </section>
 
@@ -675,7 +659,7 @@
       <div class="rung" data-tier="3">
         <div class="rung-head"><span class="rung-tier">Reason 3 &middot; Structural</span></div>
         <h4>The format surface changes faster than rulesets</h4>
-        <p>Every new AI service ships a new key format. GitGuardian found eight of its ten fastest-growing detector categories tied to AI services in 2025.<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> A detector exists only after someone writes it, which means there is always a window in which a new credential type is undetectable by every tool simultaneously.</p>
+        <p>Every new AI service ships a new key format. GitGuardian found eight of its ten fastest-growing detector categories tied to AI services in 2025.<sup class="fn"><a href="sources.html#p2-fn-1">1</a></sup> A detector exists only after someone writes it, which means there is always a window in which a new credential type is undetectable by every tool simultaneously.</p>
       </div>
       <div class="rung" data-tier="3">
         <div class="rung-head"><span class="rung-tier">Reason 4 &middot; Structural</span></div>
@@ -686,7 +670,7 @@
       <div class="rung" data-tier="2">
         <div class="rung-head"><span class="rung-tier">Reason 5 &middot; Addressable</span></div>
         <h4>The scanner is pointed at the wrong surface</h4>
-        <p>Even a perfect repository scanner is blind to the 28 percent of incidents originating in Slack, Jira and Confluence,<sup class="fn"><a href="sources.html#p2-fn-2">2</a></sup> and to container layers, CI logs, IaC state and MCP configuration files. This one you can fix, by buying coverage of those surfaces. The other four you cannot.</p>
+        <p>Even a perfect repository scanner is blind to the 28 percent of incidents originating in Slack, Jira and Confluence,<sup class="fn"><a href="sources.html#p2-fn-1">1</a></sup> and to container layers, CI logs, IaC state and MCP configuration files. This one you can fix, by buying coverage of those surfaces. The other four you cannot.</p>
       </div>
     </div>
 
